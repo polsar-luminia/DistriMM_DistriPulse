@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from "react";
+import { cn } from "@/lib/utils";
 import { AlertTriangle, Trash2, LogOut, X } from "lucide-react";
 
 const iconMap = {
@@ -63,7 +64,7 @@ export default function ConfirmDialog({
       >
         <div className="px-6 pt-6 pb-4">
           {/* Icon */}
-          <div className={`w-12 h-12 rounded-xl ${v.bg} ring-4 ${v.ring} flex items-center justify-center mx-auto mb-4`}>
+          <div className={cn("w-12 h-12 rounded-xl ring-4 flex items-center justify-center mx-auto mb-4", v.bg, v.ring)}>
             <Icon size={22} className={v.text} strokeWidth={1.8} />
           </div>
 
@@ -85,8 +86,10 @@ export default function ConfirmDialog({
           </button>
           <button
             onClick={onConfirm}
-            className={`flex-1 px-4 py-2.5 text-sm font-semibold rounded-xl
-              active:scale-[0.98] transition-all focus:outline-none focus:ring-2 ${confirmColors}`}
+            className={cn(
+              "flex-1 px-4 py-2.5 text-sm font-semibold rounded-xl active:scale-[0.98] transition-all focus:outline-none focus:ring-2",
+              confirmColors
+            )}
           >
             {confirmText}
           </button>

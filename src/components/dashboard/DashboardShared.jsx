@@ -1,5 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { useState } from "react";
+import { cn } from "@/lib/utils";
 import { formatDateUTC, formatCurrency, formatFullCurrency } from "../../utils/formatters";
 import CreditScoreCard from "./CreditScoreCard";
 import {
@@ -23,7 +24,10 @@ export { formatCurrency, formatFullCurrency };
 
 export const Card = ({ children, className = "", ...props }) => (
   <div
-    className={`bg-white rounded-xl border border-navy-100 shadow-[0_1px_3px_rgba(15,22,41,0.04),0_1px_2px_rgba(15,22,41,0.02)] hover:shadow-[0_4px_12px_rgba(15,22,41,0.06),0_1px_3px_rgba(15,22,41,0.04)] transition-all duration-300 p-4 md:p-5 ${className}`}
+    className={cn(
+      "bg-white rounded-xl border border-navy-100 shadow-[0_1px_3px_rgba(15,22,41,0.04),0_1px_2px_rgba(15,22,41,0.02)] hover:shadow-[0_4px_12px_rgba(15,22,41,0.06),0_1px_3px_rgba(15,22,41,0.04)] transition-all duration-300 p-4 md:p-5",
+      className
+    )}
     {...props}
   >
     {children}
@@ -74,7 +78,7 @@ export const StatCard = ({
     len > 14 ? "text-xl" : len > 10 ? "text-2xl" : len > 7 ? "text-3xl" : "text-4xl";
 
   return (
-    <Card className={`relative group hover:translate-y-[-1px] ${tooltip ? "" : "overflow-hidden"}`}>
+    <Card className={cn("relative group hover:translate-y-[-1px]", !tooltip && "overflow-hidden")}>
       {/* Top accent bar */}
       <div className={`absolute top-0 left-0 right-0 h-[2px] ${t.bar} opacity-60`} />
 
@@ -97,7 +101,7 @@ export const StatCard = ({
       </div>
 
       <h3
-        className={`${valueSize} font-bold text-navy-900 tracking-tight leading-tight font-mono truncate`}
+        className={cn(valueSize, "font-bold text-navy-900 tracking-tight leading-tight font-mono truncate")}
       >
         {value}
       </h3>
