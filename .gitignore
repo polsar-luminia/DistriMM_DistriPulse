@@ -1,0 +1,96 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment variables - CRITICAL: Never commit secrets
+.env
+.env.local
+.env.*.local
+.env.production
+.env.staging
+!.env.example
+
+# Development scripts and sensitive artifacts
+*.cjs
+test_webhook.js
+update_n8n_workflow.js
+update_n8n_workflow_v2.js
+armar_mensaje_correcto.js
+
+# n8n workflow exports (may contain credential IDs)
+n8n_workflows.json
+full_workflow.json
+ai_agent_workflow.json
+CFO_WORKFLOW_FIXED.json
+clean_restore.json
+clean_update.json
+current_workflow.json
+current_workflow_temp.json
+final_verification.json
+force_update.json
+hybrid_update.json
+reminder_workflow.json
+response.json
+updated_workflow.json
+workflow_detail.json
+wf_*.json
+
+# SQL migration files (expose table structure)
+*.sql
+!src/**/*.sql
+
+# Business/strategy documents
+CFO_GEMINI_PROMPT.md
+CFO_UPGRADE_PACKAGE.md
+ESTRATEGIA_PRECIOS.md
+DOCS_FUNCIONALES.md
+n8n_verification_result.md
+
+# Development prompts and analysis artifacts
+PROMPT_*.md
+PROMPTS_*.md
+CONTEXTO_*.md
+RECOMENDACIONES_*.md
+ANALYSIS_*.md
+ANALYSIS_*.txt
+IMPLEMENTATION_TIMELINE.txt
+README_AUDITORIA.txt
+Auditoria_DistriMM.docx
+nodes_list*.txt
+update_response.txt
+clean_update_response.txt
+
+# n8n skills (internal reference)
+n8n-skills/
+
+# Development plans and docs
+docs/plans/
+
+# Example data (may contain sensitive info)
+Ejemplo Excel/
+
+# Development artifacts
+_dev/
+.claude/
+.playwright-mcp/
