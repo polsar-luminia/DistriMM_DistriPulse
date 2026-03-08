@@ -1,4 +1,5 @@
 import React from "react";
+import { cn } from "@/lib/utils";
 import { ArrowUp, ArrowDown } from "lucide-react";
 import { Card } from "./Card";
 
@@ -22,7 +23,7 @@ const StatCard = ({
     <Card className="hover:shadow-lg transition-all duration-300 group">
       <div className="flex items-center gap-2 mb-2">
         <div
-          className={`p-1.5 rounded-lg shrink-0 transition-colors duration-300 ${colors[type]}`}
+          className={cn("p-1.5 rounded-lg shrink-0 transition-colors duration-300", colors[type])}
         >
           <Icon size={16} strokeWidth={1.8} />
         </div>
@@ -37,7 +38,7 @@ const StatCard = ({
 
       {trend !== undefined && trend !== null && (
         <div
-          className={`text-xs font-bold flex items-center gap-1 mt-2 tabular-nums ${trend > 0 ? "text-rose-600" : "text-emerald-600"}`}
+          className={cn("text-xs font-bold flex items-center gap-1 mt-2 tabular-nums", trend > 0 ? "text-rose-600" : "text-emerald-600")}
         >
           {trend > 0 ? (
             <ArrowUp size={14} strokeWidth={2} />
@@ -50,7 +51,7 @@ const StatCard = ({
 
       {subtext && !trend && (
         <p
-          className={`text-xs mt-2 font-medium tracking-wide ${type === "danger" ? "text-rose-600" : "text-emerald-600"}`}
+          className={cn("text-xs mt-2 font-medium tracking-wide", type === "danger" ? "text-rose-600" : "text-emerald-600")}
         >
           {subtext}
         </p>

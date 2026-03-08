@@ -18,6 +18,7 @@ import {
 import * as XLSX from "xlsx";
 import { supabase } from "../../lib/supabase";
 import { sileo } from "sileo";
+import { cn } from "@/lib/utils";
 import { formatFullCurrency } from "../../utils/formatters";
 
 export default function VentasUploadModal({ isOpen, onClose, onSuccess }) {
@@ -244,7 +245,7 @@ export default function VentasUploadModal({ isOpen, onClose, onSuccess }) {
 
               <div className="space-y-2">
                 <label className="block text-sm font-bold text-slate-700">Archivo Excel</label>
-                <div className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-all group ${file ? "border-indigo-500 bg-indigo-50/50" : "border-slate-300 hover:border-indigo-400 hover:bg-slate-50"}`}>
+                <div className={cn("border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-all group", file ? "border-indigo-500 bg-indigo-50/50" : "border-slate-300 hover:border-indigo-400 hover:bg-slate-50")}>
                   <input type="file" accept=".xlsx,.xls,.csv" onChange={(e) => { setFile(e.target.files[0]); setError(null); }} className="hidden" id="ventas-file" />
                   <label htmlFor="ventas-file" className="cursor-pointer flex flex-col items-center w-full">
                     {file ? (
@@ -312,11 +313,12 @@ export default function VentasUploadModal({ isOpen, onClose, onSuccess }) {
                           <td className="px-3 py-2 text-xs truncate max-w-[150px]">{row.producto_descripcion || row.producto_codigo}</td>
                           <td className="px-3 py-2 text-xs truncate max-w-[150px]">{row.cliente_nombre}</td>
                           <td className="px-3 py-2 text-center">
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                            <span className={cn(
+                              "text-[10px] font-bold px-2 py-0.5 rounded-full",
                               row.tipo === "DV"
                                 ? "bg-rose-100 text-rose-700"
                                 : "bg-emerald-100 text-emerald-700"
-                            }`}>
+                            )}>
                               {row.tipo === "DV" ? "Dev." : "Venta"}
                             </span>
                           </td>

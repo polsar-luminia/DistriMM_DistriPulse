@@ -5,6 +5,7 @@
 
 import React, { useMemo } from "react";
 import { TrendingUp, Ban } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   formatFullCurrency,
   formatPercentage,
@@ -97,7 +98,7 @@ export default function ReporteVendedorDetail({ vendedor }) {
                       </td>
                       <td className="px-2 py-1.5 text-right font-mono font-bold text-emerald-700">{formatFullCurrency(f.totalComisionable)}</td>
                       <td className="px-2 py-1.5 text-right">
-                        <span className={`font-bold ${margenPct >= 20 ? "text-emerald-600" : margenPct >= 10 ? "text-amber-600" : "text-rose-600"}`}>
+                        <span className={cn("font-bold", margenPct >= 20 ? "text-emerald-600" : margenPct >= 10 ? "text-amber-600" : "text-rose-600")}>
                           {formatPercentage(margenPct)}
                         </span>
                       </td>

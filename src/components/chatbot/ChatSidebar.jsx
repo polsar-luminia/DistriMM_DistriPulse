@@ -5,6 +5,7 @@
  */
 
 import { Search, MessageSquare, Plus, Trash2, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { TIME_UNITS_MS } from "../../constants/thresholds";
 
 function formatRelativeTime(date) {
@@ -114,21 +115,23 @@ export default function ChatSidebar({
                 <div
                   key={session.session_id}
                   onClick={() => onSelectSession(session)}
-                  className={`group flex items-start gap-2 px-2.5 py-2 rounded-lg cursor-pointer transition-colors ${
+                  className={cn(
+                    "group flex items-start gap-2 px-2.5 py-2 rounded-lg cursor-pointer transition-colors",
                     isActive
                       ? "bg-indigo-50 border border-indigo-200"
                       : "hover:bg-slate-50 border border-transparent"
-                  }`}
+                  )}
                 >
                   <MessageSquare
                     size={14}
-                    className={`shrink-0 mt-0.5 ${isActive ? "text-indigo-500" : "text-slate-400"}`}
+                    className={cn("shrink-0 mt-0.5", isActive ? "text-indigo-500" : "text-slate-400")}
                   />
                   <div className="flex-1 min-w-0">
                     <p
-                      className={`text-xs font-medium truncate ${
+                      className={cn(
+                        "text-xs font-medium truncate",
                         isActive ? "text-indigo-700" : "text-slate-700"
-                      }`}
+                      )}
                     >
                       {session.title}
                     </p>

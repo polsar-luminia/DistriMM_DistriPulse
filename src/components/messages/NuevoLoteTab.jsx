@@ -21,6 +21,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { sileo } from "sileo";
+import { cn } from "@/lib/utils";
 import { Card } from "../dashboard/DashboardShared";
 import { PhoneBadge, fmtCOP } from "./MessagesShared";
 
@@ -205,23 +206,25 @@ export default function NuevoLoteTab({ currentLoadId, messaging }) {
           <React.Fragment key={s.num}>
             <button
               onClick={() => s.num < step && setStep(s.num)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
+              className={cn(
+                "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all",
                 step === s.num
                   ? "bg-indigo-600 text-white shadow"
                   : step > s.num
                     ? "bg-indigo-100 text-indigo-600 cursor-pointer hover:bg-indigo-200"
                     : "bg-slate-100 text-slate-400"
-              }`}
+              )}
               disabled={s.num > step}
             >
               <span
-                className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${
+                className={cn(
+                  "w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black",
                   step === s.num
                     ? "bg-white text-indigo-600"
                     : step > s.num
                       ? "bg-indigo-600 text-white"
                       : "bg-slate-300 text-white"
-                }`}
+                )}
               >
                 {step > s.num ? "✓" : s.num}
               </span>
@@ -229,7 +232,7 @@ export default function NuevoLoteTab({ currentLoadId, messaging }) {
             </button>
             {s.num < 3 && (
               <div
-                className={`flex-1 h-0.5 rounded ${step > s.num ? "bg-indigo-400" : "bg-slate-200"}`}
+                className={cn("flex-1 h-0.5 rounded", step > s.num ? "bg-indigo-400" : "bg-slate-200")}
               />
             )}
           </React.Fragment>
@@ -423,9 +426,10 @@ export default function NuevoLoteTab({ currentLoadId, messaging }) {
                     {filteredClients.map((c) => (
                       <tr
                         key={c.cliente_nit}
-                        className={`hover:bg-indigo-50/30 transition-colors ${
-                          selectedNits.has(c.cliente_nit) ? "bg-indigo-50/50" : ""
-                        }`}
+                        className={cn(
+                          "hover:bg-indigo-50/30 transition-colors",
+                          selectedNits.has(c.cliente_nit) && "bg-indigo-50/50"
+                        )}
                       >
                         <td className="px-3 py-2.5">
                           <input
@@ -455,13 +459,14 @@ export default function NuevoLoteTab({ currentLoadId, messaging }) {
                         </td>
                         <td className="px-3 py-2.5 text-center">
                           <span
-                            className={`text-xs font-bold px-2 py-0.5 rounded-md ${
+                            className={cn(
+                              "text-xs font-bold px-2 py-0.5 rounded-md",
                               (c.max_dias_mora || 0) > 30
                                 ? "bg-rose-100 text-rose-700"
                                 : (c.max_dias_mora || 0) > 0
                                   ? "bg-amber-100 text-amber-700"
                                   : "bg-emerald-100 text-emerald-700"
-                            }`}
+                            )}
                           >
                             {c.max_dias_mora || 0}d
                           </span>

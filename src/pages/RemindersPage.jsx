@@ -1,5 +1,6 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useOutletContext } from "react-router-dom";
+import { cn } from "@/lib/utils";
 import { sileo } from "sileo";
 import { formatDateUTC } from "../utils/formatters";
 import {
@@ -212,7 +213,7 @@ export default function RemindersPage() {
                     onClick={() =>
                       setConfig((prev) => ({ ...prev, sentStatus: status }))
                     }
-                    className={`flex-1 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${config.sentStatus === status ? "bg-white shadow-md text-indigo-600" : "text-slate-500 hover:text-slate-700"}`}
+                    className={cn("flex-1 rounded-xl text-xs font-black uppercase tracking-wider transition-all", config.sentStatus === status ? "bg-white shadow-md text-indigo-600" : "text-slate-500 hover:text-slate-700")}
                   >
                     {status === "all"
                       ? "Todos"
@@ -247,7 +248,7 @@ export default function RemindersPage() {
 
               {/* Days Range Chip */}
               <div
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all ${config.enabled.days ? "bg-white border-indigo-200 shadow-sm ring-1 ring-indigo-50" : "bg-slate-50/50 border-transparent opacity-50"}`}
+                className={cn("flex items-center gap-3 px-4 py-3 rounded-xl border transition-all", config.enabled.days ? "bg-white border-indigo-200 shadow-sm ring-1 ring-indigo-50" : "bg-slate-50/50 border-transparent opacity-50")}
               >
                 <input
                   type="checkbox"
@@ -307,7 +308,7 @@ export default function RemindersPage() {
                     className={forceSend ? "text-rose-500" : "text-slate-400"}
                   />
                   <span
-                    className={`text-xs font-black uppercase tracking-tight ${forceSend ? "text-rose-600" : "text-slate-600"}`}
+                    className={cn("text-xs font-black uppercase tracking-tight", forceSend ? "text-rose-600" : "text-slate-600")}
                   >
                     Modo Reenvío
                   </span>
@@ -381,14 +382,14 @@ export default function RemindersPage() {
                     <td className="px-8 py-5">
                       <div className="flex items-center gap-3">
                         <div
-                          className={`w-2 h-2 rounded-full ${item.dias_mora > 0 ? "bg-rose-500 animate-pulse" : "bg-emerald-500"}`}
+                          className={cn("w-2 h-2 rounded-full", item.dias_mora > 0 ? "bg-rose-500 animate-pulse" : "bg-emerald-500")}
                         ></div>
                         <div>
                           <p className="font-bold text-slate-700 text-xs">
                             {formatDateUTC(item.fecha_vencimiento)}
                           </p>
                           <p
-                            className={`text-[10px] font-black uppercase ${item.dias_mora > 0 ? "text-rose-600" : "text-emerald-600"}`}
+                            className={cn("text-[10px] font-black uppercase", item.dias_mora > 0 ? "text-rose-600" : "text-emerald-600")}
                           >
                             {item.dias_mora > 0
                               ? `${item.dias_mora} días mora`

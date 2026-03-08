@@ -4,6 +4,7 @@
  * @module components/cfo/ActionItem
  */
 
+import { cn } from "@/lib/utils";
 import { Target } from "lucide-react";
 
 const PRIORITY_COLORS = {
@@ -28,7 +29,7 @@ export default function ActionItem({ item, index }) {
         <div className="flex items-center gap-2 mb-1 flex-wrap">
           <h4 className="text-sm font-bold text-slate-800">{item.accion || item.titulo}</h4>
           {item.prioridad && (
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${pColor}`}>
+            <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold border", pColor)}>
               {item.prioridad}
             </span>
           )}

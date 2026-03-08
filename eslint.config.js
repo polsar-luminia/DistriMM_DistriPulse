@@ -6,7 +6,7 @@ import eslintConfigPrettier from "eslint-config-prettier";
 import { defineConfig, globalIgnores } from "eslint/config";
 
 export default defineConfig([
-  globalIgnores(["dist", "_dev", "armar_mensaje_correcto.js", "update_n8n_workflow.js", "update_workflow_direct.js"]),
+  globalIgnores(["dist", "_dev", "armar_mensaje_correcto.js", "update_n8n_workflow.js", "update_workflow_direct.js", "src/components/ui"]),
   {
     files: ["**/*.{js,jsx}"],
     ignores: ["**/__tests__/**", "**/*.test.{js,jsx}"],

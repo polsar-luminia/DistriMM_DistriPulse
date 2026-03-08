@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useOutletContext } from "react-router-dom";
+import { cn } from "@/lib/utils";
 import { supabase } from "../lib/supabase";
 import ConfirmDialog from "../components/ConfirmDialog";
 import { useConfirm } from "../hooks/useConfirm";
@@ -154,10 +155,10 @@ export default function FilesPage() {
 
       {/* Error / Diagnostic Status */}
       {(loadError || dbStatus) && (
-        <div className={`p-4 rounded-lg border flex items-start gap-3 ${(loadError || dbStatus?.success === false)
+        <div className={cn("p-4 rounded-lg border flex items-start gap-3", (loadError || dbStatus?.success === false)
           ? "bg-rose-50 border-rose-200 text-rose-700"
           : "bg-emerald-50 border-emerald-200 text-indigo-700"
-          }`}>
+          )}>
           {/* Icon */}
           {(loadError || dbStatus?.success === false) ? <AlertOctagon size={20} /> : <CheckCircle size={20} />}
 
@@ -174,7 +175,7 @@ export default function FilesPage() {
                 {dbStatus.details && (
                   <ul className="mt-2 space-y-1 bg-white/50 p-2 rounded max-h-40 overflow-y-auto">
                     {dbStatus.details.map((log, idx) => (
-                      <li key={idx} className={`text-[10px] ${log.success ? 'text-indigo-700' : 'text-rose-700 font-bold'}`}>
+                      <li key={idx} className={cn("text-[10px]", log.success ? 'text-indigo-700' : 'text-rose-700 font-bold')}>
                         {log.success ? '✓' : '✕'} {log.msg}
                       </li>
                     ))}
@@ -195,12 +196,12 @@ export default function FilesPage() {
             return (
               <Card
                 key={load.id}
-                className={`group transition-all duration-300 cursor-pointer overflow-hidden border-2 h-full flex flex-col ${isActive ? "border-indigo-500 bg-indigo-50/20 shadow-xl scale-[1.02] z-10" : "border-transparent hover:border-slate-200 hover:shadow-md"}`}
+                className={cn("group transition-all duration-300 cursor-pointer overflow-hidden border-2 h-full flex flex-col", isActive ? "border-indigo-500 bg-indigo-50/20 shadow-xl scale-[1.02] z-10" : "border-transparent hover:border-slate-200 hover:shadow-md")}
                 onClick={() => onLoadChange?.(load.id)}
               >
                 <div className="flex items-start justify-between mb-6">
                   <div
-                    className={`p-4 rounded-xl transition-colors ${isActive ? "bg-indigo-500 text-white shadow-lg shadow-indigo-500/20" : "bg-slate-100 text-slate-400 group-hover:bg-slate-200 group-hover:text-slate-600"}`}
+                    className={cn("p-4 rounded-xl transition-colors", isActive ? "bg-indigo-500 text-white shadow-lg shadow-indigo-500/20" : "bg-slate-100 text-slate-400 group-hover:bg-slate-200 group-hover:text-slate-600")}
                   >
                     <FileText size={28} />
                   </div>
@@ -248,13 +249,13 @@ export default function FilesPage() {
 
                     {load.total_valor_cartera && (
                       <div
-                        className={`mt-4 pt-4 border-t ${isActive ? "border-indigo-100" : "border-slate-100"}`}
+                        className={cn("mt-4 pt-4 border-t", isActive ? "border-indigo-100" : "border-slate-100")}
                       >
                         <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-1">
                           Volumen Procesado
                         </p>
                         <p
-                          className={`text-2xl font-black ${isActive ? "text-indigo-700" : "text-slate-800"}`}
+                          className={cn("text-2xl font-black", isActive ? "text-indigo-700" : "text-slate-800")}
                         >
                           {formatMoney(load.total_valor_cartera)}
                         </p>
@@ -265,7 +266,7 @@ export default function FilesPage() {
 
                 {/* Actions */}
                 <div
-                  className={`mt-6 pt-4 border-t flex items-center justify-between ${isActive ? "border-indigo-100" : "border-slate-100 opacity-60 group-hover:opacity-100"}`}
+                  className={cn("mt-6 pt-4 border-t flex items-center justify-between", isActive ? "border-indigo-100" : "border-slate-100 opacity-60 group-hover:opacity-100")}
                 >
                   <span className="text-[10px] font-bold text-slate-400 uppercase italic">
                     ID: {load.id.substring(0, 8)}

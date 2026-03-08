@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
+import { cn } from "@/lib/utils";
 import { Card } from "./DashboardShared";
 import { formatCurrency } from "../../utils/formatters";
 import { supabase } from "../../lib/supabase";
@@ -139,13 +140,13 @@ export default function VendedoresKpiCards({ vendedores }) {
                 </div>
                 <div className="h-1.5 bg-navy-100 rounded-full overflow-hidden">
                   <div
-                    className={`h-full rounded-full transition-all duration-500 ${
+                    className={cn("h-full rounded-full transition-all duration-500",
                       healthPct >= 70
                         ? "bg-emerald-400"
                         : healthPct >= 40
                           ? "bg-amber-400"
                           : "bg-rose-400"
-                    }`}
+                    )}
                     style={{ width: `${healthPct}%` }}
                   />
                 </div>

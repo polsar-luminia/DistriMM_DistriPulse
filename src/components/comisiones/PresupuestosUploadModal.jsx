@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { sileo } from "sileo";
+import { cn } from "@/lib/utils";
 import { formatFullCurrency } from "../../utils/formatters";
 import { getVendedores } from "../../services/portfolioService";
 
@@ -375,11 +376,12 @@ export default function PresupuestosUploadModal({
                   Archivo Excel
                 </label>
                 <div
-                  className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-all group ${
+                  className={cn(
+                    "border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-all group",
                     file
                       ? "border-amber-500 bg-amber-50/50"
                       : "border-slate-300 hover:border-amber-400 hover:bg-slate-50"
-                  }`}
+                  )}
                 >
                   <input
                     type="file"

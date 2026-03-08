@@ -4,6 +4,7 @@
  * @module components/cfo/AgingBar
  */
 
+import { cn } from "@/lib/utils";
 import { parseNumericValue, displayCurrency } from "./cfoUtils";
 
 const BAR_COLORS = [
@@ -37,7 +38,7 @@ export default function AgingBar({ buckets }) {
           return (
             <div
               key={b.rango || b.label || i}
-              className={`${BAR_COLORS[i] || "bg-slate-400"} transition-all duration-500`}
+              className={cn(BAR_COLORS[i] || "bg-slate-400", "transition-all duration-500")}
               style={{ width: `${pct}%` }}
               title={`${b.rango || b.label}: ${displayCurrency(b.valor || b.monto)} (${pct.toFixed(1)}%)`}
             />
@@ -48,7 +49,7 @@ export default function AgingBar({ buckets }) {
         {buckets.map((b, i) => (
           <div key={b.rango || b.label || i} className="flex items-center gap-1.5 text-xs">
             <div
-              className={`w-2.5 h-2.5 rounded-full ${BAR_COLORS[i] || "bg-slate-400"}`}
+              className={cn("w-2.5 h-2.5 rounded-full", BAR_COLORS[i] || "bg-slate-400")}
             />
             <span className="text-slate-500 font-medium">
               {b.rango || b.label}

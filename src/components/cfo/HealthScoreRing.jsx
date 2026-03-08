@@ -4,6 +4,7 @@
  * @module components/cfo/HealthScoreRing
  */
 
+import { cn } from "@/lib/utils";
 import { COLORS } from "../../utils/constants";
 import { getSemaphore } from "./cfoUtils";
 
@@ -42,7 +43,7 @@ export default function HealthScoreRing({ score, semaforo }) {
           <span className="text-xs font-bold text-slate-400">/100</span>
         </div>
       </div>
-      <span className={`px-3 py-1 rounded-full text-xs font-bold ${sem.badge}`}>
+      <span className={cn("px-3 py-1 rounded-full text-xs font-bold", sem.badge)}>
         {sem.label}
       </span>
     </div>

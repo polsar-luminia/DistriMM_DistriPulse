@@ -12,6 +12,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { sileo } from "sileo";
+import { cn } from "@/lib/utils";
 import {
   formatNumber,
 } from "../../utils/formatters";
@@ -169,7 +170,7 @@ export default function CatalogoTab({ hook }) {
               {filtered.slice(0, 200).map((p) => {
                 const isExcl = excludedProducts.has(p.codigo) || excludedBrands.has(p.marca);
                 return (
-                  <tr key={p.id} className={`hover:bg-slate-50 ${isExcl ? "bg-rose-50/30" : ""}`}>
+                  <tr key={p.id} className={cn("hover:bg-slate-50", isExcl && "bg-rose-50/30")}>
                     <td className="px-4 py-2.5 font-mono text-xs text-slate-600">{p.codigo}</td>
                     <td className="px-4 py-2.5 text-slate-800 truncate max-w-[250px]">{p.nombre}</td>
                     <td className="px-4 py-2.5 text-slate-500 text-xs">{p.categoria_nombre}</td>

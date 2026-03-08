@@ -7,6 +7,7 @@
 import React, { useState, useMemo } from "react";
 import { X, FileText, FileSpreadsheet, Filter, Loader2 } from "lucide-react";
 import { sileo } from "sileo";
+import { cn } from "@/lib/utils";
 import {
   generarCarteraPDF,
   generarCarteraExcel,
@@ -204,11 +205,12 @@ export default function ReportCarteraModal({
                 <button
                   key={key}
                   onClick={() => setFilterStatus(key)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={cn(
+                    "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
                     filterStatus === key
                       ? "bg-indigo-600 text-white shadow-sm"
                       : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                  }`}
+                  )}
                 >
                   {label}
                 </button>
@@ -229,11 +231,12 @@ export default function ReportCarteraModal({
                 <button
                   key={key}
                   onClick={() => setGroupBy(key)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={cn(
+                    "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
                     groupBy === key
                       ? "bg-indigo-600 text-white shadow-sm"
                       : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                  }`}
+                  )}
                 >
                   {label}
                 </button>

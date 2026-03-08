@@ -21,6 +21,7 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { sileo } from "sileo";
+import { cn } from "@/lib/utils";
 import { formatCurrency, formatFullCurrency, formatDateUTC } from "../../utils/formatters";
 import { Card, KpiCard, EmptyState } from "./ComisionesShared";
 import RecaudoUploadModal from "./RecaudoUploadModal";
@@ -222,11 +223,12 @@ export default function RecaudoTab({ hook }) {
                                               </span>
                                             </td>
                                             <td className="px-4 py-2 text-center">
-                                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                              <span className={cn(
+                                                "text-[10px] font-bold px-2 py-0.5 rounded-full",
                                                 item.aplica_comision
                                                   ? "bg-emerald-100 text-emerald-700"
                                                   : "bg-rose-100 text-rose-700"
-                                              }`}>
+                                              )}>
                                                 {item.aplica_comision ? "Sí" : "No"}
                                               </span>
                                             </td>

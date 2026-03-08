@@ -3,6 +3,7 @@
  * @fileoverview Shared small components for the Comisiones module.
  * @module components/comisiones/ComisionesShared
  */
+import { cn } from "@/lib/utils";
 
 export const MESES = [
   "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -11,7 +12,10 @@ export const MESES = [
 
 export const Card = ({ children, className = "", ...props }) => (
   <div
-    className={`bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 p-4 md:p-5 ${className}`}
+    className={cn(
+      "bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 p-4 md:p-5",
+      className
+    )}
     {...props}
   >
     {children}
@@ -32,17 +36,17 @@ export const KpiCard = ({ title, value, icon: Icon, type = "neutral" }) => {
 
   return (
     <Card className="relative overflow-hidden">
-      <div className={`absolute top-0 left-0 right-0 h-[2px] ${t.bar} opacity-60`} />
+      <div className={cn("absolute top-0 left-0 right-0 h-[2px] opacity-60", t.bar)} />
       <div className="flex justify-between items-start gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider mb-2">
             {title}
           </p>
-          <h3 className={`text-slate-900 ${valueSize} font-black tabular-nums tracking-tight`}>
+          <h3 className={cn("text-slate-900 font-black tabular-nums tracking-tight", valueSize)}>
             {value}
           </h3>
         </div>
-        <div className={`p-2.5 rounded-xl ${t.icon}`}>
+        <div className={cn("p-2.5 rounded-xl", t.icon)}>
           <Icon size={20} strokeWidth={1.5} />
         </div>
       </div>
@@ -53,11 +57,12 @@ export const KpiCard = ({ title, value, icon: Icon, type = "neutral" }) => {
 export const TabButton = ({ active, onClick, icon: Icon, children }) => (
   <button
     onClick={onClick}
-    className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold rounded-lg transition-all ${
+    className={cn(
+      "flex items-center gap-2 px-4 py-2.5 text-sm font-bold rounded-lg transition-all",
       active
         ? "bg-indigo-600 text-white shadow-lg shadow-indigo-900/20"
         : "text-slate-500 hover:text-slate-800 hover:bg-slate-100"
-    }`}
+    )}
   >
     <Icon size={16} />
     {children}

@@ -4,8 +4,9 @@
  * @module pages/MessagesPage
  */
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
+import { cn } from "@/lib/utils";
 import { MessageCircle } from "lucide-react";
 import { useMessaging } from "../hooks/useMessaging";
 import { TABS, LoteProgressBadge } from "../components/messages/MessagesShared";
@@ -61,11 +62,11 @@ export default function MessagesPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
+              className={cn("flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all",
                 activeTab === tab.id
                   ? "bg-white shadow-md text-indigo-600"
                   : "text-slate-500 hover:text-slate-700"
-              }`}
+              )}
             >
               <tab.icon size={14} />
               {tab.label}

@@ -17,6 +17,7 @@ import {
 import * as XLSX from "xlsx";
 import { supabase } from "../lib/supabase";
 import { sileo } from "sileo";
+import { cn } from "@/lib/utils";
 import { validateExcelMIME } from "../utils/fileValidation";
 import { CARTERA_BATCH_SIZE, CLIENTES_BATCH_SIZE } from "../constants";
 import {
@@ -531,7 +532,7 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
                   Archivo Excel
                 </label>
                 <div
-                  className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-all duration-200 group ${file ? "border-indigo-500 bg-indigo-50/50" : "border-slate-300 hover:border-indigo-400 hover:bg-slate-50"}`}
+                  className={cn("border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-all duration-200 group", file ? "border-indigo-500 bg-indigo-50/50" : "border-slate-300 hover:border-indigo-400 hover:bg-slate-50")}
                 >
                   <input
                     type="file"
@@ -592,19 +593,19 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
           {step === "preview" && (
             <div className="space-y-6 animate-in slide-in-from-right-4">
               {/* Type Badge */}
-              <div className={`rounded-lg p-4 flex gap-3 ${detectedType === UPLOAD_TYPES.CLIENTES ? "bg-blue-50 border border-blue-200" : "bg-amber-50 border border-amber-200"}`}>
+              <div className={cn("rounded-lg p-4 flex gap-3", detectedType === UPLOAD_TYPES.CLIENTES ? "bg-blue-50 border border-blue-200" : "bg-amber-50 border border-amber-200")}>
                 {detectedType === UPLOAD_TYPES.CLIENTES ? (
                   <Users className="text-blue-600 shrink-0" size={24} />
                 ) : (
                   <ShieldAlert className="text-amber-600 shrink-0" size={24} />
                 )}
                 <div>
-                  <h4 className={`font-bold text-sm uppercase tracking-wide mb-1 ${detectedType === UPLOAD_TYPES.CLIENTES ? "text-blue-800" : "text-amber-800"}`}>
+                  <h4 className={cn("font-bold text-sm uppercase tracking-wide mb-1", detectedType === UPLOAD_TYPES.CLIENTES ? "text-blue-800" : "text-amber-800")}>
                     {detectedType === UPLOAD_TYPES.CLIENTES
                       ? "Maestro de Clientes Detectado"
                       : "Archivo de Cartera Detectado"}
                   </h4>
-                  <p className={`text-sm leading-relaxed ${detectedType === UPLOAD_TYPES.CLIENTES ? "text-blue-700" : "text-amber-700"}`}>
+                  <p className={cn("text-sm leading-relaxed", detectedType === UPLOAD_TYPES.CLIENTES ? "text-blue-700" : "text-amber-700")}>
                     {detectedType === UPLOAD_TYPES.CLIENTES
                       ? `Se encontraron ${fullData.length} clientes. Los existentes se actualizaran automaticamente.`
                       : `Se encontraron ${fullData.length} registros de cartera. Verifica las fechas antes de guardar.`}
@@ -644,7 +645,7 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
                               {row.nombreCompleto}
                             </td>
                             <td className="px-4 py-2">
-                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${row.tipo_persona === "Juridica" ? "bg-indigo-100 text-indigo-700" : "bg-slate-100 text-slate-600"}`}>
+                              <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", row.tipo_persona === "Juridica" ? "bg-indigo-100 text-indigo-700" : "bg-slate-100 text-slate-600")}>
                                 {row.tipo_persona || "N/A"}
                               </span>
                             </td>

@@ -5,7 +5,8 @@
  * @module pages/DirectorioClientesPage
  */
 
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { cn } from "@/lib/utils";
 import {
   Users,
   Search,
@@ -123,7 +124,7 @@ export default function DirectorioClientesPage() {
   }, [clientes, searchQuery, filterTipo, filterMunicipio, filterTelefono, filterVendedor]);
 
   // Reset page on filter change
-  React.useEffect(() => {
+  useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, filterTipo, filterMunicipio, filterTelefono, filterVendedor]);
 
@@ -428,7 +429,7 @@ function ClientMasterCard({ client: c, isExpanded, onExpand, vendedorNombre }) {
 
   return (
     <Card
-      className={`overflow-hidden transition-all ${isExpanded ? "ring-2 ring-indigo-100" : ""}`}
+      className={cn("overflow-hidden transition-all", isExpanded && "ring-2 ring-indigo-100")}
     >
       <div
         className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 cursor-pointer"
@@ -436,7 +437,7 @@ function ClientMasterCard({ client: c, isExpanded, onExpand, vendedorNombre }) {
       >
         <div className="flex items-center gap-3">
           <div
-            className={`p-2.5 rounded-full ${isJuridica ? "bg-indigo-50 text-indigo-600" : "bg-emerald-50 text-emerald-600"}`}
+            className={cn("p-2.5 rounded-full", isJuridica ? "bg-indigo-50 text-indigo-600" : "bg-emerald-50 text-emerald-600")}
           >
             {isJuridica ? <Building2 size={20} /> : <User size={20} />}
           </div>
@@ -449,7 +450,7 @@ function ClientMasterCard({ client: c, isExpanded, onExpand, vendedorNombre }) {
                 NIT: {c.no_identif}
               </span>
               <span
-                className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${isJuridica ? "bg-indigo-100 text-indigo-700" : "bg-emerald-100 text-emerald-700"}`}
+                className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded", isJuridica ? "bg-indigo-100 text-indigo-700" : "bg-emerald-100 text-emerald-700")}
               >
                 {c.tipo_persona || "N/A"}
               </span>

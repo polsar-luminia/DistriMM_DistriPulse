@@ -15,6 +15,7 @@ import {
   ToggleRight,
 } from "lucide-react";
 import { sileo } from "sileo";
+import { cn } from "@/lib/utils";
 import { Card } from "./ComisionesShared";
 
 export default function ExclusionesTab({ hook }) {
@@ -129,7 +130,7 @@ export default function ExclusionesTab({ hook }) {
                   <button onClick={() => handleToggle(e.id, e.activa)} className="text-slate-400 hover:text-slate-600">
                     {e.activa ? <ToggleRight size={20} className="text-rose-500" /> : <ToggleLeft size={20} className="text-slate-300" />}
                   </button>
-                  <span className={`text-sm font-medium ${e.activa ? "text-rose-800" : "text-slate-400 line-through"}`}>{e.valor}</span>
+                  <span className={cn("text-sm font-medium", e.activa ? "text-rose-800" : "text-slate-400 line-through")}>{e.valor}</span>
                 </div>
                 <button onClick={() => handleRemove(e.id)} className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-100 rounded transition-colors">
                   <X size={14} />
@@ -189,7 +190,7 @@ export default function ExclusionesTab({ hook }) {
                   <button onClick={() => handleToggle(e.id, e.activa)} className="text-slate-400 hover:text-slate-600">
                     {e.activa ? <ToggleRight size={20} className="text-rose-500" /> : <ToggleLeft size={20} className="text-slate-300" />}
                   </button>
-                  <span className={`text-sm ${e.activa ? "text-rose-800" : "text-slate-400 line-through"}`}>
+                  <span className={cn("text-sm", e.activa ? "text-rose-800" : "text-slate-400 line-through")}>
                     <span className="font-mono text-xs mr-1">{e.valor}</span>
                     {e.descripcion && e.descripcion !== e.valor && <span className="font-medium"> — {e.descripcion}</span>}
                   </span>

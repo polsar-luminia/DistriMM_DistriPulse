@@ -4,6 +4,7 @@
  * @module components/cfo/InsightCard
  */
 
+import { cn } from "@/lib/utils";
 import { TrendingUp, TrendingDown, Activity, AlertTriangle } from "lucide-react";
 
 const TYPE_ICONS = {
@@ -21,7 +22,7 @@ export default function InsightCard({ insight }) {
 
   return (
     <div className="flex gap-3 items-start">
-      <div className={`p-1.5 rounded-lg ${cfg.bg} shrink-0`}>
+      <div className={cn("p-1.5 rounded-lg shrink-0", cfg.bg)}>
         <cfg.icon size={14} className={cfg.color} />
       </div>
       <div>

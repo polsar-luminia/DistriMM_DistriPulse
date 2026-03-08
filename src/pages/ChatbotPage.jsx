@@ -5,7 +5,8 @@
  * @module pages/ChatbotPage
  */
 
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { cn } from "@/lib/utils";
 import {
   Bot,
   Loader2,
@@ -357,9 +358,9 @@ export default function ChatbotPage() {
     <div className="flex h-[calc(100vh-8rem)] max-h-[900px]">
       {/* ─── Desktop Sidebar ─── */}
       <div
-        className={`hidden md:flex flex-col bg-white border border-slate-200 rounded-l-xl shrink-0 transition-all duration-200 overflow-hidden ${
+        className={cn("hidden md:flex flex-col bg-white border border-slate-200 rounded-l-xl shrink-0 transition-all duration-200 overflow-hidden",
           sidebarOpen ? "w-72" : "w-0 border-0"
-        }`}
+        )}
       >
         {sidebarOpen && (
           <ChatSidebar
@@ -409,7 +410,7 @@ export default function ChatbotPage() {
       )}
 
       {/* ─── Chat Area ─── */}
-      <div className={`flex-1 flex flex-col min-w-0 ${sidebarOpen ? "" : "rounded-l-xl"}`}>
+      <div className={cn("flex-1 flex flex-col min-w-0", !sidebarOpen && "rounded-l-xl")}>
         {/* ─── Header ─── */}
         <div className="flex items-center justify-between px-4 py-3 bg-white border border-slate-200 rounded-tr-xl">
           <div className="flex items-center gap-3">
