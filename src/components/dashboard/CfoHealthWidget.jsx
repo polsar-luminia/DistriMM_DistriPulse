@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { cn } from "@/lib/utils";
 import { Card } from "./DashboardShared";
 import { getCfoAnalyses } from "../../services/cfoService";
 import {
@@ -158,17 +159,17 @@ export default function CfoHealthWidget() {
       </div>
 
       <Card className="relative overflow-hidden">
-        <div className={`absolute top-0 left-0 right-0 h-[2px] ${sem.bg.replace("bg-", "bg-")} opacity-80`} />
+        <div className={cn("absolute top-0 left-0 right-0 h-[2px] opacity-80", sem.bg.replace("bg-", "bg-"))} />
 
         {/* Row 1: Score + KPIs */}
         <div className="flex flex-col sm:flex-row gap-4">
           {/* Score column */}
           <div className="flex flex-col items-center shrink-0 sm:pr-4 sm:border-r sm:border-navy-100">
-            <p className={`text-4xl font-bold font-mono tracking-tight ${scoreColor}`}>
+            <p className={cn("text-4xl font-bold font-mono tracking-tight", scoreColor)}>
               {health_score ?? "N/A"}
             </p>
             <span
-              className={`mt-1.5 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-semibold ring-1 ${sem.bg} ${sem.text}`}
+              className={cn("mt-1.5 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-semibold ring-1", sem.bg, sem.text)}
             >
               <SemIcon size={10} />
               {sem.label || semaforo_general || "Sin datos"}
@@ -297,7 +298,7 @@ export default function CfoHealthWidget() {
                 return (
                   <span
                     key={v.vendedor || v.codigo}
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-medium ring-1 ${vSem.bg} ${vSem.text}`}
+                    className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-medium ring-1", vSem.bg, vSem.text)}
                   >
                     <Users size={10} />
                     {v.vendedor || v.codigo}
@@ -323,14 +324,14 @@ function KpiMini({ icon: Icon, label, value, danger }) {
       <Icon
         size={12}
         strokeWidth={1.8}
-        className={danger ? "text-rose-400 mt-0.5" : "text-navy-300 mt-0.5"}
+        className={cn("mt-0.5", danger ? "text-rose-400" : "text-navy-300")}
       />
       <div>
         <p className="text-[9px] text-navy-400 font-medium leading-none mb-0.5">
           {label}
         </p>
         <p
-          className={`text-sm font-bold font-mono tracking-tight ${danger ? "text-rose-600" : "text-navy-800"}`}
+          className={cn("text-sm font-bold font-mono tracking-tight", danger ? "text-rose-600" : "text-navy-800")}
         >
           {value}
         </p>
@@ -348,5 +349,5 @@ const PRIORITY_COLORS = {
 
 function PriorityDot({ priority }) {
   const color = PRIORITY_COLORS[priority] || PRIORITY_COLORS.MEDIA;
-  return <span className={`w-1.5 h-1.5 rounded-full ${color} mt-1.5 shrink-0`} />;
+  return <span className={cn("w-1.5 h-1.5 rounded-full mt-1.5 shrink-0", color)} />;
 }

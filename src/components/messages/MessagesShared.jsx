@@ -13,6 +13,7 @@ import {
   FileText,
   Smartphone,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 // ════════════════════════════════════════════════════════════════════════════
 // TAB DEFINITIONS
@@ -105,7 +106,7 @@ export function EstadoBadge({ estado }) {
 
   return (
     <span
-      className={`inline-flex items-center text-[10px] font-bold uppercase px-2 py-0.5 rounded-md border ${styles[estado] || styles.pendiente}`}
+      className={cn("inline-flex items-center text-[10px] font-bold uppercase px-2 py-0.5 rounded-md border", styles[estado] || styles.pendiente)}
     >
       {estado === "en_proceso" ? "En proceso" : estado}
     </span>

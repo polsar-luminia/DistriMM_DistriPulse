@@ -17,6 +17,7 @@ import {
 import * as XLSX from "xlsx";
 import { supabase } from "../../lib/supabase";
 import { sileo } from "sileo";
+import { cn } from "@/lib/utils";
 import { normalizeBrand } from "../../utils/brandNormalization";
 
 export default function CatalogoUploadModal({ isOpen, onClose, onSuccess }) {
@@ -125,7 +126,7 @@ export default function CatalogoUploadModal({ isOpen, onClose, onSuccess }) {
 
               <div className="space-y-2">
                 <label className="block text-sm font-bold text-slate-700">Archivo Excel</label>
-                <div className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-all group ${file ? "border-emerald-500 bg-emerald-50/50" : "border-slate-300 hover:border-emerald-400 hover:bg-slate-50"}`}>
+                <div className={cn("border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-all group", file ? "border-emerald-500 bg-emerald-50/50" : "border-slate-300 hover:border-emerald-400 hover:bg-slate-50")}>
                   <input type="file" accept=".xlsx,.xls,.csv" onChange={(e) => { setFile(e.target.files[0]); setError(null); }} className="hidden" id="catalogo-file" />
                   <label htmlFor="catalogo-file" className="cursor-pointer flex flex-col items-center w-full">
                     {file ? (

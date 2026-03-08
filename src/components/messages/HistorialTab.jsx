@@ -17,6 +17,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { sileo } from "sileo";
+import { cn } from "@/lib/utils";
 import { Card } from "../dashboard/DashboardShared";
 import { EstadoBadge, PhoneBadge } from "./MessagesShared";
 import { timeAgo } from "../../utils/timeAgo";
@@ -299,7 +300,8 @@ export default function HistorialLotesTab({ messaging }) {
               <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
                 <div className="flex items-center gap-4">
                   <div
-                    className={`p-2.5 rounded-xl ${
+                    className={cn(
+                      "p-2.5 rounded-xl",
                       lote.estado === "completado"
                         ? "bg-emerald-50 text-emerald-600"
                         : lote.estado === "en_proceso"
@@ -309,7 +311,7 @@ export default function HistorialLotesTab({ messaging }) {
                             : lote.estado === "cancelado"
                               ? "bg-slate-100 text-slate-400"
                               : "bg-amber-50 text-amber-600"
-                    }`}
+                    )}
                   >
                     {lote.estado === "en_proceso" ? (
                       <Loader size={18} className="animate-spin" />
@@ -361,9 +363,10 @@ export default function HistorialLotesTab({ messaging }) {
               {(lote.estado === "en_proceso" || lote.estado === "parcial") && (
                 <div className="mt-3 w-full bg-slate-100 rounded-full h-1.5">
                   <div
-                    className={`h-1.5 rounded-full transition-all duration-500 ${
+                    className={cn(
+                      "h-1.5 rounded-full transition-all duration-500",
                       lote.estado === "parcial" ? "bg-orange-500" : "bg-indigo-600"
-                    }`}
+                    )}
                     style={{
                       width: `${
                         lote.total_destinatarios > 0

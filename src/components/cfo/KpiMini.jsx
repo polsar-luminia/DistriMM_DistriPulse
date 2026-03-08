@@ -4,6 +4,8 @@
  * @module components/cfo/KpiMini
  */
 
+import { cn } from "@/lib/utils";
+
 const SEMAPHORE_TEXT = {
   SALUDABLE: "text-emerald-700",
   ACEPTABLE: "text-blue-700",
@@ -25,7 +27,7 @@ export default function KpiMini({ label, value, sub, semaforo }) {
       </p>
       <p className="text-lg font-black text-slate-900">{value}</p>
       {sub && (
-        <p className={`text-xs font-semibold mt-0.5 ${textColor || "text-slate-500"}`}>
+        <p className={cn("text-xs font-semibold mt-0.5", textColor || "text-slate-500")}>
           {sub}
         </p>
       )}

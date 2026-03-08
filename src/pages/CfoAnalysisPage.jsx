@@ -4,8 +4,9 @@
  * @module pages/CfoAnalysisPage
  */
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
+import { cn } from "@/lib/utils";
 import {
   Brain, Zap, Users, MapPin, Loader2,
   BarChart3, Lightbulb, ListChecks, FileText, DollarSign,
@@ -108,13 +109,13 @@ export default function CfoAnalysisPage() {
     <div className="space-y-6">
       <PageHeader onRun={handleRunAnalysis} loading={loading} hasAnalysis />
 
-      <Card className={`${sem.bg} ${sem.border} border-2 ${sem.glow} shadow-lg`}>
+      <Card className={cn(sem.bg, sem.border, "border-2", sem.glow, "shadow-lg")}>
         <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8">
           <HealthScoreRing score={health_score || 0} semaforo={semaforo_general} />
           <div className="flex-1 text-center md:text-left">
             <div className="flex items-center gap-2 justify-center md:justify-start mb-2">
               <SemIcon size={20} className={sem.text} />
-              <span className={`px-3 py-1 rounded-full text-xs font-bold ${sem.badge}`}>{sem.label}</span>
+              <span className={cn("px-3 py-1 rounded-full text-xs font-bold", sem.badge)}>{sem.label}</span>
             </div>
             <h2 className="text-xl font-black text-slate-900 mb-2">{titulo_dashboard || "Analisis CFO"}</h2>
             {resumen_ejecutivo && <p className="text-sm text-slate-600 leading-relaxed max-w-2xl">{resumen_ejecutivo}</p>}
@@ -266,10 +267,10 @@ function VendedoresSection({ data }) {
         {data.detalle.map((v) => {
           const vSem = v.semaforo ? getSemaphore(v.semaforo) : null;
           return (
-            <div key={v.vendedor || v.codigo || v.nombre} className={`p-3 rounded-xl border ${vSem ? `${vSem.bg} ${vSem.border}` : "bg-slate-50 border-slate-100"}`}>
+            <div key={v.vendedor || v.codigo || v.nombre} className={cn("p-3 rounded-xl border", vSem ? [vSem.bg, vSem.border] : "bg-slate-50 border-slate-100")}>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-bold text-slate-800">{v.vendedor || v.codigo}</span>
-                {vSem && <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${vSem.badge}`}>{vSem.label}</span>}
+                {vSem && <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold", vSem.badge)}>{vSem.label}</span>}
               </div>
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div><span className="text-slate-400">Cartera</span><p className="font-bold text-slate-700">{displayCurrency(v.cartera_total || v.total)}</p></div>

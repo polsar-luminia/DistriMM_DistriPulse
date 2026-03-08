@@ -12,6 +12,7 @@ import {
   Loader,
 } from "lucide-react";
 import { sileo } from "sileo";
+import { cn } from "@/lib/utils";
 import { Card } from "../dashboard/DashboardShared";
 
 export default function PlantillasTab({ messaging }) {
@@ -182,13 +183,14 @@ export default function PlantillasTab({ messaging }) {
                       {t.nombre}
                     </p>
                     <span
-                      className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${
+                      className={cn(
+                        "text-[10px] font-bold uppercase px-1.5 py-0.5 rounded",
                         t.tipo === "recordatorio"
                           ? "bg-blue-50 text-blue-600"
                           : t.tipo === "promocional"
                             ? "bg-purple-50 text-purple-600"
                             : "bg-slate-100 text-slate-500"
-                      }`}
+                      )}
                     >
                       {t.tipo}
                     </span>

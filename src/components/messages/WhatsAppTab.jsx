@@ -11,6 +11,7 @@ import {
   Smartphone,
   Zap,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Card } from "../dashboard/DashboardShared";
 import { supabase } from "../../lib/supabase";
 
@@ -68,7 +69,7 @@ export default function WhatsAppTab() {
 
       <Card className="p-7">
         <div className="flex items-start gap-5">
-          <div className={`p-4 rounded-2xl shrink-0 ${isConfigured ? "bg-emerald-50" : "bg-amber-50"}`}>
+          <div className={cn("p-4 rounded-2xl shrink-0", isConfigured ? "bg-emerald-50" : "bg-amber-50")}>
             <Smartphone size={30} className={isConfigured ? "text-emerald-600" : "text-amber-500"} />
           </div>
           <div className="flex-1 min-w-0">
@@ -78,11 +79,12 @@ export default function WhatsAppTab() {
                 <p className="text-2xl font-black text-slate-800 mt-0.5">Meta Cloud API</p>
               </div>
               <span
-                className={`shrink-0 px-3.5 py-1.5 rounded-full text-xs font-bold ${
+                className={cn(
+                  "shrink-0 px-3.5 py-1.5 rounded-full text-xs font-bold",
                   isConfigured
                     ? "bg-emerald-100 text-emerald-700"
                     : "bg-amber-100 text-amber-700"
-                }`}
+                )}
               >
                 {isConfigured ? "● Configurado" : "● No configurado"}
               </span>

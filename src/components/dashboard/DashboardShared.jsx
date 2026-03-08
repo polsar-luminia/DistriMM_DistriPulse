@@ -80,10 +80,10 @@ export const StatCard = ({
   return (
     <Card className={cn("relative group hover:translate-y-[-1px]", !tooltip && "overflow-hidden")}>
       {/* Top accent bar */}
-      <div className={`absolute top-0 left-0 right-0 h-[2px] ${t.bar} opacity-60`} />
+      <div className={cn("absolute top-0 left-0 right-0 h-[2px] opacity-60", t.bar)} />
 
       <div className="flex items-center gap-2 mb-2">
-        <div className={`p-1.5 rounded-lg shrink-0 ${t.icon}`}>
+        <div className={cn("p-1.5 rounded-lg shrink-0", t.icon)}>
           <Icon size={14} strokeWidth={1.8} />
         </div>
         <p className="text-[10px] font-semibold text-navy-400 uppercase tracking-[0.08em]">
@@ -108,7 +108,7 @@ export const StatCard = ({
 
       {trend !== undefined && trend !== null && (
         <div
-          className={`text-[10px] font-semibold flex items-center gap-1 mt-2 ${trend > 0 ? "text-rose-500" : "text-emerald-500"}`}
+          className={cn("text-[10px] font-semibold flex items-center gap-1 mt-2", trend > 0 ? "text-rose-500" : "text-emerald-500")}
         >
           {trend > 0 ? <ArrowUp size={10} /> : <ArrowDown size={10} />}
           <span>{Math.abs(trend).toFixed(1)}% vs anterior</span>
@@ -116,7 +116,7 @@ export const StatCard = ({
       )}
 
       {subtext && (
-        <p className={`text-[10px] mt-1.5 font-medium ${t.accent}`}>
+        <p className={cn("text-[10px] mt-1.5 font-medium", t.accent)}>
           {subtext}
         </p>
       )}
@@ -141,10 +141,10 @@ export const CustomTooltip = ({ active, payload, label }) => {
         <p className="font-semibold text-navy-800 text-xs mb-1.5">{fullName}</p>
         <div className="flex items-center gap-2">
           <span
-            className={`w-1.5 h-1.5 rounded-full ${isDays ? "bg-rose-400" : "bg-emerald-400"}`}
+            className={cn("w-1.5 h-1.5 rounded-full", isDays ? "bg-rose-400" : "bg-emerald-400")}
           />
           <p
-            className={`font-mono font-semibold text-xs ${isDays ? "text-rose-600" : "text-navy-700"}`}
+            className={cn("font-mono font-semibold text-xs", isDays ? "text-rose-600" : "text-navy-700")}
           >
             {isDays ? `${val} días` : formatFullCurrency(val)}
           </p>
@@ -301,11 +301,11 @@ export const SortableHeader = ({
 
   return (
     <th
-      className={`px-4 py-3 cursor-pointer hover:bg-navy-50/50 transition-colors group select-none ${align === "right" ? "text-right" : "text-left"}`}
+      className={cn("px-4 py-3 cursor-pointer hover:bg-navy-50/50 transition-colors group select-none", align === "right" ? "text-right" : "text-left")}
       onClick={handleClick}
     >
       <div
-        className={`flex items-center gap-1 ${align === "right" ? "justify-end" : "justify-start"}`}
+        className={cn("flex items-center gap-1", align === "right" ? "justify-end" : "justify-start")}
       >
         <span className="text-[10px] font-semibold text-navy-400 uppercase tracking-[0.06em]">
           {label}
@@ -335,7 +335,7 @@ export const ClientCard = ({ client, onExpand, isExpanded }) => {
   const clientNit = client.items?.[0]?.tercero_nit ?? null;
   return (
     <div
-      className={`bg-white rounded-xl border overflow-hidden transition-all duration-200 ${isVencido ? "border-l-[3px] border-l-rose-400 border-navy-100" : "border-l-[3px] border-l-emerald-400 border-navy-100"} ${isExpanded ? "ring-1 ring-sky-200 shadow-md" : "shadow-sm"}`}
+      className={cn("bg-white rounded-xl border overflow-hidden transition-all duration-200", isVencido ? "border-l-[3px] border-l-rose-400 border-navy-100" : "border-l-[3px] border-l-emerald-400 border-navy-100", isExpanded ? "ring-1 ring-sky-200 shadow-md" : "shadow-sm")}
     >
       <div
         className="p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 cursor-pointer hover:bg-navy-50/30 transition-colors"
@@ -343,7 +343,7 @@ export const ClientCard = ({ client, onExpand, isExpanded }) => {
       >
         <div className="flex items-center gap-3">
           <div
-            className={`p-2.5 rounded-lg ${isVencido ? "bg-rose-50 text-rose-500" : "bg-emerald-50 text-emerald-500"}`}
+            className={cn("p-2.5 rounded-lg", isVencido ? "bg-rose-50 text-rose-500" : "bg-emerald-50 text-emerald-500")}
           >
             <User size={20} strokeWidth={1.8} />
           </div>
@@ -353,7 +353,7 @@ export const ClientCard = ({ client, onExpand, isExpanded }) => {
             </h3>
             <div className="flex items-center gap-2 mt-1">
               <span
-                className={`text-[9px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-wide ${isVencido ? "bg-rose-50 text-rose-600" : "bg-emerald-50 text-emerald-600"}`}
+                className={cn("text-[9px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-wide", isVencido ? "bg-rose-50 text-rose-600" : "bg-emerald-50 text-emerald-600")}
               >
                 {isVencido ? "Vencido" : "Al Día"}
               </span>
@@ -417,7 +417,7 @@ export const ClientCard = ({ client, onExpand, isExpanded }) => {
                       {formatDateUTC(item.fecha_vencimiento)}
                     </td>
                     <td
-                      className={`px-3 py-2 text-right font-mono font-semibold ${item.dias_mora > 0 ? "text-rose-500" : "text-emerald-500"}`}
+                      className={cn("px-3 py-2 text-right font-mono font-semibold", item.dias_mora > 0 ? "text-rose-500" : "text-emerald-500")}
                     >
                       {item.dias_mora}
                     </td>

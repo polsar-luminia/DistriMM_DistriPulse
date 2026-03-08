@@ -1,4 +1,5 @@
 import React from "react";
+import { cn } from "@/lib/utils";
 import { ChevronRight, X, Target, ShieldAlert, Info } from "lucide-react";
 import { Card } from "./DashboardShared";
 import { formatFullCurrency } from "../../utils/formatters";
@@ -20,7 +21,7 @@ const COLORS = {
 /* ─── Section heading component ─── */
 const SectionTitle = ({ icon: Icon, iconColor, children }) => (
   <div className="flex items-center gap-2.5 mb-5">
-    <div className={`p-1.5 rounded-lg ${iconColor}`}>
+    <div className={cn("p-1.5 rounded-lg", iconColor)}>
       <Icon size={18} strokeWidth={1.8} />
     </div>
     <h2 className="text-lg font-bold text-navy-800 tracking-tight">{children}</h2>
@@ -30,7 +31,7 @@ const SectionTitle = ({ icon: Icon, iconColor, children }) => (
 /* ─── Mini metric for advanced strip ─── */
 const MetricCard = ({ icon: Icon, label, value, accent, hint, onClick, tooltip }) => (
   <Card
-    className={`relative group ${tooltip ? "" : "overflow-hidden"} ${onClick ? "cursor-pointer" : ""}`}
+    className={cn("relative group", !tooltip && "overflow-hidden", onClick && "cursor-pointer")}
     onClick={onClick}
   >
     {onClick && (
@@ -57,7 +58,7 @@ const MetricCard = ({ icon: Icon, label, value, accent, hint, onClick, tooltip }
       {value}
     </p>
     {hint && (
-      <p className={`text-[10px] font-medium mt-1 ${accent} opacity-80`}>{hint}</p>
+      <p className={cn("text-[10px] font-medium mt-1 opacity-80", accent)}>{hint}</p>
     )}
   </Card>
 );

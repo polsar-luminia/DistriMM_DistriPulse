@@ -4,6 +4,7 @@
  * @module components/cfo/DebtorTable
  */
 
+import { cn } from "@/lib/utils";
 import { displayCurrency, getSemaphore } from "./cfoUtils";
 
 /**
@@ -41,7 +42,7 @@ export default function DebtorTable({ deudores }) {
                 {hasSemaforo && (
                   <td className="py-2 px-2 text-center">
                     {riesgoSem ? (
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${riesgoSem.badge}`}>{riesgoSem.label}</span>
+                      <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold", riesgoSem.badge)}>{riesgoSem.label}</span>
                     ) : "-"}
                   </td>
                 )}

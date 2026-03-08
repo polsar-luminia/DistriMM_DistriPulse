@@ -5,6 +5,7 @@
  */
 
 import { Plus } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const TRAMO_CONFIGS = [
   {
@@ -108,15 +109,15 @@ export default function RecaudoTiersEditor({
         {TRAMO_CONFIGS.map((tramo) => {
           const colors = COLOR_MAP[tramo.color];
           return (
-            <div key={tramo.key} className={`${colors.bg} ${colors.border} border rounded-lg p-4`}>
-              <h4 className={`text-xs font-black ${colors.title} uppercase mb-3`}>{tramo.label}</h4>
+            <div key={tramo.key} className={cn(colors.bg, colors.border, "border rounded-lg p-4")}>
+              <h4 className={cn("text-xs font-black uppercase mb-3", colors.title)}>{tramo.label}</h4>
               <div className="space-y-3">
                 {tramo.fields.map((f) => (
                   <div key={f.field}>
-                    <label className={`text-xs ${colors.label} font-medium`}>{f.label}</label>
+                    <label className={cn("text-xs font-medium", colors.label)}>{f.label}</label>
                     <input
                       type="number"
-                      className={`${numInput} mt-1`}
+                      className={cn(numInput, "mt-1")}
                       value={
                         f.isPct
                           ? (recaudo[f.field] ? recaudo[f.field] * 100 : "")

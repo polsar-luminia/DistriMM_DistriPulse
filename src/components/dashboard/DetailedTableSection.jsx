@@ -1,4 +1,5 @@
 import React from "react";
+import { cn } from "@/lib/utils";
 import {
   Filter,
   ChevronRight,
@@ -207,19 +208,19 @@ export default function DetailedTableSection() {
                   </td>
                   <td className="px-4 py-3">
                     <span
-                      className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold ${
+                      className={cn("inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold",
                         item.dias_mora > 0
                           ? "bg-rose-50 text-rose-500"
                           : "bg-emerald-50 text-emerald-600"
-                      }`}
+                      )}
                     >
                       {item.dias_mora > 0 ? "VENCIDA" : "AL DÍA"}
                     </span>
                   </td>
                   <td
-                    className={`px-4 py-3 text-right font-mono text-xs font-semibold ${
+                    className={cn("px-4 py-3 text-right font-mono text-xs font-semibold",
                       item.dias_mora > 0 ? "text-rose-500" : "text-navy-300"
-                    }`}
+                    )}
                   >
                     {item.dias_mora > 0 ? `${item.dias_mora}d` : "-"}
                   </td>

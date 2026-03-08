@@ -4,8 +4,9 @@
  * @module pages/VendedoresPage
  */
 
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useOutletContext } from "react-router-dom";
+import { cn } from "@/lib/utils";
 import {
   Briefcase,
   Search,
@@ -530,7 +531,7 @@ function VendedorCard({ vendedor: v, isExpanded, onExpand, fmt, onNameSave }) {
 
   return (
     <Card
-      className={`overflow-hidden transition-all ${isExpanded ? "ring-2 ring-indigo-100" : ""}`}
+      className={cn("overflow-hidden transition-all", isExpanded && "ring-2 ring-indigo-100")}
     >
       {/* Header */}
       <div
@@ -539,7 +540,7 @@ function VendedorCard({ vendedor: v, isExpanded, onExpand, fmt, onNameSave }) {
       >
         <div className="flex items-center gap-4">
           <div
-            className={`p-3 rounded-full ${healthIconClass}`}
+            className={cn("p-3 rounded-full", healthIconClass)}
           >
             <Briefcase size={24} />
           </div>
@@ -586,7 +587,7 @@ function VendedorCard({ vendedor: v, isExpanded, onExpand, fmt, onNameSave }) {
                 {v.facturas} facturas
               </span>
               <span
-                className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${healthBadgeClass}`}
+                className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", healthBadgeClass)}
               >
                 Salud: {v.healthScore.toFixed(0)}%
               </span>
@@ -616,7 +617,7 @@ function VendedorCard({ vendedor: v, isExpanded, onExpand, fmt, onNameSave }) {
               % Vencida
             </p>
             <p
-              className={`text-lg font-bold ${v.pctVencida > 30 ? "text-rose-600" : v.pctVencida > 15 ? "text-amber-600" : "text-emerald-600"}`}
+              className={cn("text-lg font-bold", v.pctVencida > 30 ? "text-rose-600" : v.pctVencida > 15 ? "text-amber-600" : "text-emerald-600")}
             >
               {v.pctVencida.toFixed(1)}%
             </p>
@@ -641,7 +642,7 @@ function VendedorCard({ vendedor: v, isExpanded, onExpand, fmt, onNameSave }) {
                 .map((b) => (
                   <div
                     key={b.label}
-                    className={`${b.color} relative group`}
+                    className={cn(b.color, "relative group")}
                     style={{
                       width: `${v.totalCartera > 0 ? (b.value / v.totalCartera) * 100 : 0}%`,
                     }}
@@ -656,7 +657,7 @@ function VendedorCard({ vendedor: v, isExpanded, onExpand, fmt, onNameSave }) {
             <div className="flex flex-wrap gap-3 mt-2">
               {agingData.map((b) => (
                 <div key={b.label} className="flex items-center gap-1">
-                  <div className={`w-2 h-2 rounded-full ${b.color}`} />
+                  <div className={cn("w-2 h-2 rounded-full", b.color)} />
                   <span className="text-[10px] text-slate-500">
                     {b.label}: {formatCurrency(b.value)}
                   </span>
@@ -693,7 +694,7 @@ function VendedorCard({ vendedor: v, isExpanded, onExpand, fmt, onNameSave }) {
                         {c.count}
                       </td>
                       <td
-                        className={`px-4 py-2 text-right font-bold ${c.maxMora > 30 ? "text-rose-600" : c.maxMora > 0 ? "text-amber-600" : "text-emerald-600"}`}
+                        className={cn("px-4 py-2 text-right font-bold", c.maxMora > 30 ? "text-rose-600" : c.maxMora > 0 ? "text-amber-600" : "text-emerald-600")}
                       >
                         {c.maxMora > 0 ? `${c.maxMora}d` : "Al dia"}
                       </td>

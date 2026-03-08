@@ -8,6 +8,7 @@ import { lazy, Suspense } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import { Bot, User } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const ChatChart = lazy(() => import("./ChatChart"));
 
@@ -73,27 +74,29 @@ export default function ChatMessage({ message }) {
   const isError = message.isError;
 
   return (
-    <div className={`flex gap-2.5 ${isUser ? "flex-row-reverse" : "flex-row"} items-start`}>
+    <div className={cn("flex gap-2.5 items-start", isUser ? "flex-row-reverse" : "flex-row")}>
       <div
-        className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+        className={cn(
+          "shrink-0 w-8 h-8 rounded-full flex items-center justify-center",
           isUser
             ? "bg-indigo-100 text-indigo-600"
             : isError
               ? "bg-rose-100 text-rose-600"
               : "bg-gradient-to-br from-emerald-400 to-teal-500 text-white"
-        }`}
+        )}
       >
         {isUser ? <User size={14} /> : <Bot size={14} />}
       </div>
 
       <div
-        className={`rounded-2xl text-sm leading-relaxed ${
+        className={cn(
+          "rounded-2xl text-sm leading-relaxed",
           isUser
             ? "max-w-[80%] bg-indigo-600 text-white rounded-tr-sm px-4 py-2.5"
             : isError
               ? "max-w-[85%] bg-rose-50 text-rose-700 border border-rose-200 rounded-tl-sm px-4 py-2.5"
               : "max-w-[85%] bg-white text-slate-700 border border-slate-200 rounded-tl-sm px-4 py-3 shadow-sm"
-        }`}
+        )}
       >
         {isUser ? (
           <p className="whitespace-pre-wrap">{message.content}</p>
@@ -108,7 +111,7 @@ export default function ChatMessage({ message }) {
           </div>
         )}
 
-        <p className={`text-[10px] mt-1 ${isUser ? "text-indigo-200" : "text-slate-400"}`}>
+        <p className={cn("text-[10px] mt-1", isUser ? "text-indigo-200" : "text-slate-400")}>
           {message.timestamp?.toLocaleTimeString("es-CO", {
             hour: "2-digit",
             minute: "2-digit",

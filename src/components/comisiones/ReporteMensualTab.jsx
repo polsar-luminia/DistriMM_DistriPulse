@@ -21,6 +21,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { sileo } from "sileo";
+import { cn } from "@/lib/utils";
 import {
   formatCurrency,
   formatFullCurrency,
@@ -395,11 +396,12 @@ export default function ReporteMensualTab({ hook }) {
                                                   </td>
                                                   <td className="px-3 py-1.5 text-center">
                                                     {dm.tienePresupuesto && (
-                                                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                                      <span className={cn(
+                                                        "text-[10px] font-bold px-2 py-0.5 rounded-full",
                                                         dm.cumpleMeta
                                                           ? "bg-emerald-100 text-emerald-700"
                                                           : "bg-rose-100 text-rose-700"
-                                                      }`}>
+                                                      )}>
                                                         {dm.cumpleMeta ? "Sí" : "No"}
                                                       </span>
                                                     )}

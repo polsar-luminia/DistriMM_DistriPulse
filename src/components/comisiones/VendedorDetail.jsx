@@ -5,6 +5,7 @@
 
 import React, { useMemo } from "react";
 import { Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   PieChart,
   Pie,
@@ -171,8 +172,8 @@ export default function VendedorDetail({ vendedor, ventas, loading, getExclusion
                     <span className="text-[10px] text-slate-400">VE</span>
                   )}
                 </td>
-                <td className={`px-2 py-1.5 font-mono ${item.excluded ? "line-through text-slate-400" : "text-slate-700"}`}>{item.producto_codigo}</td>
-                <td className={`px-2 py-1.5 truncate max-w-[180px] ${item.excluded ? "line-through text-slate-400" : "text-slate-600"}`}>{item.producto_descripcion}</td>
+                <td className={cn("px-2 py-1.5 font-mono", item.excluded ? "line-through text-slate-400" : "text-slate-700")}>{item.producto_codigo}</td>
+                <td className={cn("px-2 py-1.5 truncate max-w-[180px]", item.excluded ? "line-through text-slate-400" : "text-slate-600")}>{item.producto_descripcion}</td>
                 <td className="px-2 py-1.5 text-slate-500 truncate max-w-[120px]">{item.cliente_nombre}</td>
                 <td className="px-2 py-1.5 text-slate-400 font-mono">{item.factura}</td>
                 <td className="px-2 py-1.5 text-right font-mono">{formatNumber(item.cantidad)}</td>

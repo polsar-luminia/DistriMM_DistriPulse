@@ -1,5 +1,6 @@
-﻿import React, { useState, useMemo } from "react";
+﻿import { useState, useMemo } from "react";
 import { useOutletContext } from "react-router-dom";
+import { cn } from "@/lib/utils";
 import {
   DollarSign,
   AlertOctagon,
@@ -245,11 +246,11 @@ export default function DashboardPage() {
               <button
                 key={days}
                 onClick={() => setUpcomingDays?.(days)}
-                className={`px-3 py-1.5 rounded-md text-[10px] font-semibold transition-all ${
+                className={cn("px-3 py-1.5 rounded-md text-[10px] font-semibold transition-all",
                   upcomingDays === days
                     ? "bg-navy-800 text-white shadow-sm"
                     : "text-navy-400 hover:text-navy-600 hover:bg-navy-50"
-                }`}
+                )}
               >
                 {days}d
               </button>
@@ -288,11 +289,11 @@ export default function DashboardPage() {
                       </td>
                       <td className="px-4 py-2.5 text-right">
                         <span
-                          className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold font-mono ${
+                          className={cn("inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold font-mono",
                             (item.days_until_due ?? 0) <= 5
                               ? "bg-rose-50 text-rose-500"
                               : "bg-emerald-50 text-emerald-600"
-                          }`}
+                          )}
                         >
                           {item.days_until_due ?? 0}d
                         </span>

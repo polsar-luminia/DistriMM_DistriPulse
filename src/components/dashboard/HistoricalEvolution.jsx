@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useEffect } from "react";
+import { cn } from "@/lib/utils";
 import {
   TrendingUp,
   Calendar,
@@ -92,9 +93,9 @@ function DeltaBadge({ current, previous, suffix = "", inverse = false, format = 
     displayDiff = Math.abs(diff).toLocaleString("es-CO");
   }
   return (
-    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+    <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded-full",
       isGood ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"
-    }`}>
+    )}>
       {arrow} {displayDiff}{suffix}
     </span>
   );

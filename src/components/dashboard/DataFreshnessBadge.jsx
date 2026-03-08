@@ -1,4 +1,5 @@
 import React from "react";
+import { cn } from "@/lib/utils";
 import { Clock } from "lucide-react";
 
 /**
@@ -36,7 +37,7 @@ export default function DataFreshnessBadge({ lastLoadDate }) {
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold ring-1 ${colorClasses}`}
+      className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold ring-1", colorClasses)}
     >
       <Clock size={11} strokeWidth={2} />
       Última carga: {label}

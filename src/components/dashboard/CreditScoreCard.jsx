@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { cn } from "@/lib/utils";
 import { ShieldCheck, X, ChevronDown, ChevronUp, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { getClientCreditScoreV2, getClientCreditScore } from "../../services/portfolioService";
 import { HealthGauge, formatFullCurrency } from "./DashboardShared";
@@ -137,7 +138,7 @@ const TendenciaBadge = ({ tendencia }) => {
   const c = config[tendencia] || config.estable;
   const Icon = c.icon;
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-semibold ${c.cls}`}>
+    <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-semibold", c.cls)}>
       <Icon size={11} />
       {c.label}
     </span>
@@ -165,11 +166,11 @@ const VariableBar = ({ label, score, peso, rawValue, varKey }) => (
       <div className="flex items-center gap-2">
         <div className="flex-1 h-[7px] bg-navy-50 rounded-full overflow-hidden">
           <div
-            className={`h-full rounded-full transition-all duration-700 ${getBarColor(score)}`}
+            className={cn("h-full rounded-full transition-all duration-700", getBarColor(score))}
             style={{ width: `${Math.min(score, 100)}%` }}
           />
         </div>
-        <span className={`text-[11px] font-mono font-bold w-7 text-right shrink-0 ${getBarColorClass(score)}`}>
+        <span className={cn("text-[11px] font-mono font-bold w-7 text-right shrink-0", getBarColorClass(score))}>
           {score}
         </span>
       </div>
@@ -190,14 +191,14 @@ const DimensionCard = ({ dimKey, dimData }) => {
           {meta.label}{" "}
           <span className="text-navy-300 font-normal">({dimData.peso_total}%)</span>
         </p>
-        <span className={`text-xs font-mono font-bold ${getBarColorClass(dimData.score)}`}>
+        <span className={cn("text-xs font-mono font-bold", getBarColorClass(dimData.score))}>
           {dimData.score}/100
         </span>
       </div>
       {/* Dimension summary bar */}
       <div className="h-1.5 bg-navy-50 rounded-full overflow-hidden">
         <div
-          className={`h-full rounded-full transition-all duration-700 ${getBarColor(dimData.score)}`}
+          className={cn("h-full rounded-full transition-all duration-700", getBarColor(dimData.score))}
           style={{ width: `${Math.min(dimData.score, 100)}%` }}
         />
       </div>
@@ -302,10 +303,10 @@ const CreditScoreCard = ({ nit, onClose, maxPlazo = 45, wide = false, refreshTok
       {!loading && !fetchError && scoreData && (() => {
         // ── Gauge ──
         const gaugeSection = (
-          <div className={`flex flex-col items-center gap-2 ${wide ? "pt-1" : ""}`}>
+          <div className={cn("flex flex-col items-center gap-2", wide && "pt-1")}>
             <HealthGauge value={scoreData.score ?? 0} />
             <span
-              className={`inline-flex items-center px-3.5 py-1 rounded-full border text-sm font-semibold tracking-wide ${nivelColors.bg} ${nivelColors.text} ${nivelColors.border}`}
+              className={cn("inline-flex items-center px-3.5 py-1 rounded-full border text-sm font-semibold tracking-wide", nivelColors.bg, nivelColors.text, nivelColors.border)}
             >
               {scoreData.nivel ?? "Sin datos"}
             </span>

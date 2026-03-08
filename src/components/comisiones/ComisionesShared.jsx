@@ -46,7 +46,7 @@ export const KpiCard = ({ title, value, icon: Icon, type = "neutral" }) => {
             {value}
           </h3>
         </div>
-        <div className={`p-2.5 rounded-xl ${t.icon}`}>
+        <div className={cn("p-2.5 rounded-xl", t.icon)}>
           <Icon size={20} strokeWidth={1.5} />
         </div>
       </div>
