@@ -1,9 +1,4 @@
-﻿/**
- * @fileoverview WhatsAppTab - Meta Cloud API status + direct-send stats.
- * @module components/messages/WhatsAppTab
- */
-
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import {
   Send,
   AlertTriangle,

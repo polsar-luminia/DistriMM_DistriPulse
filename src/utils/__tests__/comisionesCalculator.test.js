@@ -5,9 +5,6 @@ import {
   calcularComisionesCompletas,
 } from "../comisionesCalculator";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-/** Crea una venta simple para testing */
 function makeVenta(producto_codigo, costo, opts = {}) {
   return {
     producto_codigo,
@@ -18,7 +15,6 @@ function makeVenta(producto_codigo, costo, opts = {}) {
   };
 }
 
-/** Crea un presupuesto de marca */
 function makePresupuestoMarca(marca, meta_ventas, pct_comision, opts = {}) {
   return {
     marca,
@@ -29,7 +25,6 @@ function makePresupuestoMarca(marca, meta_ventas, pct_comision, opts = {}) {
   };
 }
 
-/** Crea un recaudo */
 function makeRecaudo(valor_recaudo, aplica_comision, opts = {}) {
   return {
     valor_recaudo,
@@ -37,8 +32,6 @@ function makeRecaudo(valor_recaudo, aplica_comision, opts = {}) {
     vendedor_codigo: opts.vendedor_codigo || "V1",
   };
 }
-
-// ─── calcularComisionVentas ──────────────────────────────────────────────────
 
 describe("calcularComisionVentas", () => {
   test("aplica comision cuando ventas cumplen la meta (con bono fijo)", () => {
@@ -179,8 +172,6 @@ describe("calcularComisionVentas", () => {
   });
 });
 
-// ─── calcularComisionRecaudo ─────────────────────────────────────────────────
-
 describe("calcularComisionRecaudo", () => {
   test("sin presupuesto retorna todo cero", () => {
     const recaudos = [makeRecaudo(500000, true)];
@@ -304,8 +295,6 @@ describe("calcularComisionRecaudo", () => {
     expect(result.pctCumplimiento).toBe(33.33);
   });
 });
-
-// ─── calcularComisionesCompletas ─────────────────────────────────────────────
 
 describe("calcularComisionesCompletas", () => {
   test("2 vendedores retornan 2 resultados ordenados por totalComision desc", () => {

@@ -1,10 +1,3 @@
-/**
- * @fileoverview Directorio de Clientes Page - Master data view.
- * Shows all imported client data with contact info, classification, geography.
- * Separate from the portfolio-based ClientsPage.
- * @module pages/DirectorioClientesPage
- */
-
 import { useState, useMemo, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import {
@@ -423,7 +416,6 @@ export default function DirectorioClientesPage() {
   );
 }
 
-// --- CLIENT MASTER CARD ---
 function ClientMasterCard({ client: c, isExpanded, onExpand, vendedorNombre }) {
   const isJuridica = c.tipo_persona === "Juridica";
 

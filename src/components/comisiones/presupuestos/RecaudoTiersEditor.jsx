@@ -1,9 +1,3 @@
-/**
- * @fileoverview Recaudo tiers editor — 4-tramo grid for collection commission scales.
- * Extracted from PresupuestosTab for readability.
- * @module components/comisiones/presupuestos/RecaudoTiersEditor
- */
-
 import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -55,15 +49,6 @@ const COLOR_MAP = {
   rose:    { bg: "bg-rose-50",    border: "border-rose-200",     title: "text-rose-800",    label: "text-rose-600" },
 };
 
-/**
- * @param {object} props
- * @param {object|null} props.recaudo - Current recaudo row data (null if not configured)
- * @param {number} props.recaudoIdx - Index in the editRecaudo array
- * @param {function} props.onUpdateRow - (idx, field, value) => void
- * @param {function} props.onAddRecaudo - () => void — called when vendor has no recaudo to add one
- * @param {string} props.vendedorCodigo - Vendor code for pre-filling new rows
- * @param {string} props.numInput - Tailwind class string for number inputs
- */
 export default function RecaudoTiersEditor({
   recaudo,
   recaudoIdx,

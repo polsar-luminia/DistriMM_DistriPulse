@@ -1,8 +1,3 @@
-/**
- * Calculates the time elapsed since a given date and returns a human-readable string.
- * @param {string|Date} dateString - The date to calculate time from.
- * @returns {string} - Human readable time ago string (e.g., "Hace 2 horas", "Hace 5 días").
- */
 export const timeAgo = (dateString) => {
   if (!dateString) return "Nunca";
 
@@ -38,11 +33,6 @@ export const timeAgo = (dateString) => {
   return `Hace ${diffInYears} año${diffInYears !== 1 ? "s" : ""}`;
 };
 
-/**
- * Returns the difference in hours between now and a given date.
- * @param {string|Date} dateString
- * @returns {number} Hours elapsed. Returns Infinity if date is invalid or null.
- */
 export const hoursAgo = (dateString) => {
   if (!dateString) return Infinity;
   const date = new Date(dateString);

@@ -1,9 +1,3 @@
-/**
- * @fileoverview Ventas tab — daily sales view with vendor commissions breakdown.
- * Includes VendedorDetail expanded row component.
- * @module components/comisiones/VentasTab
- */
-
 import React, { useState, useMemo, useCallback } from "react";
 import ConfirmDialog from "../ConfirmDialog";
 import { useConfirm } from "../../hooks/useConfirm";

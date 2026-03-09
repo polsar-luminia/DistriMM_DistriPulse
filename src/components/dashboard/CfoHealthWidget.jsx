@@ -20,12 +20,6 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-/**
- * Expanded CFO health widget for the dashboard.
- * Shows score, KPIs, insights, and top action items.
- * Self-contained: fetches latest analysis via cfoService.
- * @returns {JSX.Element}
- */
 export default function CfoHealthWidget() {
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -315,8 +309,6 @@ export default function CfoHealthWidget() {
     </section>
   );
 }
-
-/* ─── Internal sub-components ─── */
 
 function KpiMini({ icon: Icon, label, value, danger }) {
   return (

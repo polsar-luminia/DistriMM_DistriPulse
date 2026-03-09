@@ -1,31 +1,14 @@
-/**
- * @fileoverview Messaging Service
- * Handles WhatsApp messaging via n8n webhook, template management,
- * and message logging through Supabase.
- * @module services/messagingService
- */
-
 import { supabase } from "../lib/supabase";
 import { COLOMBIA_OFFSET, DAILY_LIMIT } from "../constants";
 
-// ============================================================================
-// ANTI-BAN: HORARIO & RATE LIMITING (Frontend side)
-// ============================================================================
-
-/**
- * Gets current hour in Colombia timezone.
- * @returns {number} Hour 0-23
- */
 export const getColombiaHour = () => {
   const now = new Date();
   const utcH = now.getUTCHours();
   return (utcH + COLOMBIA_OFFSET + 24) % 24;
 };
 
-/**
- * Checks if sending is allowed based on Colombia business hours (7am-9pm).
- * @returns {{ allowed: boolean, reason: string|null, hour: number }}
- */
+// Only allow sending between 7am-9pm Colombia time
+
 export const checkSendingHours = () => {
   const hour = getColombiaHour();
   if (hour >= 21 || hour < 7) {
@@ -38,10 +21,6 @@ export const checkSendingHours = () => {
   return { allowed: true, reason: null, hour };
 };
 
-/**
- * Checks daily send count from log to enforce rate limits.
- * @returns {{ allowed: boolean, sent: number, limit: number }}
- */
 export const checkDailyLimit = async () => {
   try {
     // Use Colombia timezone (UTC-5) to determine "today"
@@ -68,16 +47,8 @@ export const checkDailyLimit = async () => {
   }
 };
 
-// ============================================================================
-// PHONE NORMALIZATION (Colombian numbers)
-// ============================================================================
+// Normalizes a Colombian phone number for WhatsApp (Meta Cloud API format: 57XXXXXXXXXX)
 
-/**
- * Normalizes a Colombian phone number for WhatsApp.
- * Strips non-digits, handles 10-digit (prefix 57), validates result.
- * @param {string} raw - Raw phone input
- * @returns {{ phone: string|null, valid: boolean, original: string }}
- */
 export const normalizePhone = (raw) => {
   if (!raw) return { phone: null, valid: false, original: raw };
 
@@ -104,12 +75,8 @@ export const normalizePhone = (raw) => {
   return { phone: valid ? digits : null, valid, original: raw };
 };
 
-/**
- * Resolves the best phone number for a client.
- * Priority: celular > telefono_1 > cartera telefono
- * @param {object} client - Client data with possible phone fields
- * @returns {{ phone: string|null, valid: boolean, source: string }}
- */
+// Priority: celular > telefono_1 > cartera telefono
+
 export const resolveClientPhone = (client) => {
   // Try celular first (best for WhatsApp)
   const sources = [
@@ -131,16 +98,6 @@ export const resolveClientPhone = (client) => {
   return { phone: null, valid: false, source: "ninguno", original: null };
 };
 
-// ============================================================================
-// TEMPLATE RENDERING
-// ============================================================================
-
-/**
- * Renders a template by replacing {{variable}} placeholders.
- * @param {string} template - Template content with {{var}} placeholders
- * @param {object} variables - Key-value pairs for replacement
- * @returns {string} Rendered message
- */
 export const renderTemplate = (template, variables = {}) => {
   if (!template) return "";
   return template.replace(/\{\{(\w+)\}\}/g, (match, key) => {
@@ -148,11 +105,6 @@ export const renderTemplate = (template, variables = {}) => {
   });
 };
 
-/**
- * Builds invoice detail text for recordatorio templates.
- * @param {object[]} items - Invoice items
- * @returns {{ detalle_facturas: string, total: string }}
- */
 export const buildInvoiceDetail = (items = []) => {
   const formatter = new Intl.NumberFormat("es-CO", {
     style: "currency",
@@ -180,15 +132,6 @@ export const buildInvoiceDetail = (items = []) => {
   };
 };
 
-// ============================================================================
-// WHATSAPP SEND (via n8n webhook)
-// ============================================================================
-
-/**
- * Sends a WhatsApp message via n8n webhook.
- * @param {{ phone: string, message: string, clientName: string, tipo: string }} payload
- * @returns {{ success: boolean, error: string|null }}
- */
 export const sendWhatsAppMessage = async ({
   phone,
   message,
@@ -209,15 +152,6 @@ export const sendWhatsAppMessage = async ({
   }
 };
 
-// ============================================================================
-// TEMPLATE CRUD (Supabase)
-// ============================================================================
-
-/**
- * Fetches all active message templates, optionally filtered by type.
- * @param {string} [tipo] - Filter by 'recordatorio', 'promocional', 'personalizado'
- * @returns {{ data: object[]|null, error: object|null }}
- */
 export const getTemplates = async (tipo) => {
   try {
     let query = supabase
@@ -239,11 +173,6 @@ export const getTemplates = async (tipo) => {
   }
 };
 
-/**
- * Creates or updates a message template.
- * @param {object} template - Template data
- * @returns {{ data: object|null, error: object|null }}
- */
 export const saveTemplate = async (template) => {
   try {
     const payload = {
@@ -280,10 +209,6 @@ export const saveTemplate = async (template) => {
   }
 };
 
-/**
- * Soft-deletes a template (sets activa = false).
- * @param {string} id - Template UUID
- */
 export const deleteTemplate = async (id) => {
   try {
     const { error } = await supabase
@@ -298,15 +223,6 @@ export const deleteTemplate = async (id) => {
   }
 };
 
-// ============================================================================
-// MESSAGE LOG (Supabase)
-// ============================================================================
-
-/**
- * Logs a message send attempt.
- * @param {object} entry - Log entry data
- * @returns {{ data: object|null, error: object|null }}
- */
 export const logMessage = async (entry) => {
   try {
     const { data, error } = await supabase
@@ -333,12 +249,6 @@ export const logMessage = async (entry) => {
   }
 };
 
-/**
- * Updates a message log entry status.
- * @param {string} id - Log entry UUID
- * @param {string} estado - New status: 'enviado' | 'fallido'
- * @param {string} [errorDetalle] - Error details if failed
- */
 export const updateLogStatus = async (id, estado, errorDetalle = null) => {
   try {
     const { error } = await supabase
@@ -353,11 +263,6 @@ export const updateLogStatus = async (id, estado, errorDetalle = null) => {
   }
 };
 
-/**
- * Fetches message log entries with optional filters.
- * @param {{ tipo?: string, estado?: string, limit?: number, offset?: number }} filters
- * @returns {{ data: object[]|null, count: number, error: object|null }}
- */
 export const getMessageLog = async (filters = {}) => {
   try {
     let query = supabase
@@ -379,16 +284,8 @@ export const getMessageLog = async (filters = {}) => {
   }
 };
 
-// ============================================================================
-// CLIENT PHONE RESOLUTION (Supabase query)
-// ============================================================================
+// Returns a map: { [nit]: { celular, telefono_1, nombre_completo } }
 
-/**
- * Fetches phone data for clients by their NITs from distrimm_clientes.
- * @param {string[]} nits - Array of tercero_nit values
- * @returns {{ data: object|null, error: object|null }}
- * Returns a map: { [nit]: { celular, telefono_1, nombre_completo } }
- */
 export const getClientPhones = async (nits) => {
   if (!nits || nits.length === 0) return { data: {}, error: null };
 
@@ -413,21 +310,6 @@ export const getClientPhones = async (nits) => {
   }
 };
 
-// ============================================================================
-// LOTE (BATCH) OPERATIONS
-// ============================================================================
-
-/**
- * Fetches filtered clients with cartera data via the database RPC function.
- * @param {object} filters
- * @param {string} filters.cargaId - UUID of the active carga
- * @param {string} [filters.tipoFiltro='morosos'] - 'morosos' | 'por_vencer' | 'todos'
- * @param {number} [filters.diasMoraMin=1] - Minimum days overdue
- * @param {number} [filters.diasVencerMax=30] - Maximum days until due
- * @param {number} [filters.montoMin=0] - Minimum balance
- * @param {number} [filters.montoMax=999999999] - Maximum balance
- * @returns {{ data: object[]|null, error: object|null }}
- */
 export async function getClientesCarteraFiltrados(filters = {}) {
   try {
     const { data, error } = await supabase.rpc("fn_clientes_cartera_filtrados", {
@@ -447,22 +329,6 @@ export async function getClientesCarteraFiltrados(filters = {}) {
   }
 }
 
-/**
- * Creates a lote (batch) header and inserts its destinatarios (detail rows).
- * Inserts the lote first, then batch-inserts all destinatario records linked to it.
- * @param {object} lote - Lote header data
- * @param {string} lote.tipo - 'morosos' | 'por_vencer' | 'promocional' | 'personalizado'
- * @param {string} lote.mensaje_plantilla - Template message text
- * @param {string} [lote.plantilla_id] - UUID of the template used
- * @param {object} [lote.filtros_aplicados] - JSON object of filters used
- * @param {object[]} destinatarios - Array of recipient records
- * @param {string} destinatarios[].cliente_nombre
- * @param {string} destinatarios[].cliente_nit
- * @param {string} destinatarios[].telefono
- * @param {string} destinatarios[].mensaje_personalizado
- * @param {string[]} [destinatarios[].facturas_ids]
- * @returns {{ data: { lote: object, detalle: object[] }|null, error: object|null }}
- */
 export async function createLote(lote, destinatarios = []) {
   try {
     const { data: loteRow, error: loteError } = await supabase
@@ -513,11 +379,6 @@ export async function createLote(lote, destinatarios = []) {
   }
 }
 
-/**
- * Fetches lotes ordered by most recent first.
- * @param {number} [limit=20] - Maximum number of lotes to return
- * @returns {{ data: object[]|null, error: object|null }}
- */
 export async function getLotes(limit = 20) {
   try {
     const { data, error } = await supabase
@@ -534,11 +395,6 @@ export async function getLotes(limit = 20) {
   }
 }
 
-/**
- * Fetches all detalle (recipient) records for a given lote.
- * @param {string} loteId - UUID of the lote
- * @returns {{ data: object[]|null, error: object|null }}
- */
 export async function getLoteDetalle(loteId) {
   try {
     const { data, error } = await supabase
@@ -555,11 +411,6 @@ export async function getLoteDetalle(loteId) {
   }
 }
 
-/**
- * Fetches a single lote by its ID.
- * @param {string} loteId - UUID of the lote
- * @returns {{ data: object|null, error: object|null }}
- */
 export async function getLoteById(loteId) {
   try {
     const { data, error } = await supabase
@@ -576,13 +427,8 @@ export async function getLoteById(loteId) {
   }
 }
 
-/**
- * Triggers lote processing by sending all recipients to the n8n webhook.
- * n8n uses Split in Batches to loop through each item.
- * @param {string} loteId - UUID of the lote (for tracking)
- * @param {object[]} destinatarios - Array of { cliente_nombre, cliente_nit, telefono, mensaje_personalizado, detalle_id }
- * @returns {{ success: boolean, data: object|null, error: string|null }}
- */
+// n8n uses Split in Batches to loop through each item
+
 export async function triggerLoteProcessing(loteId, destinatarios = []) {
   try {
     // Build the array of items that n8n will iterate with Split in Batches
@@ -608,13 +454,6 @@ export async function triggerLoteProcessing(loteId, destinatarios = []) {
   }
 }
 
-/**
- * Retries failed messages in a lote.
- * Resets all failed detalle records back to 'pendiente', updates the lote
- * estado to 'en_proceso', and triggers processing again.
- * @param {string} loteId - UUID of the lote
- * @returns {{ success: boolean, retriedCount: number, error: string|null }}
- */
 export async function retryLoteFailed(loteId) {
   try {
     const { data: failedRows, error: fetchError } = await supabase
@@ -666,11 +505,6 @@ export async function retryLoteFailed(loteId) {
   }
 }
 
-/**
- * Cancels a lote by setting its estado to 'cancelado'.
- * @param {string} loteId - UUID of the lote
- * @returns {{ success: boolean, error: object|null }}
- */
 export async function cancelLote(loteId) {
   try {
     const { error } = await supabase

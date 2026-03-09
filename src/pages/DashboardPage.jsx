@@ -115,7 +115,7 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      {/* ═══════════════════ KPI OVERVIEW ═══════════════════ */}
+      {/* KPI Overview */}
       <section className="animate-fade-up">
         {/* Row 1: 5 existing KPI cards */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
@@ -184,7 +184,7 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* ═══════════════════ DATA FRESHNESS + ADVANCED METRICS ═══════════════════ */}
+      {/* Data Freshness + Advanced Metrics */}
       <section className="animate-fade-up stagger-1">
         <div className="mb-3">
           <DataFreshnessBadge lastLoadDate={data.advanced?.lastLoadDate} />
@@ -223,19 +223,19 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* ═══════════════════ VENDEDORES KPI ═══════════════════ */}
+      {/* Vendedores KPI */}
       <VendedoresKpiCards vendedores={data.vendedores} />
 
-      {/* ═══════════════════ CFO HEALTH WIDGET ═══════════════════ */}
+      {/* CFO Health Widget */}
       <CfoHealthWidget />
 
-      {/* ═══════════════════ HISTORICAL ═══════════════════ */}
+      {/* Historical */}
       <HistoricalEvolution />
 
-      {/* ═══════════════════ HEALTH & RISK ═══════════════════ */}
+      {/* Health & Risk */}
       <HealthRiskSection data={data} />
 
-      {/* ═══════════════════ UPCOMING EXPIRATIONS ═══════════════════ */}
+      {/* Upcoming Expirations */}
       <section className="animate-fade-up stagger-3">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-5 gap-3">
           <SectionTitle icon={Clock} iconColor="bg-amber-50 text-amber-500">
@@ -319,7 +319,7 @@ export default function DashboardPage() {
         </Card>
       </section>
 
-      {/* ═══════════════════ DETAILED TABLE ═══════════════════ */}
+      {/* Detailed Table */}
       <TableProvider value={{
         filteredItems,
         paginatedItems,
@@ -338,7 +338,7 @@ export default function DashboardPage() {
         <DetailedTableSection />
       </TableProvider>
 
-      {/* ═══════════════════ MODALS ═══════════════════ */}
+      {/* Modals */}
       {isParetoModalOpen && (
         <ParetoModal
           isOpen={isParetoModalOpen}

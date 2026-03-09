@@ -1,8 +1,4 @@
 /* eslint-disable react-refresh/only-export-components */
-/**
- * @fileoverview Shared small components for the Comisiones module.
- * @module components/comisiones/ComisionesShared
- */
 import { cn } from "@/lib/utils";
 
 export const MESES = [

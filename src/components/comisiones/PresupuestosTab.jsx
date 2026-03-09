@@ -1,9 +1,3 @@
-/**
- * @fileoverview Presupuestos tab — manage collection targets and brand commission rates.
- * Grouped by salesperson with card layout for easy editing.
- * @module components/comisiones/PresupuestosTab
- */
-
 import { useState, useEffect, useMemo } from "react";
 import { Plus, Loader2, Copy, FileSpreadsheet, Search, X, ChevronsUpDown } from "lucide-react";
 import { sileo } from "sileo";
@@ -182,7 +176,6 @@ export default function PresupuestosTab({ hook }) {
     return getNormalizedMarcasList(marcas);
   }, [marcas]);
 
-  // ── Row update handlers ──
   const updateRecaudoRow = (idx, field, value) => {
     setEditRecaudo((prev) => prev.map((r, i) => {
       if (i !== idx) return r;
@@ -399,7 +392,6 @@ export default function PresupuestosTab({ hook }) {
     }
   };
 
-  /** Callback from PresupuestosUploadModal — routes to the correct save function. */
   const handleUploadSave = async (type, payload) => {
     if (type === "marca") {
       return await savePresupuestoMarca(payload);

@@ -16,27 +16,6 @@ import {
 } from "../utils/portfolioCalculations";
 import { COLORS } from "../utils/constants";
 
-/**
- * Central hook for portfolio analytics state management.
- * Fetches load history, processes portfolio items, and computes KPIs, charts, and lists.
- *
- * @returns {{
- *   items: Array,
- *   availableLoads: Array,
- *   currentLoadId: string|null,
- *   stats: { total: number, vencida: number, porVencer: number, porcentajeVencida: number, uniqueClients: number, trendPercentage: number|null, paretoPercentage: number, unrecoverableTotal: number },
- *   charts: { aging: Array, projection: Array, invoicesByStatus: Array, radarData: Array, topOldest: Array },
- *   lists: { upcomingItems: Array, urgentItems: Array, aggregatedClients: Array },
- *   vendedores: { stats: Array, uniqueCodes: Array, count: number },
- *   healthScore: number,
- *   loading: boolean,
- *   error: string|null,
- *   changeLoad: (newLoadId: string) => void,
- *   markRemindersAsSent: (ids: string[]) => Promise<{success: boolean, error?: string}>,
- *   deleteLoad: (loadId: string) => Promise<{success: boolean, error?: string}>,
- *   refresh: () => void,
- * }}
- */
 export function usePortfolioAnalytics() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);

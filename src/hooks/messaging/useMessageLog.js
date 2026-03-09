@@ -1,21 +1,6 @@
-/**
- * @fileoverview Message log hook for WhatsApp messaging history.
- * Handles log fetching, pagination, and search.
- * @module hooks/messaging/useMessageLog
- */
-
 import { useState, useCallback } from "react";
 import { getMessageLog } from "../../services/messagingService";
 
-/**
- * Gestiona el historial de mensajes enviados por WhatsApp.
- * @returns {{
- *   messageLog: Array,
- *   logCount: number,
- *   loadingLog: boolean,
- *   refreshLog: (filters?: object) => Promise<void>
- * }}
- */
 export function useMessageLog() {
   const [messageLog, setMessageLog] = useState([]);
   const [logCount, setLogCount] = useState(0);

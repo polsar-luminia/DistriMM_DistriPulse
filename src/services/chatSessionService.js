@@ -1,20 +1,5 @@
-/**
- * @fileoverview Chat Session Service - Supabase operations for DistriBot conversation persistence.
- * Handles CRUD for chat sessions and messages.
- * @module services/chatSessionService
- */
-
 import { supabase } from "../lib/supabase";
 
-// ============================================================================
-// SESSION OPERATIONS
-// ============================================================================
-
-/**
- * Fetches all chat sessions for a user, ordered by most recent activity.
- * @param {string} userId - User UUID from auth
- * @returns {Promise<{ data: Array|null, error: Error|null }>}
- */
 export const getChatSessions = async (userId) => {
   try {
     const { data, error } = await supabase
@@ -32,13 +17,6 @@ export const getChatSessions = async (userId) => {
   }
 };
 
-/**
- * Creates a new chat session.
- * @param {string} userId - User UUID
- * @param {string} sessionId - UUID string used as n8n sessionId
- * @param {string} [title='Nueva conversacion'] - Session title
- * @returns {Promise<{ data: Object|null, error: Error|null }>}
- */
 export const createChatSession = async (userId, sessionId, title = "Nueva conversacion") => {
   try {
     const { data, error } = await supabase
@@ -61,12 +39,6 @@ export const createChatSession = async (userId, sessionId, title = "Nueva conver
   }
 };
 
-/**
- * Updates the title of a chat session.
- * @param {string} sessionId - The session_id text field (not the uuid PK)
- * @param {string} title - New title
- * @returns {Promise<{ success: boolean, error: Error|null }>}
- */
 export const updateChatSessionTitle = async (sessionId, title) => {
   try {
     const { error } = await supabase
@@ -82,11 +54,6 @@ export const updateChatSessionTitle = async (sessionId, title) => {
   }
 };
 
-/**
- * Deletes a chat session and all its messages (cascade).
- * @param {string} sessionId - The session_id text field
- * @returns {Promise<{ success: boolean, error: Error|null }>}
- */
 export const deleteChatSession = async (sessionId) => {
   try {
     const { error } = await supabase
@@ -102,15 +69,6 @@ export const deleteChatSession = async (sessionId) => {
   }
 };
 
-// ============================================================================
-// MESSAGE OPERATIONS
-// ============================================================================
-
-/**
- * Fetches all messages for a chat session, ordered chronologically.
- * @param {string} chatSessionId - The uuid PK of the session
- * @returns {Promise<{ data: Array|null, error: Error|null }>}
- */
 export const getChatMessages = async (chatSessionId) => {
   try {
     const { data, error } = await supabase
@@ -127,15 +85,8 @@ export const getChatMessages = async (chatSessionId) => {
   }
 };
 
-/**
- * Saves a single chat message. The DB trigger auto-updates the parent session's
- * message_count and last_message_at.
- * @param {string} chatSessionId - The uuid PK of the parent session
- * @param {'user'|'assistant'} role - Message sender role
- * @param {string} content - Message text
- * @param {boolean} [isError=false] - Whether this is an error message
- * @returns {Promise<{ data: Object|null, error: Error|null }>}
- */
+// DB trigger auto-updates the parent session's message_count and last_message_at
+
 export const saveChatMessage = async (chatSessionId, role, content, isError = false) => {
   try {
     const { data, error } = await supabase
@@ -157,16 +108,6 @@ export const saveChatMessage = async (chatSessionId, role, content, isError = fa
   }
 };
 
-// ============================================================================
-// SEARCH
-// ============================================================================
-
-/**
- * Searches chat sessions by title or message content using the DB RPC function.
- * @param {string} userId - User UUID
- * @param {string} query - Search text
- * @returns {Promise<{ data: Array|null, error: Error|null }>}
- */
 export const searchChatSessions = async (userId, query) => {
   try {
     const { data, error } = await supabase

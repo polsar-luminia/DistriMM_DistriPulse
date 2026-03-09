@@ -1,9 +1,3 @@
-/**
- * @fileoverview Upload modal for "CONDICION VENDEDORES PRESEPUESTO AÑO" Excel files.
- * Parses vendor sections with brand commission rates, monthly targets, and recaudo tiers.
- * @module components/comisiones/PresupuestosUploadModal
- */
-
 import { useState, useEffect } from "react";
 import {
   Upload,
@@ -23,18 +17,10 @@ import { formatFullCurrency } from "../../utils/formatters";
 import { getVendedores } from "../../services/portfolioService";
 
 
-/**
- * Parses the CONDICION VENDEDORES PRESEPUESTO workbook into structured vendor data.
- *
- * The Excel has a semi-structured layout with two (or more) vendor sections:
- * - A header row with vendor name in col A and "MARCAS" in col B
- * - 16 brand rows with: marca (B), % venta (C), presupuesto mes (F), bonificacion (I)
- * - Recaudo tier data is embedded in cols K-N near the vendor sections
- *
- * @param {XLSX.WorkBook} workbook - The parsed XLSX workbook
- * @param {Record<string, string>} vendorNameToCode - Uppercase name → codigo map from DB
- * @returns {{ vendors: Array<{ nombre: string, codigo: string, marcas: Array, recaudo: object|null }>, warnings: string[] }}
- */
+// Parses the CONDICION VENDEDORES PRESEPUESTO workbook into structured vendor data.
+// Excel layout: col A = vendor name, col B = "MARCAS", then brand rows below.
+// Brand cols: marca (B), % venta (C), presupuesto mes (F), bonificacion (I).
+// Recaudo tier data in cols K-N near vendor sections.
 function parsePresupuestosExcel(workbook, vendorNameToCode) {
   const ws = workbook.Sheets[workbook.SheetNames[0]];
   if (!ws) throw new Error("No se encontró la hoja de datos.");

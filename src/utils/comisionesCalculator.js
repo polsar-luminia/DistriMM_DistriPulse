@@ -1,20 +1,5 @@
-/**
- * @fileoverview Motor de cálculo de comisiones — funciones puras.
- * Recibe datos ya cargados de Supabase, retorna resultados calculados.
- * @module utils/comisionesCalculator
- */
-
 import { normalizeBrand } from "./brandNormalization";
 
-/**
- * Calcula comisiones por ventas (marca) para un vendedor.
- *
- * @param {Object} params
- * @param {Array} params.ventas — Ventas comisionables del vendedor (ya filtradas, sin excluidas)
- * @param {Array} params.presupuestosMarca — Presupuestos marca del periodo para este vendedor
- * @param {Object} params.productBrandMap — Mapa producto_codigo → marca (del catálogo)
- * @returns {{ detalleMarcas: Array<{ marca, totalCosto, metaVentas, pctComision, cumpleMeta, comision, tienePresupuesto }>, totalComisionVentas: number }}
- */
 export function calcularComisionVentas({ ventas, presupuestosMarca, productBrandMap }) {
   // 1. Agrupar ventas por marca usando productBrandMap
   //    Para cada venta: marca = productBrandMap[venta.producto_codigo] || "SIN MARCA"
@@ -77,14 +62,6 @@ export function calcularComisionVentas({ ventas, presupuestosMarca, productBrand
   return { detalleMarcas, totalComisionVentas };
 }
 
-/**
- * Calcula comisión por recaudo (cobranza) para un vendedor.
- *
- * @param {Object} params
- * @param {Array} params.recaudos — Todos los recaudos del periodo para este vendedor
- * @param {Object|null} params.presupuestoRecaudo — Presupuesto recaudo del vendedor (puede ser null)
- * @returns {{ totalRecaudado, totalComisionable, totalExcluido, metaRecaudo, pctCumplimiento, tramoAplicado, pctComision, comisionRecaudo }}
- */
 export function calcularComisionRecaudo({ recaudos, presupuestoRecaudo }) {
   const totalRecaudado = recaudos.reduce((s, r) => s + Number(r.valor_recaudo || 0), 0);
   const totalComisionable = recaudos
@@ -159,17 +136,6 @@ export function calcularComisionRecaudo({ recaudos, presupuestoRecaudo }) {
   };
 }
 
-/**
- * Orquestador principal: calcula comisiones completas para todos los vendedores.
- *
- * @param {Object} params
- * @param {Array} params.ventas — Todas las ventas del periodo (ya clasificadas con campo `excluded`)
- * @param {Array} params.recaudos — Todos los recaudos del periodo
- * @param {Array} params.presupuestosMarca — Todos los presupuestos marca del periodo
- * @param {Array} params.presupuestosRecaudo — Todos los presupuestos recaudo del periodo
- * @param {Object} params.productBrandMap — Mapa producto_codigo → marca
- * @returns {Array<{ vendedor_codigo, vendedor_nombre, comisionVentas, comisionRecaudo, totalComision }>}
- */
 export function calcularComisionesCompletas({
   ventas,
   recaudos,

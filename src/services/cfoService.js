@@ -1,21 +1,5 @@
-/**
- * @fileoverview CFO Analysis Service
- * Handles communication with n8n webhook (via Supabase Edge Function proxy)
- * and Supabase cache for CFO analyses.
- * @module services/cfoService
- */
-
 import { supabase } from "../lib/supabase";
 
-// ============================================================================
-// TRIGGER CFO ANALYSIS (via n8n webhook)
-// ============================================================================
-
-/**
- * Triggers a new CFO analysis via the n8n webhook.
- * @param {{ carga_id?: string, mes: number, anio: number }} payload
- * @returns {{ data: object|null, error: string|null }}
- */
 export const triggerCfoAnalysis = async (payload) => {
   try {
     const { data: result, error } = await supabase.functions.invoke(
@@ -35,15 +19,6 @@ export const triggerCfoAnalysis = async (payload) => {
   }
 };
 
-// ============================================================================
-// GET CACHED CFO ANALYSES (from Supabase)
-// ============================================================================
-
-/**
- * Fetches cached CFO analyses from Supabase.
- * @param {string} [cargaId] - Optional load ID to filter by
- * @returns {{ data: object[]|null, error: object|null }}
- */
 export const getCfoAnalyses = async (cargaId) => {
   try {
     let query = supabase
@@ -75,15 +50,6 @@ export const getCfoAnalyses = async (cargaId) => {
   }
 };
 
-// ============================================================================
-// HISTORICAL KPI EVOLUTION (across all cargas)
-// ============================================================================
-
-/**
- * Fetches historical KPI data for all cargas, ordered by fecha_corte ASC.
- * Returns an array of snapshots with cartera, aging, mora metrics per carga.
- * @returns {{ data: object[]|null, error: string|null }}
- */
 export const getHistoricoCartera = async () => {
   try {
     const { data, error } = await supabase.rpc("fn_cfo_historico_cartera");

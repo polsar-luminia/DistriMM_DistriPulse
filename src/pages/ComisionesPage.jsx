@@ -1,9 +1,3 @@
-/**
- * @fileoverview Comisiones Page — Sales commission management with exclusion rules.
- * Six tabs: Ventas, Recaudo, Exclusiones, Catalogo, Reporte Mensual, Presupuestos.
- * @module pages/ComisionesPage
- */
-
 import { useState } from "react";
 import { Receipt, Ban, BookOpen, CalendarRange, Wallet, Settings } from "lucide-react";
 import useComisiones from "../hooks/useComisiones";

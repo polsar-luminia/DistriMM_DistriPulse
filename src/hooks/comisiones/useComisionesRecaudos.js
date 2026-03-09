@@ -1,9 +1,3 @@
-/**
- * @fileoverview Hook for managing recaudos (collections) and presupuestos (budgets).
- * Owns recaudoCargas, selectedRecaudoCargaId, recaudos, and presupuesto state.
- * @module hooks/comisiones/useComisionesRecaudos
- */
-
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
   getRecaudoCargas,
@@ -18,18 +12,6 @@ import {
   copiarPresupuestosMes,
 } from "../../services/comisionesService";
 
-/**
- * Gestiona recaudos (cargas de recaudo, detalle) y presupuestos de recaudo/marca.
- * @returns {{ recaudoCargas: Array, selectedRecaudoCargaId: string|null,
- *   selectedRecaudoCarga: Object|null, loadingRecaudoCargas: boolean,
- *   recaudos: Array, loadingRecaudos: boolean, selectRecaudoCarga: Function,
- *   deleteRecaudoCarga: Function, refreshRecaudos: Function,
- *   presupuestosRecaudo: Array, presupuestosMarca: Array,
- *   loadingPresupuestos: boolean, fetchPresupuestos: Function,
- *   savePresupuestoRecaudo: Function, savePresupuestoMarca: Function,
- *   removePresupuestoRecaudo: Function, removePresupuestoMarca: Function,
- *   copiarPresupuestos: Function }}
- */
 export function useComisionesRecaudos() {
   const [recaudoCargas, setRecaudoCargas] = useState([]);
   const [selectedRecaudoCargaId, setSelectedRecaudoCargaId] = useState(null);

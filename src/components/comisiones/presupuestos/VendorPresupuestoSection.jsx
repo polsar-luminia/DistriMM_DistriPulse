@@ -1,31 +1,7 @@
-/**
- * @fileoverview Per-vendor presupuesto card — wraps RecaudoTiersEditor + MarcaComisionesEditor.
- * Extracted from PresupuestosTab for readability.
- * @module components/comisiones/presupuestos/VendorPresupuestoSection
- */
-
 import { Trash2, Save, Loader2, Target, Tag, User, ChevronDown, ChevronUp, CircleAlert } from "lucide-react";
 import RecaudoTiersEditor from "./RecaudoTiersEditor";
 import MarcaComisionesEditor from "./MarcaComisionesEditor";
 
-/**
- * @param {object} props
- * @param {object} props.vendedor - Grouped vendor data { codigo, nombre, recaudo, recaudoIdx, marcas }
- * @param {string|null} props.savingId - Currently saving vendor ID (for spinner)
- * @param {Array} props.marcasNormalizadas - Normalized brand list for dropdown
- * @param {function} props.onUpdateRecaudoRow - (idx, field, value) => void
- * @param {function} props.onUpdateMarcaRow - (globalIdx, field, value) => void
- * @param {function} props.onDeleteVendedor - (codigo) => void
- * @param {function} props.onDeleteMarca - (row, globalIdx) => void
- * @param {function} props.onAddRecaudo - (vendedorCodigo) => void
- * @param {function} props.onAddMarca - (vendedorCodigo) => void
- * @param {function} props.onGuardar - (vendedorCodigo) => void
- * @param {string} props.baseInput - Tailwind class string for text inputs
- * @param {string} props.numInput - Tailwind class string for number inputs
- * @param {boolean} props.collapsed - Whether vendor card content is collapsed
- * @param {function} props.onToggleCollapse - Toggle collapse callback
- * @param {boolean} props.hasUnsavedChanges - Whether vendor has local unsaved edits
- */
 export default function VendorPresupuestoSection({
   vendedor,
   savingId,

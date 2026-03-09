@@ -1,9 +1,3 @@
-/**
- * @fileoverview Hook for managing the product catalog (catalogo de productos).
- * Independent — does not depend on selectedCargaId or other sub-hooks.
- * @module hooks/comisiones/useComisionesCatalogo
- */
-
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
   getProductosCatalogo,
@@ -12,17 +6,6 @@ import {
   getMarcasUnicas,
 } from "../../services/comisionesService";
 
-/**
- * Gestiona el catalogo de productos (marcas, categorias, codigos).
- * @returns {{
- *   catalogo: Array,
- *   loadingCatalogo: boolean,
- *   marcas: Array,
- *   uploadCatalogo: (rows: Array) => Promise<{error: any}>,
- *   clearCatalogo: () => Promise<boolean>,
- *   fetchCatalogo: () => Promise<void>
- * }}
- */
 export function useComisionesCatalogo() {
   const [catalogo, setCatalogo] = useState([]);
   const [loadingCatalogo, setLoadingCatalogo] = useState(true);

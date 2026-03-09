@@ -1,8 +1,3 @@
-/**
- * @fileoverview Tests for portfolioCalculations.js — pure financial calculation functions.
- * Uses Vitest with globals: true.
- */
-
 vi.mock("../constants", () => ({
   AGING_BUCKETS: [
     { key: "Al Día", min: -Infinity, max: 0, color: "#10B981" },
@@ -33,11 +28,6 @@ import {
   buildVendedorStats,
 } from "../portfolioCalculations";
 
-// ============================================================================
-// HELPERS
-// ============================================================================
-
-/** Returns "YYYY-MM-DD" in local time for a Date object */
 function isoDate(d) {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -63,10 +53,6 @@ function makeItem(overrides = {}) {
     ...overrides,
   };
 }
-
-// ============================================================================
-// preprocessItems
-// ============================================================================
 
 describe("preprocessItems", () => {
   test("item vencido ayer tiene dias_mora=1 y days_until_due=-1", () => {
@@ -105,10 +91,6 @@ describe("preprocessItems", () => {
     expect(result.dias_mora).toBe(0);
   });
 });
-
-// ============================================================================
-// calculateKPIs
-// ============================================================================
 
 describe("calculateKPIs", () => {
   test("retorna totales correctos con mezcla de facturas vencidas y al día", () => {
@@ -177,10 +159,6 @@ describe("calculateKPIs", () => {
   });
 });
 
-// ============================================================================
-// buildClientMap
-// ============================================================================
-
 describe("buildClientMap", () => {
   test("agrupa 3 items en 2 clientes con deuda y maxMora correctos", () => {
     const items = [
@@ -229,10 +207,6 @@ describe("buildClientMap", () => {
   });
 });
 
-// ============================================================================
-// calculatePareto
-// ============================================================================
-
 describe("calculatePareto", () => {
   test("1 cliente con 100% de la deuda retorna 100%", () => {
     const clients = [{ deuda: 1000000, name: "Único" }];
@@ -265,10 +239,6 @@ describe("calculatePareto", () => {
     expect(result).toBeCloseTo(33.33, 1);
   });
 });
-
-// ============================================================================
-// calculateAging
-// ============================================================================
 
 describe("calculateAging", () => {
   test("distribuye items en cada bucket correctamente", () => {
@@ -318,10 +288,6 @@ describe("calculateAging", () => {
   });
 });
 
-// ============================================================================
-// calculateProjection
-// ============================================================================
-
 describe("calculateProjection", () => {
   test("item que vence en 15 días se incluye", () => {
     const items = [makeItem({ dias_mora: 0, fecha_vencimiento: daysFromToday(15), valor_saldo: 100000 })];
@@ -354,10 +320,6 @@ describe("calculateProjection", () => {
   });
 });
 
-// ============================================================================
-// buildLists
-// ============================================================================
-
 describe("buildLists", () => {
   test("cliente con 100 días mora aparece en urgentItems con 'Cobro Jurídico'", () => {
     const items = [makeItem({ cliente_nombre: "Moroso", valor_saldo: 500000, dias_mora: 100 })];
@@ -389,10 +351,6 @@ describe("buildLists", () => {
     expect(urgentItems.length).toBe(3);
   });
 });
-
-// ============================================================================
-// buildRadarData
-// ============================================================================
 
 describe("buildRadarData", () => {
   test("3 clientes vencidos generan 3 puntos de radar", () => {
@@ -429,10 +387,6 @@ describe("buildRadarData", () => {
   });
 });
 
-// ============================================================================
-// buildTopOldest
-// ============================================================================
-
 describe("buildTopOldest", () => {
   test("15 items retorna solo 10", () => {
     const items = Array.from({ length: 15 }, (_, i) =>
@@ -461,10 +415,6 @@ describe("buildTopOldest", () => {
     expect(top[0].shortName).toBe("Cliente Descono...");
   });
 });
-
-// ============================================================================
-// buildVendedorStats
-// ============================================================================
 
 describe("buildVendedorStats", () => {
   test("2 vendedores con múltiples items producen totales correctos", () => {

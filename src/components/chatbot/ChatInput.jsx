@@ -1,20 +1,6 @@
-/**
- * @fileoverview Chat input area — textarea with send button and loading state.
- * Extracted from ChatbotPage for readability.
- * @module components/chatbot/ChatInput
- */
-
 import { useCallback } from "react";
 import { Send, Loader2 } from "lucide-react";
 
-/**
- * @param {object} props
- * @param {string} props.value - Current input value
- * @param {function} props.onChange - (value) => void
- * @param {function} props.onSend - () => void
- * @param {boolean} props.isLoading - Whether a message is being sent
- * @param {React.Ref} props.inputRef - Ref for the textarea element
- */
 export default function ChatInput({ value, onChange, onSend, isLoading, inputRef }) {
   const handleKeyDown = useCallback(
     (e) => {

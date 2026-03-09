@@ -1,8 +1,3 @@
-/**
- * @fileoverview NuevoLoteTab - Create a new messaging batch (3-step wizard).
- * @module components/messages/NuevoLoteTab
- */
-
 import React, { useState, useMemo, useCallback } from "react";
 import {
   Search,

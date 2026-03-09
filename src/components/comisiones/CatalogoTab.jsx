@@ -1,8 +1,3 @@
-/**
- * @fileoverview Catalogo tab — product master data browser with exclusion status.
- * @module components/comisiones/CatalogoTab
- */
-
 import React, { useState, useMemo } from "react";
 import {
   Search,

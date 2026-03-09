@@ -1,9 +1,3 @@
-/**
- * @fileoverview Vendedores Page - Sales rep performance dashboard.
- * Shows portfolio distribution, aging, and performance per vendedor.
- * @module pages/VendedoresPage
- */
-
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useOutletContext } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -458,7 +452,6 @@ export default function VendedoresPage() {
   );
 }
 
-// --- VENDEDOR CARD COMPONENT ---
 function VendedorCard({ vendedor: v, isExpanded, onExpand, fmt, onNameSave }) {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState("");

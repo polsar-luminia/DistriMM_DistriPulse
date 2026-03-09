@@ -1,20 +1,7 @@
-/**
- * @fileoverview Error Boundary component for graceful error handling.
- * Wraps page content to prevent crashes from propagating to the entire app.
- * Uses react-error-boundary for a declarative approach.
- * @module components/common/ErrorBoundary
- */
-
 import { ErrorBoundary as ReactErrorBoundary } from "react-error-boundary";
 import { AlertTriangle, RefreshCw, Home } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-/**
- * Fallback UI shown when an error is caught.
- * @param {Object} props
- * @param {Error} props.error - The caught error
- * @param {Function} props.resetErrorBoundary - Function to reset the boundary
- */
 function ErrorFallback({ error, resetErrorBoundary }) {
   const navigate = useNavigate();
 
@@ -72,11 +59,6 @@ function ErrorFallback({ error, resetErrorBoundary }) {
   );
 }
 
-/**
- * Error Boundary wrapper component.
- * @param {Object} props
- * @param {React.ReactNode} props.children - Child components to wrap
- */
 export default function ErrorBoundary({ children }) {
   const handleError = (error, errorInfo) => {
     if (import.meta.env.DEV) {

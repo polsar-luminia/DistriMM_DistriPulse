@@ -1,8 +1,3 @@
-/**
- * @fileoverview Reporte Mensual tab — consolidated monthly report with commission liquidation.
- * @module components/comisiones/ReporteMensualTab
- */
-
 import React, { useState, useMemo, useCallback } from "react";
 import {
   ChevronDown,

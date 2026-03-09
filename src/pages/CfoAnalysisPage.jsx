@@ -1,9 +1,3 @@
-/**
- * @fileoverview CFO Analysis Page
- * AI-powered portfolio health analysis using n8n + GPT-4o.
- * @module pages/CfoAnalysisPage
- */
-
 import { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -163,8 +157,6 @@ export default function CfoAnalysisPage() {
     </div>
   );
 }
-
-// ── Page-specific helpers ─────────────────────────────────────────────
 
 function PageHeader({ onRun, loading, hasAnalysis }) {
   return (

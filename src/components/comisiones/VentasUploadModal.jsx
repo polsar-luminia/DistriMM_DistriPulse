@@ -1,8 +1,3 @@
-/**
- * @fileoverview Upload modal for daily sales Excel files (Ventas de Productos por Factura).
- * @module components/comisiones/VentasUploadModal
- */
-
 import React, { useState } from "react";
 import {
   Upload,

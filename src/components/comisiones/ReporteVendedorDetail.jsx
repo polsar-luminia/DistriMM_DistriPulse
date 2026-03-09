@@ -1,8 +1,3 @@
-/**
- * @fileoverview Reporte Mensual — vendedor accordion detail with factura grouping.
- * @module components/comisiones/ReporteVendedorDetail
- */
-
 import React, { useMemo } from "react";
 import { TrendingUp, Ban } from "lucide-react";
 import { cn } from "@/lib/utils";

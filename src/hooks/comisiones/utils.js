@@ -1,21 +1,7 @@
-/**
- * @fileoverview Pure utility functions for commission exclusion logic.
- * Shared across sub-hooks and UI components (e.g. VentasTab).
- * @module hooks/comisiones/utils
- */
-
 import { normalizeBrand } from "../../utils/brandNormalization";
 
 const normalizeCode = (value) => String(value ?? "").trim().toUpperCase();
 
-/**
- * Determines whether a sale item is excluded from commissions.
- * @param {string} productoCode - Product code from the sale
- * @param {Set<string>} productExclusionSet - Set of excluded product codes
- * @param {Set<string>} brandExclusionSet - Set of excluded brand names
- * @param {Object} productBrandMap - Map of product code to brand name
- * @returns {{ excluded: boolean, reason: string|null }}
- */
 export function getExclusionInfo(
   productoCode,
   productExclusionSet,
@@ -42,12 +28,6 @@ export function getExclusionInfo(
   return { excluded: false, reason: null };
 }
 
-/**
- * Builds exclusion lookup structures from exclusiones and catalogo arrays.
- * @param {Array} exclusiones - Active exclusion rules
- * @param {Array} catalogo - Product catalog
- * @returns {{ productExclusionSet: Set<string>, brandExclusionSet: Set<string>, productBrandMap: Object }}
- */
 export function buildExclusionLookups(exclusiones, catalogo) {
   const productExclusionSet = new Set();
   const brandExclusionSet = new Set();

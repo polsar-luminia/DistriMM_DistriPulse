@@ -1,18 +1,5 @@
-/**
- * @fileoverview Comisiones Service - Supabase operations for the commissions module.
- * Handles sales loads, product catalog, exclusion rules, and commission calculations.
- * @module services/comisionesService
- */
-
 import { supabase, fetchAllRows } from "../lib/supabase";
 
-// ============================================================================
-// CARGAS (SALES LOADS)
-// ============================================================================
-
-/**
- * Fetches all commission loads ordered by sales date (most recent first).
- */
 export const getComisionesCargas = async () => {
   try {
     const { data, error } = await supabase
@@ -28,9 +15,6 @@ export const getComisionesCargas = async () => {
   }
 };
 
-/**
- * Deletes a commission load and all its sales items (CASCADE).
- */
 export const deleteComisionesCarga = async (id) => {
   try {
     const { error } = await supabase
@@ -46,13 +30,6 @@ export const deleteComisionesCarga = async (id) => {
   }
 };
 
-// ============================================================================
-// VENTAS (SALES ITEMS — read only)
-// ============================================================================
-
-/**
- * Fetches all sales items for a specific load.
- */
 export const getComisionesVentas = async (cargaId) => {
   try {
     const { data, error } = await supabase
@@ -68,13 +45,6 @@ export const getComisionesVentas = async (cargaId) => {
   }
 };
 
-// ============================================================================
-// CATÁLOGO DE PRODUCTOS
-// ============================================================================
-
-/**
- * Fetches the full product catalog.
- */
 export const getProductosCatalogo = async () => {
   try {
     const data = await fetchAllRows((from, to) =>
@@ -91,10 +61,6 @@ export const getProductosCatalogo = async () => {
   }
 };
 
-/**
- * Upserts product catalog rows (matched by codigo).
- * @param {Array<{codigo, nombre, categoria_codigo, categoria_nombre, marca}>} rows
- */
 export const upsertProductosCatalogo = async (rows) => {
   try {
     const { data, error } = await supabase
@@ -115,9 +81,6 @@ export const upsertProductosCatalogo = async (rows) => {
   }
 };
 
-/**
- * Fetches distinct brand names from the product catalog.
- */
 export const getMarcasUnicas = async () => {
   try {
     const data = await fetchAllRows((from, to) =>
@@ -138,9 +101,6 @@ export const getMarcasUnicas = async () => {
   }
 };
 
-/**
- * Deletes all rows from the product catalog.
- */
 export const clearProductosCatalogo = async () => {
   try {
     const { error } = await supabase
@@ -156,13 +116,6 @@ export const clearProductosCatalogo = async () => {
   }
 };
 
-// ============================================================================
-// EXCLUSIONES
-// ============================================================================
-
-/**
- * Fetches all active exclusion rules.
- */
 export const getExclusiones = async () => {
   try {
     const { data, error } = await supabase
@@ -179,10 +132,6 @@ export const getExclusiones = async () => {
   }
 };
 
-/**
- * Creates a new exclusion rule.
- * @param {{ tipo: 'marca'|'producto', valor: string, descripcion?: string, motivo?: string }} exclusion
- */
 export const addExclusion = async ({ tipo, valor, descripcion, motivo }) => {
   try {
     const { data, error } = await supabase
@@ -199,9 +148,6 @@ export const addExclusion = async ({ tipo, valor, descripcion, motivo }) => {
   }
 };
 
-/**
- * Soft-deletes an exclusion rule (sets activa = false).
- */
 export const removeExclusion = async (id) => {
   try {
     const { error } = await supabase
@@ -217,9 +163,6 @@ export const removeExclusion = async (id) => {
   }
 };
 
-/**
- * Toggles an exclusion rule's active state.
- */
 export const toggleExclusion = async (id, activa) => {
   try {
     const { error } = await supabase
@@ -235,15 +178,6 @@ export const toggleExclusion = async (id, activa) => {
   }
 };
 
-// ============================================================================
-// MONTHLY REPORT QUERIES
-// ============================================================================
-
-/**
- * Fetches all loads whose fecha_ventas falls within a given month.
- * @param {number} year - Full year (e.g. 2026)
- * @param {number} month - 1-12
- */
 export const getCargasByMonth = async (year, month) => {
   try {
     const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
@@ -267,10 +201,6 @@ export const getCargasByMonth = async (year, month) => {
   }
 };
 
-/**
- * Fetches all sales items for multiple loads at once.
- * @param {string[]} cargaIds - Array of carga UUIDs
- */
 export const getVentasByCargas = async (cargaIds) => {
   try {
     const data = await fetchAllRows((from, to) =>
@@ -288,14 +218,6 @@ export const getVentasByCargas = async (cargaIds) => {
   }
 };
 
-// ============================================================================
-// RECAUDOS
-// ============================================================================
-
-/**
- * Fetches all recaudo loads ordered by creation date (most recent first).
- * @returns {{ data: Array, error: null } | { data: null, error: Error }}
- */
 export const getRecaudoCargas = async () => {
   try {
     const { data, error } = await supabase
@@ -310,11 +232,6 @@ export const getRecaudoCargas = async () => {
   }
 };
 
-/**
- * Deletes a recaudo load and all its items (CASCADE).
- * @param {string} id - UUID of the load
- * @returns {{ success: boolean, error: null } | { success: false, error: Error }}
- */
 export const deleteRecaudoCarga = async (id) => {
   try {
     const { error } = await supabase
@@ -329,12 +246,6 @@ export const deleteRecaudoCarga = async (id) => {
   }
 };
 
-/**
- * Fetches all recaudo items for a given year/month period.
- * @param {number} year
- * @param {number} month - 1-12
- * @returns {{ data: Array, error: null } | { data: null, error: Error }}
- */
 export const getRecaudosByPeriodo = async (year, month) => {
   try {
     const data = await fetchAllRows((from, to) =>
@@ -352,11 +263,6 @@ export const getRecaudosByPeriodo = async (year, month) => {
   }
 };
 
-/**
- * Fetches all recaudo items for a specific load.
- * @param {string} cargaId - UUID of the recaudo load
- * @returns {{ data: Array, error: null } | { data: null, error: Error }}
- */
 export const getRecaudosByCarga = async (cargaId) => {
   try {
     const { data, error } = await supabase
@@ -371,15 +277,6 @@ export const getRecaudosByCarga = async (cargaId) => {
   }
 };
 
-// ============================================================================
-// PRESUPUESTOS
-// ============================================================================
-
-/**
- * Fetches active recaudo budget rows for a given month.
- * @param {number} year
- * @param {number} month - 1-12
- */
 export const getPresupuestosRecaudo = async (year, month) => {
   try {
     const { data, error } = await supabase
@@ -397,9 +294,6 @@ export const getPresupuestosRecaudo = async (year, month) => {
   }
 };
 
-/**
- * Upserts a recaudo budget row (matched by vendedor_codigo + year + month).
- */
 export const upsertPresupuestoRecaudo = async (row) => {
   try {
     const { id, ...rest } = row;
@@ -417,9 +311,6 @@ export const upsertPresupuestoRecaudo = async (row) => {
   }
 };
 
-/**
- * Deletes a recaudo budget row by id.
- */
 export const deletePresupuestoRecaudo = async (id) => {
   try {
     const { error } = await supabase
@@ -434,11 +325,6 @@ export const deletePresupuestoRecaudo = async (id) => {
   }
 };
 
-/**
- * Fetches active brand commission budget rows for a given month.
- * @param {number} year
- * @param {number} month - 1-12
- */
 export const getPresupuestosMarca = async (year, month) => {
   try {
     const { data, error } = await supabase
@@ -457,9 +343,6 @@ export const getPresupuestosMarca = async (year, month) => {
   }
 };
 
-/**
- * Upserts a brand commission budget row (matched by vendedor_codigo + marca + year + month).
- */
 export const upsertPresupuestoMarca = async (row) => {
   try {
     const { id, _id, _isNew, ...rest } = row;
@@ -477,9 +360,6 @@ export const upsertPresupuestoMarca = async (row) => {
   }
 };
 
-/**
- * Deletes a brand commission budget row by id.
- */
 export const deletePresupuestoMarca = async (id) => {
   try {
     const { error } = await supabase
@@ -494,9 +374,6 @@ export const deletePresupuestoMarca = async (id) => {
   }
 };
 
-/**
- * Copies all active budget rows (recaudo + marcas) from one month to another.
- */
 export const copiarPresupuestosMes = async (fromYear, fromMonth, toYear, toMonth) => {
   try {
     const [recaudoResult, marcasResult] = await Promise.all([
@@ -545,14 +422,6 @@ export const copiarPresupuestosMes = async (fromYear, fromMonth, toYear, toMonth
   }
 };
 
-// ============================================================================
-// CÁLCULO DE COMISIONES (RPC)
-// ============================================================================
-
-/**
- * Calculates net commissions per salesperson for a given load,
- * applying active exclusion rules.
- */
 export const calcularComisiones = async (cargaId) => {
   try {
     const { data, error } = await supabase.rpc("fn_calcular_comisiones", {

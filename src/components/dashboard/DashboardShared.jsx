@@ -18,10 +18,6 @@ import {
 // Re-export formatters for backward compatibility
 export { formatCurrency, formatFullCurrency };
 
-// ============================================================================
-// UI COMPONENTS
-// ============================================================================
-
 export const Card = ({ children, className = "", ...props }) => (
   <div
     className={cn(

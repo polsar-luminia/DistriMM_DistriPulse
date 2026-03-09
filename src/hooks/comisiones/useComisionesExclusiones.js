@@ -1,10 +1,3 @@
-/**
- * @fileoverview Hook for managing commission exclusion rules (CRUD).
- * Receives selectedCargaId as a param to avoid stale closures.
- * Uses a ref for fetchComisiones to break circular dependency with calculo hook.
- * @module hooks/comisiones/useComisionesExclusiones
- */
-
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
   getExclusiones,
@@ -13,18 +6,6 @@ import {
   toggleExclusion as toggleExclusionSvc,
 } from "../../services/comisionesService";
 
-/**
- * Gestiona reglas de exclusion de comisiones (por producto o marca).
- * @param {string|null} selectedCargaId - ID de carga seleccionada (param, no closure)
- * @returns {{
- *   exclusiones: Array,
- *   loadingExclusiones: boolean,
- *   addExclusion: (exclusion: Object) => Promise<{data: any, error: any}>,
- *   removeExclusion: (id: string) => Promise<boolean>,
- *   toggleExclusion: (id: string, activa: boolean) => Promise<boolean>,
- *   setFetchComisionesRef: (fn: Function) => void
- * }}
- */
 export function useComisionesExclusiones(selectedCargaId) {
   const [exclusiones, setExclusiones] = useState([]);
   const [loadingExclusiones, setLoadingExclusiones] = useState(true);

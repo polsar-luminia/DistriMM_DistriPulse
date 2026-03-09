@@ -1,8 +1,3 @@
-/**
- * @fileoverview HistorialLotesTab + LoteDetalleView - Batch history and drill-down.
- * @module components/messages/HistorialTab
- */
-
 import React, { useState, useEffect } from "react";
 import {
   CheckCircle,
@@ -21,10 +16,6 @@ import { cn } from "@/lib/utils";
 import { Card } from "../dashboard/DashboardShared";
 import { EstadoBadge, PhoneBadge } from "./MessagesShared";
 import { timeAgo } from "../../utils/timeAgo";
-
-// ════════════════════════════════════════════════════════════════════════════
-// LOTE DETALLE VIEW (Drill-down)
-// ════════════════════════════════════════════════════════════════════════════
 
 function LoteDetalleView({ loteId, messaging, onBack }) {
   useEffect(() => {
@@ -226,10 +217,6 @@ function LoteDetalleView({ loteId, messaging, onBack }) {
     </div>
   );
 }
-
-// ════════════════════════════════════════════════════════════════════════════
-// HISTORIAL LOTES TAB
-// ════════════════════════════════════════════════════════════════════════════
 
 export default function HistorialLotesTab({ messaging }) {
   const [viewingLoteId, setViewingLoteId] = useState(null);

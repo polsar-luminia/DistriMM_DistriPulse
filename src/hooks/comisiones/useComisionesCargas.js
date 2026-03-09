@@ -1,28 +1,9 @@
-/**
- * @fileoverview Hook for managing comisiones cargas (upload history).
- * Owns the selectedCargaId state and provides carga CRUD operations.
- * @module hooks/comisiones/useComisionesCargas
- */
-
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
   getComisionesCargas,
   deleteComisionesCarga,
 } from "../../services/comisionesService";
 
-/**
- * Gestiona cargas de comisiones (historial de uploads de ventas).
- * @returns {{
- *   cargas: Array,
- *   selectedCargaId: string|null,
- *   selectedCarga: Object|null,
- *   loadingCargas: boolean,
- *   selectCarga: (id: string) => void,
- *   deleteCarga: (id: string) => Promise<boolean>,
- *   refreshAfterUpload: () => Promise<void>,
- *   fetchCargas: () => Promise<void>
- * }}
- */
 export function useComisionesCargas() {
   const [cargas, setCargas] = useState([]);
   const [selectedCargaId, setSelectedCargaId] = useState(null);

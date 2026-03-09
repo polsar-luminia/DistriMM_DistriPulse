@@ -1,9 +1,3 @@
-/**
- * Circular gauge visualization for the portfolio health score.
- * Renders an SVG ring with a color gradient based on the score value (0-100).
- * @module components/cfo/HealthScoreRing
- */
-
 import { cn } from "@/lib/utils";
 import { COLORS } from "../../utils/constants";
 import { getSemaphore } from "./cfoUtils";
@@ -11,9 +5,6 @@ import { getSemaphore } from "./cfoUtils";
 const RING_RADIUS = 54;
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 
-/**
- * @param {{ score: number, semaforo: string }} props
- */
 export default function HealthScoreRing({ score, semaforo }) {
   const sem = getSemaphore(semaforo);
   const offset = RING_CIRCUMFERENCE - (score / 100) * RING_CIRCUMFERENCE;

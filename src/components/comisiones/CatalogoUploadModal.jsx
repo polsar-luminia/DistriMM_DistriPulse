@@ -1,8 +1,3 @@
-/**
- * @fileoverview Upload modal for product catalog Excel files (Saldos de Productos).
- * @module components/comisiones/CatalogoUploadModal
- */
-
 import React, { useState } from "react";
 import {
   Upload,

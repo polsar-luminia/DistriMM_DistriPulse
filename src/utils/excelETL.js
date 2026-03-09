@@ -1,7 +1,3 @@
-/**
- * @fileoverview Excel ETL utilities — parsing, type detection, and row normalization.
- * Pure functions with no React or Supabase dependencies.
- */
 import { parse, isValid } from "date-fns";
 import { es } from "date-fns/locale";
 

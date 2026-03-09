@@ -1,9 +1,3 @@
-/**
- * Compact KPI display card for the CFO dashboard.
- * Shows a label, value, optional subtitle, and optional semaphore color.
- * @module components/cfo/KpiMini
- */
-
 import { cn } from "@/lib/utils";
 
 const SEMAPHORE_TEXT = {
@@ -14,9 +8,6 @@ const SEMAPHORE_TEXT = {
   ALERTA_MAXIMA: "text-red-800",
 };
 
-/**
- * @param {{ label: string, value: string|number, sub?: string, semaforo?: string }} props
- */
 export default function KpiMini({ label, value, sub, semaforo }) {
   const textColor = semaforo ? (SEMAPHORE_TEXT[semaforo] || "text-slate-500") : null;
 

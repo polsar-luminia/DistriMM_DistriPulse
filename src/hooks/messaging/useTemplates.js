@@ -1,9 +1,3 @@
-/**
- * @fileoverview Template management hook for WhatsApp message templates.
- * Handles CRUD operations and loading state for plantillas.
- * @module hooks/messaging/useTemplates
- */
-
 import { useState, useEffect, useCallback } from "react";
 import {
   getTemplates,
@@ -11,16 +5,6 @@ import {
   deleteTemplate as deleteTemplateSvc,
 } from "../../services/messagingService";
 
-/**
- * Gestiona plantillas de mensajes WhatsApp.
- * @returns {{
- *   templates: Array,
- *   loadingTemplates: boolean,
- *   loadTemplates: (tipo?: string) => Promise<void>,
- *   saveTemplate: (template: object) => Promise<{data: object|null, error: object|null}>,
- *   removeTemplate: (id: string) => Promise<{success: boolean, error: object|null}>
- * }}
- */
 export function useTemplates() {
   const [templates, setTemplates] = useState([]);
   const [loadingTemplates, setLoadingTemplates] = useState(false);

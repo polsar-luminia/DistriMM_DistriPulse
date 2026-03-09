@@ -1,8 +1,3 @@
-/**
- * @fileoverview PlantillasTab - Message template management (CRUD).
- * @module components/messages/PlantillasTab
- */
-
 import React, { useState } from "react";
 import {
   FileText,

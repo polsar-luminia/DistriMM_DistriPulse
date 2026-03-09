@@ -1,9 +1,3 @@
-/**
- * @fileoverview Lote (batch) operations hook for WhatsApp messaging.
- * Handles lote creation, polling, retry, cancel, and detail loading.
- * @module hooks/messaging/useLotes
- */
-
 import { useState, useCallback, useEffect, useRef } from "react";
 import { supabase } from "../../lib/supabase";
 import {
@@ -18,25 +12,6 @@ import {
   cancelLote,
 } from "../../services/messagingService";
 
-/**
- * Gestiona operaciones de lotes (batches) para envío masivo de WhatsApp.
- * Incluye creación, polling de progreso, retry de fallidos, y cancelación.
- * @returns {{
- *   lotes: Array,
- *   loadingLotes: boolean,
- *   refreshLotes: () => Promise<void>,
- *   activeLote: object|null,
- *   activeLoteDetalle: Array,
- *   loadingDetalle: boolean,
- *   loadLoteDetalle: (loteId: string) => Promise<void>,
- *   creatingLote: boolean,
- *   createAndSendLote: (loteHeader: object, destinatarios: Array) => Promise<{success: boolean, loteId: string|null, error: string|null}>,
- *   handleRetryFailed: (loteId: string) => Promise<{success: boolean, error: string|null}>,
- *   handleCancelLote: (loteId: string) => Promise<{success: boolean, error: string|null}>,
- *   startPolling: (loteId: string) => void,
- *   stopPolling: () => void
- * }}
- */
 export function useLotes() {
   const [lotes, setLotes] = useState([]);
   const [loadingLotes, setLoadingLotes] = useState(false);
@@ -64,9 +39,6 @@ export function useLotes() {
     };
   }, []);
 
-  /**
-   * Load all lotes for the history view.
-   */
   const refreshLotes = useCallback(async () => {
     setLoadingLotes(true);
     try {
@@ -80,10 +52,6 @@ export function useLotes() {
     }
   }, []);
 
-  /**
-   * Load detail for a specific lote (drill-down view).
-   * @param {string} loteId
-   */
   const loadLoteDetalle = useCallback(async (loteId) => {
     setLoadingDetalle(true);
     try {
@@ -104,11 +72,8 @@ export function useLotes() {
     }
   }, []);
 
-  /**
-   * Start polling a lote's progress every 10 seconds.
-   * Uses isFetching guard to prevent concurrent poll requests from stacking.
-   * @param {string} loteId
-   */
+  // Poll a lote's progress every 10s; isFetching guard prevents concurrent requests
+
   const startPolling = useCallback(
     (loteId) => {
       if (pollingRef.current) {
@@ -151,9 +116,6 @@ export function useLotes() {
     [],
   );
 
-  /**
-   * Stop polling.
-   */
   const stopPolling = useCallback(() => {
     if (pollingRef.current) {
       clearInterval(pollingRef.current);
@@ -161,13 +123,6 @@ export function useLotes() {
     }
   }, []);
 
-  /**
-   * Create a new lote and trigger processing.
-   * Uses ref to prevent double-click (fixes stale closure).
-   * @param {object} loteHeader - { tipo, mensaje_plantilla, plantilla_id, filtros_aplicados }
-   * @param {object[]} destinatarios - Array of { cliente_nombre, cliente_nit, telefono, mensaje_personalizado, facturas_ids }
-   * @returns {Promise<{success: boolean, loteId: string|null, error: string|null}>}
-   */
   const createAndSendLote = useCallback(
     async (loteHeader, destinatarios) => {
       // Use ref to avoid stale closure on creatingLote state
@@ -249,11 +204,6 @@ export function useLotes() {
     [startPolling, refreshLotes],
   );
 
-  /**
-   * Retry failed messages in a lote.
-   * @param {string} loteId
-   * @returns {Promise<{success: boolean, error: string|null}>}
-   */
   const handleRetryFailed = useCallback(
     async (loteId) => {
       try {
@@ -271,11 +221,6 @@ export function useLotes() {
     [startPolling],
   );
 
-  /**
-   * Cancel a pending/in-process lote.
-   * @param {string} loteId
-   * @returns {Promise<{success: boolean, error: string|null}>}
-   */
   const handleCancelLote = useCallback(
     async (loteId) => {
       try {

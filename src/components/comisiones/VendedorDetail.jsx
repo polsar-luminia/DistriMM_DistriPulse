@@ -1,8 +1,3 @@
-/**
- * @fileoverview Vendedor expanded detail row — shows commission breakdown per salesperson.
- * @module components/comisiones/VendedorDetail
- */
-
 import React, { useMemo } from "react";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";

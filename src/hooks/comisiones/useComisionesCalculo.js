@@ -1,9 +1,3 @@
-/**
- * @fileoverview Hook for commission calculation and monthly report generation.
- * Receives selectedCargaId, catalogo, and exclusiones as parameters to avoid stale closures.
- * @module hooks/comisiones/useComisionesCalculo
- */
-
 import { useState, useEffect, useCallback } from "react";
 import { calcularComisionesCompletas } from "../../utils/comisionesCalculator";
 import {
@@ -17,23 +11,6 @@ import {
 } from "../../services/comisionesService";
 import { buildExclusionLookups, getExclusionInfo } from "./utils";
 
-/**
- * Gestiona el calculo de comisiones y el reporte mensual.
- * @param {string|null} selectedCargaId - ID de la carga seleccionada
- * @param {Array} catalogo - Catalogo de productos (para exclusiones en reporte)
- * @param {Array} exclusiones - Reglas de exclusion activas (para reporte)
- * @returns {{
- *   comisiones: Array,
- *   loadingComisiones: boolean,
- *   totals: Object,
- *   ventasDetail: Array,
- *   loadingVentas: boolean,
- *   fetchComisiones: (cargaId: string) => Promise<void>,
- *   reporteMensual: Object|null,
- *   loadingReporte: boolean,
- *   generarReporteMensual: (year: number, month: number) => Promise<void>
- * }}
- */
 export function useComisionesCalculo(selectedCargaId, catalogo, exclusiones) {
   const [comisiones, setComisiones] = useState([]);
   const [loadingComisiones, setLoadingComisiones] = useState(false);

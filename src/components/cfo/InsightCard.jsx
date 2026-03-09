@@ -1,9 +1,3 @@
-/**
- * Key insight display card with type-based icon and color.
- * Supports POSITIVO, NEGATIVO, NEUTRAL, and ALERTA insight types.
- * @module components/cfo/InsightCard
- */
-
 import { cn } from "@/lib/utils";
 import { TrendingUp, TrendingDown, Activity, AlertTriangle } from "lucide-react";
 
@@ -14,9 +8,6 @@ const TYPE_ICONS = {
   ALERTA: { icon: AlertTriangle, color: "text-amber-600", bg: "bg-amber-50" },
 };
 
-/**
- * @param {{ insight: { titulo?: string, insight?: string, tipo?: string, detalle?: string } }} props
- */
 export default function InsightCard({ insight }) {
   const cfg = TYPE_ICONS[insight.tipo] || TYPE_ICONS.NEUTRAL;
 

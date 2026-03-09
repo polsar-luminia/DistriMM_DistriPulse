@@ -18,7 +18,6 @@ const COLORS = {
   slate: "#94a3b8",
 };
 
-/* ─── Section heading component ─── */
 const SectionTitle = ({ icon: Icon, iconColor, children }) => (
   <div className="flex items-center gap-2.5 mb-5">
     <div className={cn("p-1.5 rounded-lg", iconColor)}>
@@ -28,7 +27,6 @@ const SectionTitle = ({ icon: Icon, iconColor, children }) => (
   </div>
 );
 
-/* ─── Mini metric for advanced strip ─── */
 const MetricCard = ({ icon: Icon, label, value, accent, hint, onClick, tooltip }) => (
   <Card
     className={cn("relative group", !tooltip && "overflow-hidden", onClick && "cursor-pointer")}

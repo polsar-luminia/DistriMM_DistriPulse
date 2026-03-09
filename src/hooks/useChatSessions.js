@@ -1,9 +1,3 @@
-/**
- * @fileoverview Chat Sessions Hook - State management for DistriBot conversation persistence.
- * Manages session CRUD, message loading, search, and auto-titling.
- * @module hooks/useChatSessions
- */
-
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
   getChatSessions,
@@ -15,11 +9,6 @@ import {
   searchChatSessions,
 } from "../services/chatSessionService";
 
-/**
- * Transforms DB message rows into the format expected by ChatbotPage.
- * @param {Array} dbMessages - Raw rows from distrimm_chat_messages
- * @returns {Array} Messages in { id, role, content, timestamp, isError } format
- */
 function transformMessages(dbMessages) {
   return dbMessages.map((m) => ({
     id: m.id,
@@ -30,28 +19,6 @@ function transformMessages(dbMessages) {
   }));
 }
 
-/**
- * Hook for managing DistriBot chat session persistence.
- * Handles session CRUD, message loading/persisting, search with debounce, and auto-titling.
- *
- * @param {string|null} userId - Current user's UUID from AuthContext
- * @returns {{
- *   sessions: Array<{id: string, session_id: string, title: string, created_at: string}>,
- *   activeSession: Object|null,
- *   setActiveSession: Function,
- *   loadingSessions: boolean,
- *   loadingMessages: boolean,
- *   searchQuery: string,
- *   setSearchQuery: Function,
- *   searchResults: Array|null,
- *   startNewSession: () => Promise<string|null>,
- *   loadSession: (session: Object) => Promise<Array>,
- *   persistMessage: (role: string, content: string, isError?: boolean) => Promise<void>,
- *   autoTitle: (firstUserMessage: string) => Promise<void>,
- *   removeSession: (sessionId: string) => Promise<boolean>,
- *   refreshSessions: () => Promise<void>,
- * }}
- */
 export function useChatSessions(userId) {
   const [sessions, setSessions] = useState([]);
   const [activeSession, setActiveSession] = useState(null);

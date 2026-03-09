@@ -1,10 +1,3 @@
-/**
- * @fileoverview DistriBot CFO Chat Page
- * Interactive chat interface with the AI-powered CFO assistant for cartera analysis.
- * Includes persistent conversation history with sidebar for session management.
- * @module pages/ChatbotPage
- */
-
 import { useState, useRef, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import {
@@ -31,10 +24,6 @@ import ChatSidebar from "../components/chatbot/ChatSidebar";
 import ChatMessage from "../components/chatbot/ChatMessage";
 import ChatInput from "../components/chatbot/ChatInput";
 
-// ============================================================================
-// CONSTANTS
-// ============================================================================
-
 const WELCOME_CONTENT =
   "Hola! Soy **DistriBot**, tu asesor CFO virtual experto en cartera. Consulto los datos en tiempo real. Puedo ayudarte con:\n\n" +
   "- **Resumen general** — cartera total, vencida vs vigente, % morosidad\n" +
@@ -51,10 +40,6 @@ const createWelcomeMessage = () => ({
   content: WELCOME_CONTENT,
   timestamp: new Date(),
 });
-
-// ============================================================================
-// SMALL INLINE COMPONENTS
-// ============================================================================
 
 const TypingIndicator = () => (
   <div className="flex gap-2.5 items-start">
@@ -110,10 +95,6 @@ const ScrollToBottomButton = ({ onClick, visible }) => {
   );
 };
 
-// ============================================================================
-// MAIN CHATBOT PAGE
-// ============================================================================
-
 export default function ChatbotPage() {
   const { user } = useAuth();
   const [confirmProps, confirm] = useConfirm();
@@ -147,7 +128,6 @@ export default function ChatbotPage() {
 
   const suggestions = getSuggestedQuestions();
 
-  // ─── Auto-scroll ───
   const scrollToBottom = useCallback((behavior = "smooth") => {
     messagesEndRef.current?.scrollIntoView({ behavior });
   }, []);
@@ -156,7 +136,6 @@ export default function ChatbotPage() {
     scrollToBottom();
   }, [messages, isLoading, scrollToBottom]);
 
-  // ─── Scroll detection ───
   const handleScroll = useCallback(() => {
     const container = chatContainerRef.current;
     if (!container) return;
@@ -165,14 +144,12 @@ export default function ChatbotPage() {
     setShowScrollButton(!isNearBottom);
   }, []);
 
-  // ─── Track first message per session ───
   useEffect(() => {
     const userMessageCount = messages.filter((m) => m.role === "user").length;
     isFirstMessageRef.current = userMessageCount === 0;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSession]);
 
-  // ─── Send message ───
   const handleSend = useCallback(
     async (messageText) => {
       const text = (messageText || inputValue).trim();
@@ -272,7 +249,6 @@ export default function ChatbotPage() {
     [inputValue, isLoading, sessionId, activeSession, startNewSession, autoTitle, persistMessage]
   );
 
-  // ─── New conversation ───
   const handleNewConversation = useCallback(async () => {
     const oldSessionId = sessionId;
     const newId = await startNewSession();
@@ -292,7 +268,6 @@ export default function ChatbotPage() {
     }
   }, [sessionId, startNewSession]);
 
-  // ─── Load existing session ───
   const handleSelectSession = useCallback(
     async (session) => {
       if (session.session_id === activeSession?.session_id) {
@@ -311,7 +286,6 @@ export default function ChatbotPage() {
     [activeSession, loadSession, scrollToBottom]
   );
 
-  // ─── Delete session ───
   const handleDeleteSession = useCallback(
     async (sessionIdToDelete) => {
       const ok = await confirm({
@@ -335,7 +309,6 @@ export default function ChatbotPage() {
     [removeSession, sessionId, confirm]
   );
 
-  // ─── Retry last message ───
   const handleRetry = useCallback(() => {
     const lastUserMsg = [...messages].reverse().find((m) => m.role === "user");
     if (lastUserMsg) {
@@ -356,7 +329,7 @@ export default function ChatbotPage() {
 
   return (
     <div className="flex h-[calc(100vh-8rem)] max-h-[900px]">
-      {/* ─── Desktop Sidebar ─── */}
+      {/* Desktop Sidebar */}
       <div
         className={cn("hidden md:flex flex-col bg-white border border-slate-200 rounded-l-xl shrink-0 transition-all duration-200 overflow-hidden",
           sidebarOpen ? "w-72" : "w-0 border-0"
@@ -377,7 +350,7 @@ export default function ChatbotPage() {
         )}
       </div>
 
-      {/* ─── Mobile Sidebar Overlay ─── */}
+      {/* Mobile Sidebar Overlay */}
       {mobileSidebarOpen && (
         <>
           <div
@@ -409,9 +382,9 @@ export default function ChatbotPage() {
         </>
       )}
 
-      {/* ─── Chat Area ─── */}
+      {/* Chat Area */}
       <div className={cn("flex-1 flex flex-col min-w-0", !sidebarOpen && "rounded-l-xl")}>
-        {/* ─── Header ─── */}
+        {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 bg-white border border-slate-200 rounded-tr-xl">
           <div className="flex items-center gap-3">
             {/* Sidebar toggle (desktop) */}
@@ -465,7 +438,7 @@ export default function ChatbotPage() {
           </div>
         </div>
 
-        {/* ─── Messages Area ─── */}
+        {/* Messages Area */}
         <div
           ref={chatContainerRef}
           onScroll={handleScroll}
@@ -506,7 +479,7 @@ export default function ChatbotPage() {
           )}
         </div>
 
-        {/* ─── Suggestions (only when chat is fresh) ─── */}
+        {/* Suggestions (only when chat is fresh) */}
         {hasOnlyWelcome && !isLoading && (
           <div className="px-4 py-3 bg-slate-50/80 border-x border-slate-200">
             <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-2 text-center">
@@ -516,7 +489,7 @@ export default function ChatbotPage() {
           </div>
         )}
 
-        {/* ─── Input Area ─── */}
+        {/* Input Area */}
         <ChatInput
           value={inputValue}
           onChange={setInputValue}

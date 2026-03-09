@@ -1,12 +1,4 @@
-﻿/**
- * @fileoverview Professional PDF and Excel report generation for the Cartera module.
- * Generates reports grouped by municipio or vendedor,
- * cross-referencing cartera_items with clientes data.
- * Uses jsPDF + jspdf-autotable for landscape A4 and xlsx for Excel.
- * @module utils/reporteCartera
- */
-
-import * as XLSX from "xlsx-js-style";
+﻿import * as XLSX from "xlsx-js-style";
 
 // ── Color palette ──
 const C = {
@@ -29,7 +21,6 @@ const C = {
 
 // ── Formatters ──
 
-/** @param {number} v */
 const $f = (v) => {
   if (v == null || isNaN(v)) return "$0";
   return new Intl.NumberFormat("es-CO", {
@@ -39,19 +30,16 @@ const $f = (v) => {
   }).format(v);
 };
 
-/** @param {number} v */
 const pf = (v) => {
   if (v == null || isNaN(v)) return "0,0%";
   return v.toFixed(1).replace(".", ",") + "%";
 };
 
-/** @param {number} v */
 const ni = (v) => {
   if (v == null || isNaN(v)) return "0";
   return Math.round(v).toLocaleString("es-CO");
 };
 
-/** @param {string} dateStr */
 const fmtDate = (dateStr) => {
   if (!dateStr) return "—";
   const d = new Date(`${dateStr}T12:00:00`);
@@ -90,12 +78,6 @@ const tableDefaults = {
 
 // ── Grouping logic ──
 
-/**
- * Groups enriched items and computes per-group metrics.
- * @param {Array} items - Enriched cartera items
- * @param {"vendedor"|"municipio"} groupBy
- * @returns {Array<Object>} Sorted by carteraTotal descending
- */
 function buildGroups(items, groupBy) {
   const map = {};
   for (const item of items) {
@@ -150,11 +132,6 @@ function buildGroups(items, groupBy) {
     .sort((a, b) => b.carteraTotal - a.carteraTotal);
 }
 
-/**
- * Global summary across all items.
- * @param {Array} items
- * @returns {Object}
- */
 function computeGlobalSummary(items) {
   const carteraTotal = items.reduce(
     (s, i) => s + Number(i.valor_saldo || 0),
@@ -173,7 +150,6 @@ function computeGlobalSummary(items) {
   };
 }
 
-/** Build filename for cartera reports. */
 function buildFilename(groupBy, status, ext) {
   const d = new Date();
   const yyyy = d.getFullYear();
@@ -188,12 +164,6 @@ function statusLabel(status) {
   return "Toda la Cartera";
 }
 
-/**
- * Aggregate items by unique client (NIT) for the detail section.
- * Groups invoices per client and computes per-client totals.
- * @param {Array} items
- * @returns {Array<Object>} Sorted by saldoTotal descending
- */
 function aggregateByClient(items) {
   const map = {};
   for (const item of items) {
@@ -226,17 +196,6 @@ function aggregateByClient(items) {
   return Object.values(map).sort((a, b) => b.saldoTotal - a.saldoTotal);
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// PDF GENERATION
-// ═══════════════════════════════════════════════════════════════════════════
-
-/**
- * Generates a PDF cartera report.
- * @param {Object} params
- * @param {Array} params.items - Pre-filtered, enriched cartera items
- * @param {"vendedor"|"municipio"} params.groupBy
- * @param {Object} params.filters - { status, groupBy, selectedVendedores, selectedMunicipios }
- */
 export async function generarCarteraPDF({ items, groupBy, filters }) {
   const { default: jsPDF } = await import("jspdf");
   const { default: autoTable } = await import("jspdf-autotable");
@@ -247,10 +206,6 @@ export async function generarCarteraPDF({ items, groupBy, filters }) {
   const groups = buildGroups(items, groupBy);
   const summary = computeGlobalSummary(items);
   const groupLabel = groupBy === "vendedor" ? "Vendedor" : "Municipio";
-
-  // ════════════════════════════════════════════════════════════════════════
-  // PAGE 1 — COVER
-  // ════════════════════════════════════════════════════════════════════════
 
   const cx = pageW / 2;
 
@@ -352,10 +307,6 @@ export async function generarCarteraPDF({ items, groupBy, filters }) {
   doc.setTextColor(...C.slate);
   doc.text(`Generado: ${genDate}`, cx, pageH - 18, { align: "center" });
 
-  // ════════════════════════════════════════════════════════════════════════
-  // PAGE 2 — SUMMARY TABLE (with % Participación)
-  // ════════════════════════════════════════════════════════════════════════
-
   if (groups.length > 0) {
     doc.addPage();
     let y = 18;
@@ -450,10 +401,6 @@ export async function generarCarteraPDF({ items, groupBy, filters }) {
       },
     });
   }
-
-  // ════════════════════════════════════════════════════════════════════════
-  // PAGES 3+ — DETAIL PER GROUP (client summary + per-client invoices)
-  // ════════════════════════════════════════════════════════════════════════
 
   groups.forEach((group) => {
     doc.addPage();
@@ -563,10 +510,6 @@ export async function generarCarteraPDF({ items, groupBy, filters }) {
         }
       },
     });
-
-    // ════════════════════════════════════════════════════════════════════
-    // INVOICE DETAIL PER CLIENT (always rendered, new pages as needed)
-    // ════════════════════════════════════════════════════════════════════
 
     y = doc.lastAutoTable.finalY + 8;
 
@@ -696,10 +639,6 @@ export async function generarCarteraPDF({ items, groupBy, filters }) {
     });
   });
 
-  // ════════════════════════════════════════════════════════════════════════
-  // FOOTER — Page numbers on all pages
-  // ════════════════════════════════════════════════════════════════════════
-
   const totalPages = doc.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
@@ -716,18 +655,6 @@ export async function generarCarteraPDF({ items, groupBy, filters }) {
   doc.save(buildFilename(groupBy, filters.status, "pdf"));
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// EXCEL GENERATION
-// ═══════════════════════════════════════════════════════════════════════════
-
-/**
- * Generates an Excel workbook with summary and detail sheets,
- * including full client data cross-referenced from clientes.
- * @param {Object} params
- * @param {Array} params.items - Pre-filtered, enriched cartera items
- * @param {"vendedor"|"municipio"} params.groupBy
- * @param {Object} params.filters
- */
 export function generarCarteraExcel({ items, groupBy, filters }) {
   const groups = buildGroups(items, groupBy);
   const summary = computeGlobalSummary(items);

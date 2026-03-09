@@ -1,16 +1,7 @@
-/**
- * Expandable/collapsible card section with icon and title.
- * Uses the children pattern for flexible content composition.
- * @module components/cfo/CollapsibleSection
- */
-
 import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Card } from "../dashboard/DashboardShared";
 
-/**
- * @param {{ title: string, icon: import("lucide-react").LucideIcon, children: React.ReactNode, defaultOpen?: boolean }} props
- */
 export default function CollapsibleSection({
   title,
   icon: Icon,

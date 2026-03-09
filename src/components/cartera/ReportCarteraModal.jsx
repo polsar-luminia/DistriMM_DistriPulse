@@ -1,9 +1,3 @@
-/**
- * @fileoverview Modal for generating filtered cartera reports (PDF/Excel).
- * Enriches cartera_items with distrimm_clientes data (phone, address, barrio, municipio).
- * @module components/cartera/ReportCarteraModal
- */
-
 import React, { useState, useMemo } from "react";
 import { X, FileText, FileSpreadsheet, Filter, Loader2 } from "lucide-react";
 import { sileo } from "sileo";

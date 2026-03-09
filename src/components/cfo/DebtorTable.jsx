@@ -1,15 +1,6 @@
-/**
- * Top debtors ranking table for the CFO dashboard.
- * Displays client name, debt amount, overdue days, and optional risk badge.
- * @module components/cfo/DebtorTable
- */
-
 import { cn } from "@/lib/utils";
 import { displayCurrency, getSemaphore } from "./cfoUtils";
 
-/**
- * @param {{ deudores: Array<{ posicion?: number, cliente?: string, nombre?: string, deuda_total?: number|string, saldo?: number|string, valor_saldo?: number|string, max_mora_dias?: number, dias_mora?: number, dias?: number, semaforo?: string, riesgo?: string }> }} props
- */
 export default function DebtorTable({ deudores }) {
   if (!deudores || deudores.length === 0) return null;
 

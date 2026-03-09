@@ -1,19 +1,5 @@
-/**
- * @fileoverview Portfolio Service - Centralized Supabase operations for portfolio data.
- * Implements the Data Access Layer following Clean Architecture principles.
- * @module services/portfolioService
- */
-
 import { supabase, fetchAllRows } from "../lib/supabase";
 
-// ============================================================================
-// LOAD OPERATIONS
-// ============================================================================
-
-/**
- * Fetches all available loads (time-travel options) ordered by cutoff date (most recent first).
- * @returns {Promise<{data: Array|null, error: Error|null}>}
- */
 export const getLoads = async () => {
   try {
     const { data, error } = await supabase
@@ -29,10 +15,6 @@ export const getLoads = async () => {
   }
 };
 
-/**
- * Deletes a load and all its associated items (cascade delete configured in DB).
- * @returns {Promise<{success: boolean, error: Error|null}>}
- */
 export const deleteLoad = async (loadId) => {
   try {
     const { error } = await supabase
@@ -48,14 +30,6 @@ export const deleteLoad = async (loadId) => {
   }
 };
 
-// ============================================================================
-// PORTFOLIO ITEM OPERATIONS
-// ============================================================================
-
-/**
- * Fetches all portfolio items for a specific load.
- * @returns {Promise<{data: Array|null, error: Error|null}>}
- */
 export const getPortfolioItems = async (loadId) => {
   try {
     const data = await fetchAllRows((from, to) =>
@@ -72,10 +46,6 @@ export const getPortfolioItems = async (loadId) => {
   }
 };
 
-/**
- * Fetches only the valor_saldo column for a load (used for trend calculations).
- * @returns {Promise<{data: Array|null, error: Error|null}>}
- */
 export const getPortfolioSummary = async (loadId) => {
   try {
     const data = await fetchAllRows((from, to) =>
@@ -95,14 +65,6 @@ export const getPortfolioSummary = async (loadId) => {
   }
 };
 
-// ============================================================================
-// REMINDER OPERATIONS
-// ============================================================================
-
-/**
- * Marks multiple invoices as having a reminder sent.
- * @returns {Promise<{success: boolean, timestamp: string|null, error: Error|null}>}
- */
 export const markRemindersAsSent = async (invoiceIds) => {
   if (!invoiceIds || invoiceIds.length === 0) {
     return {
@@ -128,14 +90,6 @@ export const markRemindersAsSent = async (invoiceIds) => {
   }
 };
 
-// ============================================================================
-// UPLOAD / CONNECTION OPERATIONS
-// ============================================================================
-
-/**
- * Tests the Supabase connection by performing a simple count query.
- * @returns {Promise<{connected: boolean, error: Error|null}>}
- */
 export const testConnection = async () => {
   try {
     const { error } = await supabase
@@ -150,10 +104,6 @@ export const testConnection = async () => {
   }
 };
 
-/**
- * Rolls back a failed upload by deleting the created load record.
- * @returns {Promise<void>}
- */
 export const rollbackUpload = async (loadId) => {
   try {
     await supabase.from("historial_cargas").delete().eq("id", loadId);
@@ -162,14 +112,6 @@ export const rollbackUpload = async (loadId) => {
   }
 };
 
-// ============================================================================
-// CLIENTES (MASTER DATA) OPERATIONS
-// ============================================================================
-
-/**
- * Fetches all clients from distrimm_clientes.
- * @returns {Promise<{data: Array|null, error: Error|null}>}
- */
 export const getClientes = async () => {
   try {
     const data = await fetchAllRows((from, to) =>
@@ -186,10 +128,6 @@ export const getClientes = async () => {
   }
 };
 
-/**
- * Fetches a single client by NIT.
- * @returns {Promise<{data: Object|null, error: Error|null}>}
- */
 export const getClienteByNit = async (nit) => {
   try {
     const { data, error } = await supabase
@@ -206,10 +144,6 @@ export const getClienteByNit = async (nit) => {
   }
 };
 
-/**
- * Gets client count.
- * @returns {Promise<{count: number, error: Error|null}>}
- */
 export const getClientesCount = async () => {
   try {
     const { count, error } = await supabase
@@ -224,10 +158,6 @@ export const getClientesCount = async () => {
   }
 };
 
-/**
- * Gets clients grouped by municipio with counts.
- * @returns {Promise<{data: Array|null, error: Error|null}>}
- */
 export const getClientesByMunicipio = async () => {
   try {
     const data = await fetchAllRows((from, to) =>
@@ -255,14 +185,6 @@ export const getClientesByMunicipio = async () => {
   }
 };
 
-// ============================================================================
-// VENDEDORES OPERATIONS
-// ============================================================================
-
-/**
- * Fetches all vendedores.
- * @returns {Promise<{data: Array|null, error: Error|null}>}
- */
 export const getVendedores = async () => {
   try {
     const { data, error } = await supabase
@@ -278,10 +200,6 @@ export const getVendedores = async () => {
   }
 };
 
-/**
- * Updates a vendedor's name.
- * @returns {Promise<{success: boolean, error: Error|null}>}
- */
 export const updateVendedorName = async (codigo, nombre) => {
   try {
     const { error } = await supabase
@@ -297,15 +215,6 @@ export const updateVendedorName = async (codigo, nombre) => {
   }
 };
 
-// ============================================================================
-// CREDIT SCORE
-// ============================================================================
-
-/**
- * Calculates the internal credit score for a client by NIT.
- * Calls the fn_calcular_credit_score Supabase RPC function.
- * @returns {Promise<{data: Object|null, error: Error|null}>}
- */
 export const getClientCreditScore = async (nit) => {
   if (!nit) return { data: null, error: new Error("NIT is required") };
   try {
@@ -321,11 +230,8 @@ export const getClientCreditScore = async (nit) => {
 };
 
 
-/**
- * Calculates the v2 credit score (8 variables, 3 dimensions, configurable).
- * Falls back to v1 if the RPC doesn't exist yet.
- * @returns {Promise<{data: Object|null, error: Error|string|null}>}
- */
+// v2 credit score: 8 variables, 3 dimensions, configurable weights
+
 export const getClientCreditScoreV2 = async (nit) => {
   if (!nit) return { data: null, error: new Error("NIT is required") };
   try {
@@ -350,10 +256,6 @@ export const getClientCreditScoreV2 = async (nit) => {
   }
 };
 
-/**
- * Fetches cartera items by an explicit list of IDs.
- * @returns {Promise<{data: Array|null, error: Error|null}>}
- */
 export const getInvoicesByIds = async (ids) => {
   if (!ids || ids.length === 0) return { data: [], error: null };
   try {
@@ -370,14 +272,6 @@ export const getInvoicesByIds = async (ids) => {
   }
 };
 
-// ============================================================================
-// CONFIG
-// ============================================================================
-
-/**
- * Fetches global app config (single row, id=1).
- * @returns {Promise<{data: Object|null, error: Error|null}>}
- */
 export const getConfig = async () => {
   try {
     const { data, error } = await supabase
@@ -393,11 +287,6 @@ export const getConfig = async () => {
   }
 };
 
-/**
- * Updates global app config.
- * @param {{ max_plazo_dias: number }} updates
- * @returns {Promise<{data: Object|null, error: Error|null}>}
- */
 export const updateConfig = async (updates) => {
   try {
     const { data, error } = await supabase
@@ -413,10 +302,6 @@ export const updateConfig = async (updates) => {
   }
 };
 
-/**
- * Fetches the score_config JSONB from distrimm_config.
- * @returns {Promise<{data: Object|null, error: Error|null}>}
- */
 export const getScoreConfig = async () => {
   try {
     const { data, error } = await supabase
@@ -432,11 +317,6 @@ export const getScoreConfig = async () => {
   }
 };
 
-/**
- * Updates only the score_config JSONB in distrimm_config.
- * @param {object} scoreConfig - Full score configuration object
- * @returns {Promise<{error: Error|null}>}
- */
 export const updateScoreConfig = async (scoreConfig) => {
   try {
     const { error } = await supabase

@@ -1,9 +1,3 @@
-/**
- * Horizontal stacked bar chart for aging distribution buckets.
- * Each bucket represents a time range with proportional width and color.
- * @module components/cfo/AgingBar
- */
-
 import { cn } from "@/lib/utils";
 import { parseNumericValue, displayCurrency } from "./cfoUtils";
 
@@ -19,9 +13,6 @@ const BAR_COLORS = [
 
 const MIN_VISIBLE_PCT = 0.5;
 
-/**
- * @param {{ buckets: Array<{ rango?: string, label?: string, valor?: number|string, monto?: number|string }> }} props
- */
 export default function AgingBar({ buckets }) {
   if (!buckets || buckets.length === 0) return null;
 

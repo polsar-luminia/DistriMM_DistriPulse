@@ -1,20 +1,5 @@
-/**
- * @fileoverview Pure calculation functions extracted from usePortfolioAnalytics.
- * Each function is pure: no side effects, no React state access, no mutation of inputs.
- * @module utils/portfolioCalculations
- */
-
 import { AGING_BUCKETS, THRESHOLDS } from "./constants";
 
-// ============================================================================
-// PREPROCESSING
-// ============================================================================
-
-/**
- * Enriches raw items with computed days_until_due.
- * @param {Array} items - Raw portfolio items from Supabase
- * @returns {Array} Items with days_until_due added
- */
 export function preprocessItems(items) {
     const today = new Date();
     const tDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
@@ -39,29 +24,11 @@ export function preprocessItems(items) {
     });
 }
 
-// ============================================================================
-// HELPERS
-// ============================================================================
-
-/**
- * Rounds a COP monetary value to the nearest whole peso.
- * Prevents floating-point accumulation errors in client-side aggregations.
- * @param {number} n
- * @returns {number}
- */
+// Prevents floating-point accumulation errors in client-side aggregations.
 function roundCOP(n) {
     return Math.round(n || 0);
 }
 
-// ============================================================================
-// KPIs
-// ============================================================================
-
-/**
- * Calculates main portfolio KPIs including unrecoverable debt.
- * @param {Array} items - Processed portfolio items
- * @returns {{ total: number, vencida: number, porVencer: number, porcentajeVencida: number, vencidaItems: Array, unrecoverableTotal: number }}
- */
 export function calculateKPIs(items) {
     const total = roundCOP(items.reduce((sum, item) => sum + (item.valor_saldo || 0), 0));
     const vencidaItems = items.filter(i => (i.dias_mora || 0) > 0);
@@ -78,15 +45,6 @@ export function calculateKPIs(items) {
     return { total, vencida, porVencer, porcentajeVencida, vencidaItems, unrecoverableTotal };
 }
 
-// ============================================================================
-// CLIENT MAP & PARETO
-// ============================================================================
-
-/**
- * Builds aggregated client map from portfolio items.
- * @param {Array} items - Processed portfolio items
- * @returns {{ clientMap: Object, sortedClients: Array, uniqueClientsCount: number }}
- */
 export function buildClientMap(items) {
     const clientMap = {};
     items.forEach(item => {
@@ -115,13 +73,6 @@ export function buildClientMap(items) {
     return { clientMap, sortedClients, uniqueClientsCount };
 }
 
-/**
- * Calculates Pareto (80/20) percentage from sorted clients.
- * @param {Array} sortedClients - Clients sorted by debt descending
- * @param {number} totalCartera - Total portfolio value
- * @param {number} uniqueClientsCount - Total unique clients
- * @returns {number} Percentage of clients representing 80% of debt
- */
 export function calculatePareto(sortedClients, totalCartera, uniqueClientsCount) {
     let accumulatedDebt = 0;
     let paretoClientsCount = 0;
@@ -133,15 +84,6 @@ export function calculatePareto(sortedClients, totalCartera, uniqueClientsCount)
     return uniqueClientsCount > 0 ? (paretoClientsCount / uniqueClientsCount) * 100 : 0;
 }
 
-// ============================================================================
-// AGING
-// ============================================================================
-
-/**
- * Calculates aging distribution across standard buckets.
- * @param {Array} items - Processed portfolio items
- * @returns {Array<{ name: string, value: number, color: string, percent: string|number }>}
- */
 export function calculateAging(items) {
     const buckets = {};
     AGING_BUCKETS.forEach(b => {
@@ -168,15 +110,6 @@ export function calculateAging(items) {
     }));
 }
 
-// ============================================================================
-// PROJECTION
-// ============================================================================
-
-/**
- * Calculates receivable projection for the next 30 days.
- * @param {Array} items - Processed portfolio items
- * @returns {Array<{ date: string, total: number }>}
- */
 export function calculateProjection(items) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -208,16 +141,6 @@ export function calculateProjection(items) {
     return Object.keys(projectionMap).sort().map(date => ({ date, total: projectionMap[date] }));
 }
 
-// ============================================================================
-// LISTS
-// ============================================================================
-
-/**
- * Builds urgent, aggregated, and upcoming lists.
- * @param {Array} items - Processed portfolio items
- * @param {Object} clientMap - Client aggregation map from buildClientMap
- * @returns {{ urgentItems: Array, aggregatedClients: Array, upcomingItems: Array }}
- */
 export function buildLists(items, clientMap) {
     const urgentItems = Object.values(clientMap)
         .filter(c => c.maxMora > THRESHOLDS.HIGH_RISK_DAYS)
@@ -246,15 +169,6 @@ export function buildLists(items, clientMap) {
     return { urgentItems, aggregatedClients, upcomingItems };
 }
 
-// ============================================================================
-// RADAR
-// ============================================================================
-
-/**
- * Builds radar chart data from top overdue clients.
- * @param {Array} sortedClients - Clients sorted by debt descending
- * @returns {Array}
- */
 export function buildRadarData(sortedClients) {
     const radarSubset = sortedClients
         .filter(c => c.maxMora > 0)
@@ -274,15 +188,6 @@ export function buildRadarData(sortedClients) {
     }));
 }
 
-// ============================================================================
-// TOP OLDEST
-// ============================================================================
-
-/**
- * Returns the 10 oldest overdue items.
- * @param {Array} items - Processed portfolio items
- * @returns {Array}
- */
 export function buildTopOldest(items) {
     return [...items]
         .sort((a, b) => (b.dias_mora || 0) - (a.dias_mora || 0))
@@ -297,22 +202,10 @@ export function buildTopOldest(items) {
         });
 }
 
-// ============================================================================
-// ADVANCED ANALYTICS
-// ============================================================================
-
-/** HHI risk-level thresholds (US DOJ/FTC standard) */
+// HHI risk-level thresholds (US DOJ/FTC standard)
 const HHI_THRESHOLDS = { HIGH: 2500, MODERATE: 1500 };
 
-/**
- * Calculates weighted average days overdue (mora ponderada).
- * Only considers items with dias_mora > 0; weight = valor_saldo.
- *
- * Formula: SUM(dias_mora * valor_saldo) / SUM(valor_saldo)
- *
- * @param {Array<{ dias_mora?: number, valor_saldo?: number }>} items - Processed portfolio items
- * @returns {number} Weighted average days overdue (0 if no overdue items or zero balance)
- */
+// Formula: SUM(dias_mora * valor_saldo) / SUM(valor_saldo)
 export function calculateMoraPonderada(items) {
     let weightedSum = 0;
     let totalBalance = 0;
@@ -329,16 +222,7 @@ export function calculateMoraPonderada(items) {
     return totalBalance > 0 ? Math.round(weightedSum / totalBalance * 100) / 100 : 0;
 }
 
-/**
- * Calculates Herfindahl-Hirschman Index (HHI) for client concentration risk.
- * Also returns the top-3 clients' combined share as a percentage.
- *
- * Formula: SUM((client.deuda / totalCartera * 100)^2) for each client
- *
- * @param {Array<{ deuda: number }>} sortedClients - Clients sorted by debt descending (from buildClientMap)
- * @param {number} totalCartera - Total portfolio value
- * @returns {{ hhi: number, top3Pct: number, riskLevel: 'Bajo'|'Moderado'|'Alto' }}
- */
+// HHI: SUM((client.deuda / totalCartera * 100)^2) for each client
 export function calculateHHI(sortedClients, totalCartera) {
     if (!sortedClients.length || totalCartera <= 0) {
         return { hhi: 0, top3Pct: 0, riskLevel: "Bajo" };
@@ -368,15 +252,6 @@ export function calculateHHI(sortedClients, totalCartera) {
     return { hhi, top3Pct, riskLevel };
 }
 
-// ============================================================================
-// VENDEDOR ANALYTICS
-// ============================================================================
-
-/**
- * Builds vendor performance statistics.
- * @param {Array} items - Processed portfolio items
- * @returns {{ vendedorStats: Array, uniqueVendedores: Array }}
- */
 export function buildVendedorStats(items) {
     const vendedorMap = {};
     items.forEach(item => {

@@ -1,9 +1,3 @@
-/**
- * @fileoverview Chat message bubble — user vs assistant styling with markdown rendering.
- * Extracted from ChatbotPage for readability.
- * @module components/chatbot/ChatMessage
- */
-
 import { lazy, Suspense } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
@@ -65,10 +59,6 @@ const markdownComponents = {
   pre: ({ children }) => <>{children}</>,
 };
 
-/**
- * @param {object} props
- * @param {object} props.message - Message object { id, role, content, timestamp, isError? }
- */
 export default function ChatMessage({ message }) {
   const isUser = message.role === "user";
   const isError = message.isError;

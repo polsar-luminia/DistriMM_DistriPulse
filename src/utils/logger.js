@@ -1,7 +1,3 @@
-/**
- * Development-only logger. All methods are no-ops in production.
- * @module utils/logger
- */
 const isDev = import.meta.env.DEV;
 
 export const logger = {

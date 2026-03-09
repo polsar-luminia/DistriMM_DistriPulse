@@ -1,9 +1,3 @@
-/**
- * @fileoverview Upload modal for "Comisiones x Cartera" (recibos de caja).
- * Parses the 19-column .xls layout; marks rows with dias_mora > 70 as non-commissionable.
- * @module components/comisiones/RecaudoUploadModal
- */
-
 import React, { useState } from "react";
 import {
   Upload,
@@ -25,7 +19,7 @@ import { RECAUDO_THRESHOLDS } from "../../constants/thresholds";
 
 const { DIAS_MORA_LIMITE } = RECAUDO_THRESHOLDS;
 
-/** Parses a date value from Excel (serial number or dd/MM/yyyy string). */
+// Parses a date value from Excel (serial number or dd/MM/yyyy string).
 function parseExcelDate(raw) {
   if (!raw) return null;
   if (typeof raw === "number") {

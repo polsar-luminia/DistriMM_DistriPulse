@@ -1,9 +1,3 @@
-/**
- * @fileoverview Recaudo tab — collections view with commissionability breakdown.
- * Shows per-upload KPIs and a per-salesperson expandable detail table.
- * @module components/comisiones/RecaudoTab
- */
-
 import React, { useState, useMemo } from "react";
 import ConfirmDialog from "../ConfirmDialog";
 import { useConfirm } from "../../hooks/useConfirm";

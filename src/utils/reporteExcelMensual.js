@@ -1,9 +1,3 @@
-/**
- * @fileoverview Excel export for the Reporte Mensual tab.
- * Mirrors reportePDF.js pattern — pure export utility, no React.
- * @module utils/reporteExcelMensual
- */
-
 import * as XLSX from "xlsx-js-style";
 
 const MESES = [
@@ -11,9 +5,6 @@ const MESES = [
   "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre",
 ];
 
-/**
- * Generates and downloads a multi-sheet Excel workbook for the monthly report.
- */
 export function generarReporteExcelMensual({
   vendedorData,
   classifiedVentas,

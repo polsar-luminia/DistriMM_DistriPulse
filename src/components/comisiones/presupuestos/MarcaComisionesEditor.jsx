@@ -1,21 +1,5 @@
-/**
- * @fileoverview Brand commissions editor table — per-vendor marca rows.
- * Extracted from PresupuestosTab for readability.
- * @module components/comisiones/presupuestos/MarcaComisionesEditor
- */
-
 import { Plus, Trash2 } from "lucide-react";
 
-/**
- * @param {object} props
- * @param {Array} props.marcasRows - Marca rows for this vendor (with _globalIdx)
- * @param {Array} props.marcasNormalizadas - Normalized brand list for dropdown
- * @param {function} props.onUpdateRow - (globalIdx, field, value) => void
- * @param {function} props.onDeleteMarca - (row, globalIdx) => void
- * @param {function} props.onAddMarca - () => void
- * @param {string} props.baseInput - Tailwind class string for text inputs
- * @param {string} props.numInput - Tailwind class string for number inputs
- */
 export default function MarcaComisionesEditor({
   marcasRows,
   marcasNormalizadas,
