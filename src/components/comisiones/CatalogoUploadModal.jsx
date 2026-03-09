@@ -14,7 +14,7 @@ import {
   ArrowRight,
   Package,
 } from "lucide-react";
-import * as XLSX from "xlsx";
+import * as XLSX from "xlsx-js-style";
 import { supabase } from "../../lib/supabase";
 import { sileo } from "sileo";
 import { cn } from "@/lib/utils";
@@ -28,8 +28,22 @@ export default function CatalogoUploadModal({ isOpen, onClose, onSuccess }) {
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState(null);
 
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
   const reset = () => { setFile(null); setStep("select"); setPreviewData([]); setFullData([]); setError(null); setProgress(0); };
   const handleClose = () => { reset(); onClose(); };
+
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      if (selectedFile.size > MAX_FILE_SIZE) {
+        setError("El archivo excede el tamaño máximo permitido (10MB)");
+        return;
+      }
+      setFile(selectedFile);
+      setError(null);
+    }
+  };
 
   const handleAnalyze = () => {
     if (!file) return;
@@ -127,7 +141,7 @@ export default function CatalogoUploadModal({ isOpen, onClose, onSuccess }) {
               <div className="space-y-2">
                 <label className="block text-sm font-bold text-slate-700">Archivo Excel</label>
                 <div className={cn("border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-all group", file ? "border-emerald-500 bg-emerald-50/50" : "border-slate-300 hover:border-emerald-400 hover:bg-slate-50")}>
-                  <input type="file" accept=".xlsx,.xls,.csv" onChange={(e) => { setFile(e.target.files[0]); setError(null); }} className="hidden" id="catalogo-file" />
+                  <input type="file" accept=".xlsx,.xls,.csv" onChange={handleFileChange} className="hidden" id="catalogo-file" />
                   <label htmlFor="catalogo-file" className="cursor-pointer flex flex-col items-center w-full">
                     {file ? (
                       <>

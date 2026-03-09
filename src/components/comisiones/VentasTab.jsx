@@ -22,7 +22,7 @@ import {
   Download,
   Undo2,
 } from "lucide-react";
-import * as XLSX from "xlsx";
+import * as XLSX from "xlsx-js-style";
 import { sileo } from "sileo";
 import {
   getExclusionInfo,

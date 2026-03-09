@@ -4,7 +4,7 @@
  * @module utils/reporteExcelMensual
  */
 
-import * as XLSX from "xlsx";
+import * as XLSX from "xlsx-js-style";
 
 const MESES = [
   "Enero","Febrero","Marzo","Abril","Mayo","Junio",

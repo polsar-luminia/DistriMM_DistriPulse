@@ -14,7 +14,7 @@ import {
   Users,
   FileText,
 } from "lucide-react";
-import * as XLSX from "xlsx";
+import * as XLSX from "xlsx-js-style";
 import { supabase } from "../lib/supabase";
 import { sileo } from "sileo";
 import { cn } from "@/lib/utils";
@@ -91,9 +91,15 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
     onClose();
   };
 
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
     if (selectedFile) {
+      if (selectedFile.size > MAX_FILE_SIZE) {
+        setError("El archivo excede el tamaño máximo permitido (10MB)");
+        return;
+      }
       setFile(selectedFile);
       setError(null);
     }

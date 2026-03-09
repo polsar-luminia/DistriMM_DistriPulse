@@ -38,12 +38,12 @@ Each service has a single responsibility and communicates with exactly one backe
 - `portfolioService.js` — Supabase CRUD for cartera data
 - `comisionesService.js` — Supabase CRUD for commissions module (cargas, ventas, catálogo, exclusiones, RPC)
 - `messagingService.js` — WhatsApp bulk sends (via Edge Function proxy) + Supabase logging
-- `chatbotService.js` — AI agent chat (direct n8n call, needs >60s)
+- `chatbotService.js` — AI agent chat (via Edge Function proxy)
 - `cfoService.js` — CFO analysis (via Edge Function proxy)
 
 Hybrid n8n architecture:
-- **WhatsApp & CFO**: Proxied through Supabase Edge Functions (`proxy-n8n-whatsapp`, `proxy-n8n-cfo`). Frontend uses `supabase.functions.invoke()`. Secrets (`N8N_WHATSAPP_URL`, `N8N_WEBHOOK_URL`, `N8N_AUTH_KEY`) live in Supabase Edge Function secrets.
-- **Chatbot**: Direct `fetch` to n8n (90s timeout). The AI Agent workflow can take 40-70s which exceeds the 60s Edge Function limit on Free tier. Uses `VITE_N8N_CHAT_URL` + `VITE_N8N_AUTH_KEY` in `.env`. Acceptable risk: read-only, no writes.
+- **All n8n calls** (WhatsApp, CFO, Chatbot) are proxied through Supabase Edge Functions (`proxy-n8n-whatsapp`, `proxy-n8n-cfo`, `proxy-n8n-chatbot`). Frontend uses `supabase.functions.invoke()`. Secrets (`N8N_WHATSAPP_URL`, `N8N_WEBHOOK_URL`, `N8N_CHAT_URL`, `N8N_AUTH_KEY`) live in Supabase Edge Function secrets.
+- **Chatbot**: The AI Agent workflow can take 40-70s. The Edge Function has a 100s timeout to accommodate this. Client-side keeps a 90s AbortController as safety net.
 
 ### Supabase Tables
 Legacy tables (no prefix): `historial_cargas`, `cartera_items`
@@ -94,8 +94,6 @@ See `.env.example` for full documentation with instructions on where to obtain e
 
 ```
 VITE_SUPABASE_URL / VITE_SUPABASE_KEY     — Supabase project
-VITE_N8N_CHAT_URL                         — n8n chatbot webhook (direct call)
-VITE_N8N_AUTH_KEY                         — n8n auth key (only for chatbot)
 VITE_META_PHONE_NUMBER_ID                 — Meta Cloud API phone number ID
 ```
 
@@ -103,7 +101,8 @@ Supabase Edge Function secrets (Dashboard → Edge Functions → Secrets):
 ```
 N8N_WHATSAPP_URL   — n8n messaging webhook URL
 N8N_WEBHOOK_URL    — n8n CFO analysis webhook URL
-N8N_AUTH_KEY       — Shared secret for n8n calls (same as VITE_N8N_AUTH_KEY)
+N8N_CHAT_URL       — n8n chatbot AI Agent webhook URL
+N8N_AUTH_KEY       — Shared secret for all n8n calls
 ```
 
 Other server-side secrets (Meta access token) live in n8n credentials.

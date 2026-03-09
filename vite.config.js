@@ -21,7 +21,7 @@ export default defineConfig({
           "vendor-react": ["react", "react-dom", "react-router-dom"],
           "vendor-supabase": ["@supabase/supabase-js"],
           "vendor-charts": ["recharts"],
-          "vendor-xlsx": ["xlsx"],
+          "vendor-xlsx": ["xlsx-js-style"],
           "vendor-ui": ["lucide-react", "framer-motion"],
           "vendor-pdf": ["jspdf", "jspdf-autotable"],
           "vendor-date": ["date-fns"],
