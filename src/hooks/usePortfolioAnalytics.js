@@ -259,6 +259,9 @@ export function usePortfolioAnalytics() {
             } else {
                 setLoading(false);
             }
+        }).catch((err) => {
+            setError(err.message);
+            setLoading(false);
         });
     }, [fetchLoads, fetchData]);
 

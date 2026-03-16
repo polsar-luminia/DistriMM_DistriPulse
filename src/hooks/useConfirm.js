@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 
 /**
  * Hook that replaces window.confirm with a custom dialog.
@@ -49,6 +49,14 @@ export function useConfirm() {
     resolveRef.current?.(false);
     resolveRef.current = null;
     setState((s) => ({ ...s, open: false }));
+  }, []);
+
+  // Resolve pending promise on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      resolveRef.current?.(false);
+      resolveRef.current = null;
+    };
   }, []);
 
   const dialogProps = {

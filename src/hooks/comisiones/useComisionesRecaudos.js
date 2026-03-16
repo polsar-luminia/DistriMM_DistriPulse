@@ -92,13 +92,16 @@ export function useComisionesRecaudos() {
     const { success } = await deleteRecaudoCargaSvc(id);
     if (success) {
       await fetchRecaudoCargas();
-      if (id === selectedRecaudoCargaId) {
-        setSelectedRecaudoCargaId(null);
-        setRecaudos([]);
-      }
+      setSelectedRecaudoCargaId((prev) => {
+        if (prev === id) {
+          setRecaudos([]);
+          return null;
+        }
+        return prev;
+      });
     }
     return success;
-  }, [fetchRecaudoCargas, selectedRecaudoCargaId]);
+  }, [fetchRecaudoCargas]);
 
   const refreshRecaudos = useCallback(() => fetchRecaudoCargas(), [fetchRecaudoCargas]);
 

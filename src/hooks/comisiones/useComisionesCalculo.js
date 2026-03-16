@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { calcularComisionesCompletas } from "../../utils/comisionesCalculator";
 import {
   calcularComisiones,
@@ -146,16 +146,19 @@ export function useComisionesCalculo(selectedCargaId, catalogo, exclusiones) {
   );
 
   // Computed totals
-  const init = { totalVentas: 0, ventasExcluidas: 0, ventasComisionables: 0, margenComisionable: 0, costoComisionable: 0 };
-  const totals = comisiones.reduce((acc, v) => ({
-    totalVentas: acc.totalVentas + Number(v.total_ventas || 0),
-    ventasExcluidas: acc.ventasExcluidas + Number(v.ventas_excluidas || 0),
-    ventasComisionables: acc.ventasComisionables + Number(v.ventas_comisionables || 0),
-    margenComisionable: acc.margenComisionable + Number(v.margen_comisionable || 0),
-    costoComisionable: acc.costoComisionable + Number(v.costo_comisionable || 0),
-  }), init);
-  totals.margenPct = totals.ventasComisionables > 0
-    ? (totals.margenComisionable / totals.ventasComisionables) * 100 : 0;
+  const totals = useMemo(() => {
+    const init = { totalVentas: 0, ventasExcluidas: 0, ventasComisionables: 0, margenComisionable: 0, costoComisionable: 0 };
+    const t = comisiones.reduce((acc, v) => ({
+      totalVentas: acc.totalVentas + Number(v.total_ventas || 0),
+      ventasExcluidas: acc.ventasExcluidas + Number(v.ventas_excluidas || 0),
+      ventasComisionables: acc.ventasComisionables + Number(v.ventas_comisionables || 0),
+      margenComisionable: acc.margenComisionable + Number(v.margen_comisionable || 0),
+      costoComisionable: acc.costoComisionable + Number(v.costo_comisionable || 0),
+    }), init);
+    t.margenPct = t.ventasComisionables > 0
+      ? (t.margenComisionable / t.ventasComisionables) * 100 : 0;
+    return t;
+  }, [comisiones]);
 
   return {
     comisiones,
