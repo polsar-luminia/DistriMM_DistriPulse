@@ -189,9 +189,9 @@ export default function ChatbotPage() {
         });
       }
 
-      // Persist user message (fire-and-forget)
-      persistMessage("user", text).catch((error) => {
-        if (import.meta.env.DEV) console.error("[ChatbotPage] persistMessage (user) failed:", error);
+      // Persist user message (fire-and-forget with warning)
+      persistMessage("user", text).catch(() => {
+        sileo.warning("No se pudo guardar el mensaje en el historial");
       });
 
       try {
@@ -209,9 +209,7 @@ export default function ChatbotPage() {
               isError: true,
             },
           ]);
-          persistMessage("assistant", errorContent, true).catch((error) => {
-            if (import.meta.env.DEV) console.error("[ChatbotPage] persistMessage (error) failed:", error);
-          });
+          persistMessage("assistant", errorContent, true).catch(() => {});
           sileo.error({ title: "Error al comunicarse con DistriBot" });
         } else {
           setMessages((prev) => [
@@ -223,8 +221,8 @@ export default function ChatbotPage() {
               timestamp: new Date(),
             },
           ]);
-          persistMessage("assistant", data).catch((error) => {
-            if (import.meta.env.DEV) console.error("[ChatbotPage] persistMessage (assistant) failed:", error);
+          persistMessage("assistant", data).catch(() => {
+            sileo.warning("No se pudo guardar la respuesta en el historial");
           });
         }
       } catch (err) {
@@ -239,9 +237,7 @@ export default function ChatbotPage() {
             isError: true,
           },
         ]);
-        persistMessage("assistant", errorContent, true).catch((error) => {
-          if (import.meta.env.DEV) console.error("[ChatbotPage] persistMessage (unexpected error) failed:", error);
-        });
+        persistMessage("assistant", errorContent, true).catch(() => {});
       } finally {
         setIsLoading(false);
       }

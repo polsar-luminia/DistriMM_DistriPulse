@@ -146,8 +146,18 @@ export const processClientesData = (jsonData) => {
         clasificacion_iva: row["Clasificacion Iva"] || null,
         profesion: row["Profesion"] || null,
         actividad: row["Actividad"] || null,
-        cupo_venta: parseFloat(row["Vr Cupo Venta"] || 0),
-        cupo_compra: parseFloat(row["Vr Cupo Compra"] || 0),
+        cupo_venta: (() => {
+          const raw = row["Vr Cupo Venta"] || 0;
+          const cleaned = typeof raw === "string" ? raw.replace(/,/g, "") : raw;
+          const parsed = parseFloat(cleaned);
+          return Number.isNaN(parsed) ? 0 : parsed;
+        })(),
+        cupo_compra: (() => {
+          const raw = row["Vr Cupo Compra"] || 0;
+          const cleaned = typeof raw === "string" ? raw.replace(/,/g, "") : raw;
+          const parsed = parseFloat(cleaned);
+          return Number.isNaN(parsed) ? 0 : parsed;
+        })(),
         comentario: row["Comentario"] || null,
         barrio: row["Barrio"] || null,
         municipio: row["Municipio"] || null,

@@ -15,6 +15,7 @@ import {
   Check,
   X,
   FileText,
+  Loader2,
 } from "lucide-react";
 import {
   Card,
@@ -55,9 +56,11 @@ export default function VendedoresPage() {
   const [nitVendedorMap, setNitVendedorMap] = useState({});
   const [showReportModal, setShowReportModal] = useState(false);
   const [clientesDataMap, setClientesDataMap] = useState({});
+  const [loadingVendedores, setLoadingVendedores] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
+    setLoadingVendedores(true);
     getVendedores().then(({ data }) => {
       if (!cancelled && data) setVendedoresDB(data);
     }).catch(() => {});
@@ -82,7 +85,9 @@ export default function VendedoresPage() {
         clientesRes.data.forEach((c) => { map[c.no_identif] = c.vendedor_codigo; });
       }
       setNitVendedorMap(map);
-    }).catch(() => {});
+    }).catch(() => {}).finally(() => {
+      if (!cancelled) setLoadingVendedores(false);
+    });
     return () => { cancelled = true; };
   }, []);
 
@@ -242,6 +247,15 @@ export default function VendedoresPage() {
   );
 
   const fmt = showExactNumbers ? formatFullCurrency : formatCurrency;
+
+  if (loadingVendedores) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 size={32} className="text-indigo-600 animate-spin" />
+        <span className="ml-3 text-sm text-slate-500 font-medium">Cargando vendedores...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
