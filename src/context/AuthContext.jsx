@@ -43,7 +43,7 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
 
       if (event === "SIGNED_OUT") {
-        // Optional: Clear any local app state if needed
+        sessionStorage.removeItem("distribot_session_id");
       }
     });
 

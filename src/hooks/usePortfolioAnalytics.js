@@ -176,6 +176,11 @@ export function usePortfolioAnalytics() {
             } else {
                 setLoading(false);
             }
+        }).catch((err) => {
+            if (!cancelled) {
+                setError(err.message);
+                setLoading(false);
+            }
         });
         return () => { cancelled = true; };
     }, [fetchLoads, fetchData]);
