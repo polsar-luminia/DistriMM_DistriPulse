@@ -102,7 +102,7 @@ export const StatCard = ({
         {value}
       </h3>
 
-      {trend !== undefined && trend !== null && (
+      {trend !== undefined && trend !== null && trend !== 0 && (
         <div
           className={cn("text-[10px] font-semibold flex items-center gap-1 mt-2", trend > 0 ? "text-rose-500" : "text-emerald-500")}
         >

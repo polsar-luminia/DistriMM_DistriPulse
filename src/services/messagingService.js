@@ -273,7 +273,7 @@ export const getMessageLog = async (filters = {}) => {
     if (filters.tipo) query = query.eq("tipo", filters.tipo);
     if (filters.estado) query = query.eq("estado", filters.estado);
     if (filters.limit) query = query.limit(filters.limit);
-    if (filters.offset) query = query.range(filters.offset, filters.offset + (filters.limit || 50) - 1);
+    if (filters.offset != null) query = query.range(filters.offset, filters.offset + (filters.limit || 50) - 1);
 
     const { data, count, error } = await query;
     if (error) throw error;

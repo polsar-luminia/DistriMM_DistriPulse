@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import ConfirmDialog from "./ConfirmDialog";
 import { useConfirm } from "../hooks/useConfirm";
 import {
@@ -41,8 +41,13 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState(null);
   const [detectedType, setDetectedType] = useState(null); // 'cartera' | 'clientes'
+  const successTimeoutRef = useRef(null);
 
   const resetState = () => {
+    if (successTimeoutRef.current) {
+      clearTimeout(successTimeoutRef.current);
+      successTimeoutRef.current = null;
+    }
     setFile(null);
     setStep("select");
     setPreviewData([]);
@@ -257,7 +262,7 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
       }
 
       setStep("success");
-      setTimeout(() => {
+      successTimeoutRef.current = setTimeout(() => {
         onUploadSuccess();
         handleClose();
       }, 2000);
@@ -383,7 +388,7 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
 
       setProgress(100);
       setStep("success");
-      setTimeout(() => {
+      successTimeoutRef.current = setTimeout(() => {
         onUploadSuccess();
         handleClose();
       }, 2000);

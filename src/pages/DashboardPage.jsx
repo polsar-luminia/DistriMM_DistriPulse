@@ -1,4 +1,4 @@
-﻿import { useState, useMemo } from "react";
+﻿import { useState, useMemo, useEffect, useRef } from "react";
 import { useOutletContext } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
@@ -53,6 +53,8 @@ export default function DashboardPage() {
   const [itemsPerPage, setItemsPerPage] = useState(50);
   const [isParetoModalOpen, setIsParetoModalOpen] = useState(false);
   const [isUnrecoverableModalOpen, setIsUnrecoverableModalOpen] = useState(false);
+  const prevFilteredLenRef = useRef(0);
+  const prevPageSizeRef = useRef(50);
 
   const formatMoney = (val) =>
     showExactNumbers ? formatFullCurrency(val) : formatCurrency(val);
@@ -70,14 +72,14 @@ export default function DashboardPage() {
   const allItems = useMemo(() => data.items || [], [data.items]);
   const filteredItems = useMemo(() => data.items || [], [data.items]);
 
-  // Reset pagination when filtered data or page size changes (setState during render pattern)
-  const [prevFilteredLen, setPrevFilteredLen] = useState(filteredItems.length);
-  const [prevPageSize, setPrevPageSize] = useState(itemsPerPage);
-  if (filteredItems.length !== prevFilteredLen || itemsPerPage !== prevPageSize) {
-    setPrevFilteredLen(filteredItems.length);
-    setPrevPageSize(itemsPerPage);
-    setCurrentPage(1);
-  }
+  // Reset pagination when filtered data or page size changes
+  useEffect(() => {
+    if (filteredItems.length !== prevFilteredLenRef.current || itemsPerPage !== prevPageSizeRef.current) {
+      prevFilteredLenRef.current = filteredItems.length;
+      prevPageSizeRef.current = itemsPerPage;
+      setCurrentPage(1);
+    }
+  }, [filteredItems.length, itemsPerPage]);
 
   const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
   const paginatedItems = useMemo(() => {
@@ -88,10 +90,10 @@ export default function DashboardPage() {
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
       setCurrentPage(newPage);
-      window.scrollTo({
-        top: document.getElementById("detailed-table")?.offsetTop - 100,
-        behavior: "smooth",
-      });
+      const el = document.getElementById("detailed-table");
+      if (el) {
+        window.scrollTo({ top: el.offsetTop - 100, behavior: "smooth" });
+      }
     }
   };
 

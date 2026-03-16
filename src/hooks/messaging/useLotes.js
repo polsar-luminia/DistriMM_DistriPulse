@@ -180,10 +180,15 @@ export function useLotes() {
           .eq("id", loteId);
 
         // 4. Trigger n8n webhook with ALL recipients
-        const { error: triggerError } = await triggerLoteProcessing(loteId, destinatariosConIds);
+        const triggerResult = await triggerLoteProcessing(loteId, destinatariosConIds);
 
-        if (triggerError) {
-          if (import.meta.env.DEV) console.warn("[useLotes] Lote created but trigger failed:", triggerError);
+        if (!triggerResult.success) {
+          // Mark lote as failed so the user can see and retry
+          await supabase
+            .from("distrimm_recordatorios_lote")
+            .update({ estado: "fallido", updated_at: new Date().toISOString() })
+            .eq("id", loteId);
+          throw new Error(triggerResult.error || "Error al enviar mensajes");
         }
 
         // 5. Start polling for this lote's progress

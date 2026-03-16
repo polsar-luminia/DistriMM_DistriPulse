@@ -115,7 +115,9 @@ export function calcularComisionRecaudo({ recaudos, presupuestoRecaudo }) {
   let pctComision = 0;
 
   for (const tramo of tramos) {
-    if (pctCumplimiento >= tramo.min) {
+    const meetsMin = pctCumplimiento >= tramo.min;
+    const meetsMax = tramo.max == null || pctCumplimiento <= tramo.max;
+    if (meetsMin && meetsMax) {
       tramoAplicado = tramo.nombre;
       pctComision = tramo.pct;
       break;

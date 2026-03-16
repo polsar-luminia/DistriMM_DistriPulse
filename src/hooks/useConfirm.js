@@ -23,6 +23,10 @@ export function useConfirm() {
 
   const confirm = useCallback((options = {}) => {
     return new Promise((resolve) => {
+      // Resolve any pending promise with false before overwriting
+      if (resolveRef.current) {
+        resolveRef.current(false);
+      }
       resolveRef.current = resolve;
       setState({
         open: true,
