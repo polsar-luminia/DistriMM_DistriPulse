@@ -29,6 +29,7 @@ export function useChatSessions(userId) {
 
   const searchTimeoutRef = useRef(null);
   const fetchRequestIdRef = useRef(0);
+  const loadSessionRequestIdRef = useRef(0);
 
   // ─── Load sessions on mount ───
   const refreshSessions = useCallback(async () => {
@@ -71,14 +72,17 @@ export function useChatSessions(userId) {
 
   // ─── Load existing session messages ───
   const loadSession = useCallback(async (session) => {
+    const requestId = ++loadSessionRequestIdRef.current;
     setLoadingMessages(true);
     setActiveSession(session);
     try {
       const { data } = await getChatMessages(session.id);
+      if (requestId !== loadSessionRequestIdRef.current) return [];
       const messages = transformMessages(data || []);
       setLoadingMessages(false);
       return messages;
     } catch (err) {
+      if (requestId !== loadSessionRequestIdRef.current) return [];
       if (import.meta.env.DEV) console.error("[useChatSessions] Error loading messages:", err);
       setLoadingMessages(false);
       return [];
@@ -89,7 +93,11 @@ export function useChatSessions(userId) {
   const persistMessage = useCallback(
     async (role, content, isError = false) => {
       if (!activeSession) return;
-      await saveChatMessage(activeSession.id, role, content, isError);
+      try {
+        await saveChatMessage(activeSession.id, role, content, isError);
+      } catch (err) {
+        if (import.meta.env.DEV) console.error("[useChatSessions] Error persisting message:", err);
+      }
     },
     [activeSession]
   );
@@ -98,12 +106,13 @@ export function useChatSessions(userId) {
   const autoTitle = useCallback(
     async (firstUserMessage) => {
       if (!activeSession) return;
+      const sessionId = activeSession.session_id;
       const title = firstUserMessage.substring(0, 80).trim() || "Nueva conversacion";
-      await updateChatSessionTitle(activeSession.session_id, title);
+      await updateChatSessionTitle(sessionId, title);
       setActiveSession((prev) => (prev ? { ...prev, title } : prev));
       setSessions((prev) =>
         prev.map((s) =>
-          s.session_id === activeSession.session_id ? { ...s, title } : s
+          s.session_id === sessionId ? { ...s, title } : s
         )
       );
     },

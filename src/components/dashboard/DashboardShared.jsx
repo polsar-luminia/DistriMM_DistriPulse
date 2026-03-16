@@ -401,8 +401,8 @@ export const ClientCard = ({ client, onExpand, isExpanded }) => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-navy-50">
-                {client.items?.map((item, idx) => (
-                  <tr key={idx} className="hover:bg-navy-50/30">
+                {client.items?.map((item) => (
+                  <tr key={item.documento_id || item.id} className="hover:bg-navy-50/30">
                     <td className="px-3 py-2 font-mono text-navy-600">
                       {item.documento_id}
                     </td>
