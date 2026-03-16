@@ -85,7 +85,6 @@ Deno.serve(async (req: Request) => {
           action: action || "sendMessage",
           sessionId,
           chatInput,
-          ...(n8nAuthKey ? { authKey: n8nAuthKey } : {}),
         }),
         signal: controller.signal,
       });

@@ -30,12 +30,10 @@ export function resetSession() {
   return newSessionId;
 }
 
-// 90s client-side timeout as safety net (n8n AI Agent can take 40-70s)
+// Edge Function has a 100s timeout; supabase.functions.invoke does not support
+// AbortSignal, so the Edge Function timeout is the effective limit.
 
 export async function sendChatMessage(sessionId, message) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 90_000);
-
   try {
     const { data: result, error } = await supabase.functions.invoke(
       "proxy-n8n-chatbot",
@@ -64,12 +62,7 @@ export async function sendChatMessage(sessionId, message) {
     return { data: output, error: null };
   } catch (err) {
     if (import.meta.env.DEV) console.error("[chatbotService] Error sending message:", err);
-    if (err.name === "AbortError") {
-      return { data: null, error: "El servidor está tardando demasiado. Intenta de nuevo." };
-    }
     return { data: null, error: "No se pudo conectar con el servidor. Verifica tu conexión." };
-  } finally {
-    clearTimeout(timeout);
   }
 }
 
