@@ -50,9 +50,7 @@ const SectionLabel = ({ children }) => (
 const navSections = [
   {
     label: "TABLERO",
-    links: [
-      { to: "/", icon: LayoutDashboard, text: "Dashboard", end: true },
-    ],
+    links: [{ to: "/", icon: LayoutDashboard, text: "Dashboard", end: true }],
   },
   {
     label: "ANALISIS",
@@ -73,15 +71,11 @@ const navSections = [
   },
   {
     label: "COMUNICACION",
-    links: [
-      { to: "/mensajes", icon: MessageCircle, text: "Mensajes" },
-    ],
+    links: [{ to: "/mensajes", icon: MessageCircle, text: "Mensajes" }],
   },
   {
     label: "ADMINISTRACION",
-    links: [
-      { to: "/archivos", icon: Database, text: "Archivos" },
-    ],
+    links: [{ to: "/archivos", icon: Database, text: "Archivos" }],
   },
 ];
 
@@ -138,7 +132,7 @@ export default function MainLayout({ dashboardContext }) {
             <Layers size={18} className="text-indigo-600" />
           </div>
           <span className="font-extrabold text-base tracking-tight text-slate-800">
-            Distri<span className="text-indigo-600">MM</span>
+            Distri<span className="text-indigo-600">Pulse</span>
           </span>
         </div>
         {/* Collapse toggle (desktop only) */}
@@ -187,7 +181,15 @@ export default function MainLayout({ dashboardContext }) {
       {/* Footer version */}
       <div className="px-4 py-3 border-t border-slate-100 shrink-0">
         <p className="text-[10px] text-slate-400 font-medium text-center">
-          V3.0 · <a href="https://hola.luminiatech.digital" target="_blank" rel="noopener noreferrer" className="font-bold bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent hover:opacity-90">LuminIA</a>
+          V1.0.0 ·{" "}
+          <a
+            href="https://hola.luminiatech.digital"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-bold bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent hover:opacity-90"
+          >
+            LuminIA
+          </a>
         </p>
       </div>
     </div>
@@ -253,7 +255,7 @@ export default function MainLayout({ dashboardContext }) {
                 <Layers size={14} className="text-indigo-600" />
               </div>
               <span className="font-extrabold text-sm tracking-tight text-slate-800">
-                Distri<span className="text-indigo-600">MM</span>
+                Distri<span className="text-indigo-600">Pulse</span>
               </span>
             </div>
           )}
@@ -298,7 +300,9 @@ export default function MainLayout({ dashboardContext }) {
             <div className="ml-1 pl-2 border-l border-slate-200 flex items-center gap-2">
               <div className="flex items-center gap-1.5 text-slate-500">
                 <User size={16} />
-                <span className="text-xs font-medium hidden lg:inline">Usuario</span>
+                <span className="text-xs font-medium hidden lg:inline">
+                  Usuario
+                </span>
               </div>
               <button
                 onClick={handleLogout}
@@ -318,7 +322,9 @@ export default function MainLayout({ dashboardContext }) {
             <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] z-20 flex items-center justify-center">
               <div className="flex flex-col items-center gap-3">
                 <div className="animate-spin w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full" />
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Cargando datos...</span>
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">
+                  Cargando datos...
+                </span>
               </div>
             </div>
           )}
@@ -331,7 +337,14 @@ export default function MainLayout({ dashboardContext }) {
         <footer className="py-4 border-t border-slate-100 text-center">
           <p className="text-[11px] text-slate-400">
             &copy; {new Date().getFullYear()} DistriPulse Analytics · Powered by{" "}
-            <a href="https://hola.luminiatech.digital" target="_blank" rel="noopener noreferrer" className="font-bold bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent hover:opacity-90">LuminIA</a>
+            <a
+              href="https://hola.luminiatech.digital"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-bold bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent hover:opacity-90"
+            >
+              LuminIA
+            </a>
           </p>
         </footer>
       </div>
@@ -340,5 +353,3 @@ export default function MainLayout({ dashboardContext }) {
     </div>
   );
 }
-
-

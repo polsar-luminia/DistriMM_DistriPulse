@@ -35,7 +35,10 @@ export default function ReportCarteraModal({
       const nit = item.tercero_nit;
       const cliente = clientesDataMap?.[nit] || {};
       const vendedorCodigo =
-        item.vendedor_codigo || nitVendedorMap?.[nit] || cliente.vendedor_codigo || "SIN";
+        item.vendedor_codigo ||
+        nitVendedorMap?.[nit] ||
+        cliente.vendedor_codigo ||
+        "SIN";
       return {
         ...item,
         _vendedor:
@@ -65,11 +68,18 @@ export default function ReportCarteraModal({
   // Apply all active filters
   const filteredItems = useMemo(() => {
     return enrichedItems.filter((item) => {
-      if (filterStatus === "VENCIDA" && item._estado !== "VENCIDA") return false;
-      if (filterStatus === "AL_DIA" && item._estado !== "AL DÍA") return false;
-      if (selectedVendedores.length > 0 && !selectedVendedores.includes(item._vendedor))
+      if (filterStatus === "VENCIDA" && item._estado !== "VENCIDA")
         return false;
-      if (selectedMunicipios.length > 0 && !selectedMunicipios.includes(item._municipio))
+      if (filterStatus === "AL_DIA" && item._estado !== "AL DÍA") return false;
+      if (
+        selectedVendedores.length > 0 &&
+        !selectedVendedores.includes(item._vendedor)
+      )
+        return false;
+      if (
+        selectedMunicipios.length > 0 &&
+        !selectedMunicipios.includes(item._municipio)
+      )
         return false;
       return true;
     });
@@ -137,7 +147,7 @@ export default function ReportCarteraModal({
   const handleExportExcel = async () => {
     setIsGenerating(true);
     try {
-      generarCarteraExcel({
+      await generarCarteraExcel({
         items: filteredItems,
         groupBy,
         filters: {
@@ -203,7 +213,7 @@ export default function ReportCarteraModal({
                     "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
                     filterStatus === key
                       ? "bg-indigo-600 text-white shadow-sm"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200",
                   )}
                 >
                   {label}
@@ -229,7 +239,7 @@ export default function ReportCarteraModal({
                     "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
                     groupBy === key
                       ? "bg-indigo-600 text-white shadow-sm"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200",
                   )}
                 >
                   {label}
@@ -310,9 +320,7 @@ export default function ReportCarteraModal({
               {filteredItems.length.toLocaleString()} facturas
             </span>
             <span className="text-slate-400">|</span>
-            <span className="text-slate-600">
-              {numClientes} clientes
-            </span>
+            <span className="text-slate-600">{numClientes} clientes</span>
             <span className="text-slate-400">|</span>
             <span className="text-slate-600">
               {formatCOP(totalCartera)} cartera

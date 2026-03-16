@@ -26,7 +26,7 @@ export const timeAgo = (dateString) => {
 
   const diffInMonths = Math.floor(diffInDays / 30);
   if (diffInMonths < 12) {
-    return `Hace ${diffInMonths} mes${diffInMonths !== 1 ? "s" : ""}`;
+    return `Hace ${diffInMonths} ${diffInMonths !== 1 ? "meses" : "mes"}`;
   }
 
   const diffInYears = Math.floor(diffInDays / 365);

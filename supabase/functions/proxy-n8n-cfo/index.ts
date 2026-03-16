@@ -29,36 +29,36 @@ Deno.serve(async (req: Request) => {
     }
 
     // --- Read secrets ---
-    const n8nChatUrl = Deno.env.get("N8N_CHAT_URL");
+    const n8nWebhookUrl = Deno.env.get("N8N_WEBHOOK_URL");
     const n8nAuthKey = Deno.env.get("N8N_AUTH_KEY") || "";
 
-    if (!n8nChatUrl) {
-      return jsonResponse({ error: "N8N_CHAT_URL not configured" }, 500);
+    if (!n8nWebhookUrl) {
+      return jsonResponse({ error: "N8N_WEBHOOK_URL not configured" }, 500);
     }
 
     // --- Parse body ---
     const body = await req.json();
-    const { action, sessionId, chatInput } = body;
+    const { carga_id, mes, anio } = body;
 
-    if (!sessionId || !chatInput) {
-      return jsonResponse({ error: "Missing sessionId or chatInput" }, 400);
+    if (!mes || !anio) {
+      return jsonResponse({ error: "Missing mes or anio" }, 400);
     }
 
-    // --- Proxy to n8n (long timeout: AI Agent takes 40-70s) ---
+    // --- Proxy to n8n (60s timeout) ---
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 100_000);
+    const timeout = setTimeout(() => controller.abort(), 60_000);
 
     try {
-      const n8nResponse = await fetch(n8nChatUrl, {
+      const n8nResponse = await fetch(n8nWebhookUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           ...(n8nAuthKey ? { "x-n8n-auth": n8nAuthKey } : {}),
         },
         body: JSON.stringify({
-          action: action || "sendMessage",
-          sessionId,
-          chatInput,
+          ...(carga_id ? { carga_id } : {}),
+          mes,
+          anio,
         }),
         signal: controller.signal,
       });
@@ -78,10 +78,10 @@ Deno.serve(async (req: Request) => {
       clearTimeout(timeout);
     }
   } catch (err) {
-    console.error("proxy-n8n-chatbot error:", err);
+    console.error("proxy-n8n-cfo error:", err);
     const message =
       err instanceof DOMException && err.name === "AbortError"
-        ? "n8n request timed out (100s)"
+        ? "n8n request timed out (60s)"
         : "Internal error";
     const status = err instanceof DOMException && err.name === "AbortError" ? 504 : 500;
     return jsonResponse({ error: message }, status);

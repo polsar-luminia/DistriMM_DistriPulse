@@ -1,6 +1,7 @@
 import { ErrorBoundary as ReactErrorBoundary } from "react-error-boundary";
 import { AlertTriangle, RefreshCw, Home } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { captureError } from "../../lib/sentry";
 
 function ErrorFallback({ error, resetErrorBoundary }) {
   const navigate = useNavigate();
@@ -63,10 +64,16 @@ export default function ErrorBoundary({ children }) {
   const handleError = (error, errorInfo) => {
     if (import.meta.env.DEV) {
       console.error("[ErrorBoundary] Caught error:", error);
-      console.error("[ErrorBoundary] Component stack:", errorInfo?.componentStack);
+      console.error(
+        "[ErrorBoundary] Component stack:",
+        errorInfo?.componentStack,
+      );
     }
 
-    // TODO: In production, send to error tracking service (e.g., Sentry)
+    captureError(error, {
+      componentStack: errorInfo?.componentStack,
+      boundary: "page",
+    });
   };
 
   return (

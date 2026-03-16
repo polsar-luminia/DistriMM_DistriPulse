@@ -81,6 +81,9 @@ nodes_list*.txt
 update_response.txt
 clean_update_response.txt
 
+# Supabase CLI temp files
+supabase/.temp/
+
 # n8n skills (internal reference)
 n8n-skills/
 

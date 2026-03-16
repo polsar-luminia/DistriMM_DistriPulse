@@ -25,10 +25,15 @@ export const checkDailyLimit = async () => {
   try {
     // Use Colombia timezone (UTC-5) to determine "today"
     const now = new Date();
-    const colombiaTime = new Date(now.getTime() + (now.getTimezoneOffset() + COLOMBIA_OFFSET * 60) * 60000);
+    const colombiaTime = new Date(
+      now.getTime() + (now.getTimezoneOffset() + COLOMBIA_OFFSET * 60) * 60000,
+    );
     colombiaTime.setHours(0, 0, 0, 0);
     // Convert back to UTC for the database query
-    const todayStartUTC = new Date(colombiaTime.getTime() - (now.getTimezoneOffset() + COLOMBIA_OFFSET * 60) * 60000);
+    const todayStartUTC = new Date(
+      colombiaTime.getTime() -
+        (now.getTimezoneOffset() + COLOMBIA_OFFSET * 60) * 60000,
+    );
     const { count, error } = await supabase
       .from("distrimm_mensajes_log")
       .select("id", { count: "exact", head: true })
@@ -41,9 +46,15 @@ export const checkDailyLimit = async () => {
       limit: DAILY_LIMIT,
     };
   } catch (error) {
-    if (import.meta.env.DEV) console.error("[messagingService] Error checking daily limit:", error);
+    if (import.meta.env.DEV)
+      console.error("[messagingService] Error checking daily limit:", error);
     // Fail closed — if we can't verify the limit, block sending for safety
-    return { allowed: false, reason: "Error verificando límite diario", count: 0, error };
+    return {
+      allowed: false,
+      reason: "Error verificando límite diario",
+      count: 0,
+      error,
+    };
   }
 };
 
@@ -132,22 +143,85 @@ export const buildInvoiceDetail = (items = []) => {
   };
 };
 
+// ============================================================================
+// WHATSAPP INSTANCE (multi-instance support)
+// ============================================================================
+
+/**
+ * Gets the active WhatsApp instance for the current user.
+ * @returns {{ data: { id: string, phone_number_id: string, phone_display: string } | null, error: object | null }}
+ */
+export const getActiveInstance = async () => {
+  try {
+    const { data, error } = await supabase
+      .from("distrimm_whatsapp_instances")
+      .select("id, phone_number_id, phone_display, business_name, status")
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (err) {
+    if (import.meta.env.DEV)
+      console.error("[messagingService] Error fetching active instance:", err);
+    return { data: null, error: err };
+  }
+};
+
+// ============================================================================
+// WHATSAPP SEND (via n8n webhook)
+// ============================================================================
+
+/**
+ * Sends a WhatsApp message via n8n webhook.
+ * Includes instance_id so the Edge Function can resolve credentials.
+ * @param {{ phone: string, message: string, clientName: string, tipo: string, instance_id?: string }} payload
+ * @returns {{ success: boolean, error: string|null }}
+ */
 export const sendWhatsAppMessage = async ({
   phone,
   message,
   clientName,
   tipo = "recordatorio",
+  instance_id,
 }) => {
   try {
+    // If no instance_id provided, try to get it automatically
+    let resolvedInstanceId = instance_id;
+    if (!resolvedInstanceId) {
+      const { data: inst } = await getActiveInstance();
+      resolvedInstanceId = inst?.id;
+    }
+
+    if (!resolvedInstanceId) {
+      return {
+        success: false,
+        data: null,
+        error:
+          "No hay instancia de WhatsApp activa. Conecta tu numero primero.",
+      };
+    }
+
     const { data, error } = await supabase.functions.invoke(
       "proxy-n8n-whatsapp",
-      { body: { phone, message, clientName, tipo } },
+      {
+        body: {
+          phone,
+          message,
+          clientName,
+          tipo,
+          instance_id: resolvedInstanceId,
+        },
+      },
     );
 
     if (error) throw error;
     return { success: true, data, error: null };
   } catch (err) {
-    if (import.meta.env.DEV) console.error("[messagingService] Error sending WhatsApp:", err);
+    if (import.meta.env.DEV)
+      console.error("[messagingService] Error sending WhatsApp:", err);
     return { success: false, data: null, error: err };
   }
 };
@@ -168,7 +242,8 @@ export const getTemplates = async (tipo) => {
     if (error) throw error;
     return { data, error: null };
   } catch (err) {
-    if (import.meta.env.DEV) console.error("[messagingService] Error fetching templates:", err);
+    if (import.meta.env.DEV)
+      console.error("[messagingService] Error fetching templates:", err);
     return { data: null, error: err };
   }
 };
@@ -204,7 +279,8 @@ export const saveTemplate = async (template) => {
     if (error) throw error;
     return { data, error: null };
   } catch (err) {
-    if (import.meta.env.DEV) console.error("[messagingService] Error saving template:", err);
+    if (import.meta.env.DEV)
+      console.error("[messagingService] Error saving template:", err);
     return { data: null, error: err };
   }
 };
@@ -218,7 +294,8 @@ export const deleteTemplate = async (id) => {
     if (error) throw error;
     return { success: true, error: null };
   } catch (err) {
-    if (import.meta.env.DEV) console.error("[messagingService] Error deleting template:", err);
+    if (import.meta.env.DEV)
+      console.error("[messagingService] Error deleting template:", err);
     return { success: false, error: err };
   }
 };
@@ -244,7 +321,8 @@ export const logMessage = async (entry) => {
     if (error) throw error;
     return { data, error: null };
   } catch (err) {
-    if (import.meta.env.DEV) console.error("[messagingService] Error logging message:", err);
+    if (import.meta.env.DEV)
+      console.error("[messagingService] Error logging message:", err);
     return { data: null, error: err };
   }
 };
@@ -258,7 +336,8 @@ export const updateLogStatus = async (id, estado, errorDetalle = null) => {
     if (error) throw error;
     return { success: true, error: null };
   } catch (err) {
-    if (import.meta.env.DEV) console.error("[messagingService] Error updating log:", err);
+    if (import.meta.env.DEV)
+      console.error("[messagingService] Error updating log:", err);
     return { success: false, error: err };
   }
 };
@@ -273,7 +352,10 @@ export const getMessageLog = async (filters = {}) => {
     if (filters.tipo) query = query.eq("tipo", filters.tipo);
     if (filters.estado) query = query.eq("estado", filters.estado);
     if (filters.offset != null) {
-      query = query.range(filters.offset, filters.offset + (filters.limit || 50) - 1);
+      query = query.range(
+        filters.offset,
+        filters.offset + (filters.limit || 50) - 1,
+      );
     } else if (filters.limit) {
       query = query.limit(filters.limit);
     }
@@ -282,7 +364,8 @@ export const getMessageLog = async (filters = {}) => {
     if (error) throw error;
     return { data, count, error: null };
   } catch (err) {
-    if (import.meta.env.DEV) console.error("[messagingService] Error fetching message log:", err);
+    if (import.meta.env.DEV)
+      console.error("[messagingService] Error fetching message log:", err);
     return { data: null, count: 0, error: err };
   }
 };
@@ -308,26 +391,31 @@ export const getClientPhones = async (nits) => {
 
     return { data: phoneMap, error: null };
   } catch (err) {
-    if (import.meta.env.DEV) console.error("[messagingService] Error fetching client phones:", err);
+    if (import.meta.env.DEV)
+      console.error("[messagingService] Error fetching client phones:", err);
     return { data: null, error: err };
   }
 };
 
 export async function getClientesCarteraFiltrados(filters = {}) {
   try {
-    const { data, error } = await supabase.rpc("fn_clientes_cartera_filtrados", {
-      p_carga_id: filters.cargaId,
-      p_tipo_filtro: filters.tipoFiltro || "morosos",
-      p_dias_mora_min: filters.diasMoraMin ?? 1,
-      p_dias_vencer_max: filters.diasVencerMax ?? 30,
-      p_monto_min: filters.montoMin ?? 0,
-      p_monto_max: filters.montoMax ?? 999999999,
-    });
+    const { data, error } = await supabase.rpc(
+      "fn_clientes_cartera_filtrados",
+      {
+        p_carga_id: filters.cargaId,
+        p_tipo_filtro: filters.tipoFiltro || "morosos",
+        p_dias_mora_min: filters.diasMoraMin ?? 1,
+        p_dias_vencer_max: filters.diasVencerMax ?? 30,
+        p_monto_min: filters.montoMin ?? 0,
+        p_monto_max: filters.montoMax ?? 999999999,
+      },
+    );
 
     if (error) throw error;
     return { data, error: null };
   } catch (err) {
-    if (import.meta.env.DEV) console.error("[messagingService] Error fetching filtered clients:", err);
+    if (import.meta.env.DEV)
+      console.error("[messagingService] Error fetching filtered clients:", err);
     return { data: null, error: err };
   }
 }
@@ -389,7 +477,8 @@ export async function createLote(lote, destinatarios = []) {
 
     return { data: { lote: loteRow, detalle }, error: null };
   } catch (err) {
-    if (import.meta.env.DEV) console.error("[messagingService] Error creating lote:", err);
+    if (import.meta.env.DEV)
+      console.error("[messagingService] Error creating lote:", err);
     return { data: null, error: err };
   }
 }
@@ -405,7 +494,8 @@ export async function getLotes(limit = 20) {
     if (error) throw error;
     return { data, error: null };
   } catch (err) {
-    if (import.meta.env.DEV) console.error("[messagingService] Error fetching lotes:", err);
+    if (import.meta.env.DEV)
+      console.error("[messagingService] Error fetching lotes:", err);
     return { data: null, error: err };
   }
 }
@@ -422,7 +512,8 @@ export async function getLoteDetalle(loteId) {
     );
     return { data, error: null };
   } catch (err) {
-    if (import.meta.env.DEV) console.error("[messagingService] Error fetching lote detalle:", err);
+    if (import.meta.env.DEV)
+      console.error("[messagingService] Error fetching lote detalle:", err);
     return { data: null, error: err };
   }
 }
@@ -438,15 +529,42 @@ export async function getLoteById(loteId) {
     if (error) throw error;
     return { data, error: null };
   } catch (err) {
-    if (import.meta.env.DEV) console.error("[messagingService] Error fetching lote by ID:", err);
+    if (import.meta.env.DEV)
+      console.error("[messagingService] Error fetching lote by ID:", err);
     return { data: null, error: err };
   }
 }
 
-// n8n uses Split in Batches to loop through each item
-
-export async function triggerLoteProcessing(loteId, destinatarios = []) {
+/**
+ * Triggers lote processing by sending all recipients to the n8n webhook.
+ * n8n uses Split in Batches to loop through each item.
+ * @param {string} loteId - UUID of the lote (for tracking)
+ * @param {object[]} destinatarios - Array of { cliente_nombre, cliente_nit, telefono, mensaje_personalizado, detalle_id }
+ * @param {string} [instanceId] - UUID of the WhatsApp instance. If omitted, resolved automatically.
+ * @returns {{ success: boolean, data: object|null, error: string|null }}
+ */
+export async function triggerLoteProcessing(
+  loteId,
+  destinatarios = [],
+  instanceId,
+) {
   try {
+    // Resolve instance_id if not provided
+    let resolvedInstanceId = instanceId;
+    if (!resolvedInstanceId) {
+      const { data: inst } = await getActiveInstance();
+      resolvedInstanceId = inst?.id;
+    }
+
+    if (!resolvedInstanceId) {
+      return {
+        success: false,
+        data: null,
+        error:
+          "No hay instancia de WhatsApp activa. Conecta tu numero primero.",
+      };
+    }
+
     // Build the array of items that n8n will iterate with Split in Batches
     const items = destinatarios.map((d) => ({
       phone: d.telefono,
@@ -455,6 +573,7 @@ export async function triggerLoteProcessing(loteId, destinatarios = []) {
       tipo: "recordatorio",
       detalle_id: d.detalle_id || null,
       lote_id: loteId,
+      instance_id: resolvedInstanceId,
     }));
 
     const { data, error } = await supabase.functions.invoke(
@@ -465,7 +584,11 @@ export async function triggerLoteProcessing(loteId, destinatarios = []) {
     if (error) throw error;
     return { success: true, data, error: null };
   } catch (err) {
-    if (import.meta.env.DEV) console.error("[messagingService] Error triggering lote processing:", err);
+    if (import.meta.env.DEV)
+      console.error(
+        "[messagingService] Error triggering lote processing:",
+        err,
+      );
     return { success: false, data: null, error: err };
   }
 }
@@ -474,7 +597,9 @@ export async function retryLoteFailed(loteId) {
   try {
     const { data: failedRows, error: fetchError } = await supabase
       .from("distrimm_recordatorios_detalle")
-      .select("id, cliente_nombre, cliente_nit, telefono, mensaje_personalizado")
+      .select(
+        "id, cliente_nombre, cliente_nit, telefono, mensaje_personalizado",
+      )
       .eq("lote_id", loteId)
       .eq("estado_envio", "fallido");
 
@@ -525,7 +650,8 @@ export async function retryLoteFailed(loteId) {
 
     return { success: true, retriedCount: failedIds.length, error: null };
   } catch (err) {
-    if (import.meta.env.DEV) console.error("[messagingService] Error retrying lote failed:", err);
+    if (import.meta.env.DEV)
+      console.error("[messagingService] Error retrying lote failed:", err);
     return { success: false, retriedCount: 0, error: err };
   }
 }
@@ -540,7 +666,8 @@ export async function cancelLote(loteId) {
     if (error) throw error;
     return { success: true, error: null };
   } catch (err) {
-    if (import.meta.env.DEV) console.error("[messagingService] Error cancelling lote:", err);
+    if (import.meta.env.DEV)
+      console.error("[messagingService] Error cancelling lote:", err);
     return { success: false, error: err };
   }
 }

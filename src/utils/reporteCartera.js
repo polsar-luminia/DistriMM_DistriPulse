@@ -1,22 +1,20 @@
-﻿import * as XLSX from "xlsx-js-style";
-
-// ── Color palette ──
+﻿// ── Color palette ──
 const C = {
-  primary: [30, 41, 59],       // Slate 800
-  accent: [99, 102, 241],      // Indigo 500
-  emerald: [16, 185, 129],     // Emerald 500
-  amber: [245, 158, 11],       // Amber 500
-  rose: [244, 63, 94],         // Rose 500
+  primary: [30, 41, 59], // Slate 800
+  accent: [99, 102, 241], // Indigo 500
+  emerald: [16, 185, 129], // Emerald 500
+  amber: [245, 158, 11], // Amber 500
+  rose: [244, 63, 94], // Rose 500
   white: [255, 255, 255],
-  slate: [148, 163, 184],      // Slate 400
+  slate: [148, 163, 184], // Slate 400
   slate500: [100, 116, 139],
   slate700: [51, 65, 85],
   slate900: [30, 41, 59],
-  lightBg: [241, 245, 250],    // Slate 50
-  footerBg: [248, 250, 252],   // Slate 100
+  lightBg: [241, 245, 250], // Slate 50
+  footerBg: [248, 250, 252], // Slate 100
   accentLight: [238, 242, 255], // Indigo 50
-  accentMid: [224, 231, 255],  // Indigo 100
-  border: [226, 232, 240],     // Slate 200
+  accentMid: [224, 231, 255], // Indigo 100
+  border: [226, 232, 240], // Slate 200
 };
 
 // ── Formatters ──
@@ -119,12 +117,14 @@ function buildGroups(items, groupBy) {
         numFacturas: g.items.length,
         carteraTotal,
         carteraVencida,
-        pctVencido: carteraTotal > 0 ? (carteraVencida / carteraTotal) * 100 : 0,
+        pctVencido:
+          carteraTotal > 0 ? (carteraVencida / carteraTotal) * 100 : 0,
         pctParticipacion:
           totalCarteraGlobal > 0
             ? Math.round((carteraTotal / totalCarteraGlobal) * 1000) / 10
             : 0,
-        ticketPromedio: numClientes > 0 ? Math.round(carteraTotal / numClientes) : 0,
+        ticketPromedio:
+          numClientes > 0 ? Math.round(carteraTotal / numClientes) : 0,
         moraPromedio:
           g.items.length > 0 ? Math.round(diasMoraSum / g.items.length) : 0,
       };
@@ -248,8 +248,16 @@ export async function generarCarteraPDF({ items, groupBy, filters }) {
   doc.roundedRect(boxX, boxY, boxW, boxH, 3, 3, "FD");
 
   const metrics = [
-    { label: "Cartera Total", value: $f(summary.carteraTotal), color: C.slate900 },
-    { label: "Cartera Vencida", value: $f(summary.carteraVencida), color: C.rose },
+    {
+      label: "Cartera Total",
+      value: $f(summary.carteraTotal),
+      color: C.slate900,
+    },
+    {
+      label: "Cartera Vencida",
+      value: $f(summary.carteraVencida),
+      color: C.rose,
+    },
     {
       label: "% Vencido",
       value: pf(summary.pctVencido),
@@ -552,7 +560,9 @@ export async function generarCarteraPDF({ items, groupBy, filters }) {
         `NIT: ${client.nit}`,
         client.celular ? `Tel: ${client.celular}` : "",
         `Saldo: ${$f(client.saldoTotal)}`,
-        client.saldoVencido > 0 ? `Vencido: ${$f(client.saldoVencido)}` : "Al día",
+        client.saldoVencido > 0
+          ? `Vencido: ${$f(client.saldoVencido)}`
+          : "Al día",
         client.maxMora > 0 ? `Mora máx: ${client.maxMora}d` : "",
       ].filter(Boolean);
       doc.text(clientInfo.join("   |   "), 20, y + 11);
@@ -575,7 +585,16 @@ export async function generarCarteraPDF({ items, groupBy, filters }) {
 
       autoTable(doc, {
         startY: y,
-        head: [["DOCUMENTO", "EMISIÓN", "VENCIMIENTO", "DÍAS MORA", "SALDO", "ESTADO"]],
+        head: [
+          [
+            "DOCUMENTO",
+            "EMISIÓN",
+            "VENCIMIENTO",
+            "DÍAS MORA",
+            "SALDO",
+            "ESTADO",
+          ],
+        ],
         body: invoiceRows,
         foot: [
           [
@@ -655,7 +674,8 @@ export async function generarCarteraPDF({ items, groupBy, filters }) {
   doc.save(buildFilename(groupBy, filters.status, "pdf"));
 }
 
-export function generarCarteraExcel({ items, groupBy, filters }) {
+export async function generarCarteraExcel({ items, groupBy, filters }) {
+  const XLSX = await import("xlsx-js-style");
   const groups = buildGroups(items, groupBy);
   const summary = computeGlobalSummary(items);
   const groupLabel = groupBy === "vendedor" ? "Vendedor" : "Municipio";
@@ -703,7 +723,10 @@ export function generarCarteraExcel({ items, groupBy, filters }) {
     "",
   ]);
 
-  const resumenSheet = XLSX.utils.aoa_to_sheet([resumenHeaders, ...resumenData]);
+  const resumenSheet = XLSX.utils.aoa_to_sheet([
+    resumenHeaders,
+    ...resumenData,
+  ]);
   resumenSheet["!cols"] = [
     { wch: 5 },
     { wch: 28 },
@@ -747,7 +770,10 @@ export function generarCarteraExcel({ items, groupBy, filters }) {
     c.maxMora,
   ]);
 
-  const clienteSheet = XLSX.utils.aoa_to_sheet([clienteHeaders, ...clienteData]);
+  const clienteSheet = XLSX.utils.aoa_to_sheet([
+    clienteHeaders,
+    ...clienteData,
+  ]);
   clienteSheet["!cols"] = [
     { wch: 35 },
     { wch: 15 },
@@ -793,7 +819,10 @@ export function generarCarteraExcel({ items, groupBy, filters }) {
     Number(item.valor_saldo || 0),
   ]);
 
-  const facturaSheet = XLSX.utils.aoa_to_sheet([facturaHeaders, ...facturaData]);
+  const facturaSheet = XLSX.utils.aoa_to_sheet([
+    facturaHeaders,
+    ...facturaData,
+  ]);
   facturaSheet["!cols"] = [
     { wch: 35 },
     { wch: 15 },
@@ -817,4 +846,3 @@ export function generarCarteraExcel({ items, groupBy, filters }) {
 
   XLSX.writeFile(wb, buildFilename(groupBy, filters.status, "xlsx"));
 }
-

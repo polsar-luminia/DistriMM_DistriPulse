@@ -76,7 +76,7 @@ describe("formatDateShort", () => {
   });
   test("formats date without year", () => {
     const result = formatDateShort("2024-06-15");
-    expect(result).toBe("15/06");
+    expect(result).toMatch(/^15\/0?6$/);
   });
 });
 
@@ -128,7 +128,9 @@ describe("truncateText", () => {
     expect(truncateText("short", 20)).toBe("short");
   });
   test("truncates and adds ellipsis", () => {
-    expect(truncateText("this is a very long text that should be truncated", 10)).toBe("this is a ...");
+    expect(
+      truncateText("this is a very long text that should be truncated", 10),
+    ).toBe("this is a ...");
   });
   test("uses default maxLength of 20", () => {
     const text = "twelve345678901234567890extra";

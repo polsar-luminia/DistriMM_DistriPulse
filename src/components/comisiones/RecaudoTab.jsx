@@ -16,7 +16,12 @@ import {
 } from "lucide-react";
 import { sileo } from "sileo";
 import { cn } from "@/lib/utils";
-import { formatCurrency, formatFullCurrency, formatDateUTC } from "../../utils/formatters";
+import {
+  formatCurrency,
+  formatFullCurrency,
+  formatDateUTC,
+} from "../../utils/formatters";
+import { clickableProps } from "@/utils/a11y";
 import { Card, KpiCard, EmptyState } from "./ComisionesShared";
 import RecaudoUploadModal from "./RecaudoUploadModal";
 import { RECAUDO_THRESHOLDS } from "../../constants/thresholds";
@@ -45,7 +50,13 @@ export default function RecaudoTab({ hook }) {
     recaudos.forEach((r) => {
       const cod = r.vendedor_codigo || "SIN VENDEDOR";
       if (!map[cod]) {
-        map[cod] = { vendedor_codigo: cod, totalRecaudado: 0, totalComisionable: 0, totalExcluido: 0, items: [] };
+        map[cod] = {
+          vendedor_codigo: cod,
+          totalRecaudado: 0,
+          totalComisionable: 0,
+          totalExcluido: 0,
+          items: [],
+        };
       }
       map[cod].totalRecaudado += Number(r.valor_recaudo || 0);
       if (r.aplica_comision) {
@@ -55,16 +66,31 @@ export default function RecaudoTab({ hook }) {
       }
       map[cod].items.push(r);
     });
-    return Object.values(map).sort((a, b) => b.totalComisionable - a.totalComisionable);
+    return Object.values(map).sort(
+      (a, b) => b.totalComisionable - a.totalComisionable,
+    );
   }, [recaudos]);
 
   // KPI totals
   const totals = useMemo(() => {
-    const totalRecaudado = recaudos.reduce((s, r) => s + Number(r.valor_recaudo || 0), 0);
-    const totalComisionable = recaudos.filter((r) => r.aplica_comision).reduce((s, r) => s + Number(r.valor_recaudo || 0), 0);
-    const totalExcluido = recaudos.filter((r) => !r.aplica_comision).reduce((s, r) => s + Number(r.valor_recaudo || 0), 0);
-    const pctComisionable = totalRecaudado > 0 ? (totalComisionable / totalRecaudado) * 100 : 0;
-    return { totalRecaudado, totalComisionable, totalExcluido, pctComisionable };
+    const totalRecaudado = recaudos.reduce(
+      (s, r) => s + Number(r.valor_recaudo || 0),
+      0,
+    );
+    const totalComisionable = recaudos
+      .filter((r) => r.aplica_comision)
+      .reduce((s, r) => s + Number(r.valor_recaudo || 0), 0);
+    const totalExcluido = recaudos
+      .filter((r) => !r.aplica_comision)
+      .reduce((s, r) => s + Number(r.valor_recaudo || 0), 0);
+    const pctComisionable =
+      totalRecaudado > 0 ? (totalComisionable / totalRecaudado) * 100 : 0;
+    return {
+      totalRecaudado,
+      totalComisionable,
+      totalExcluido,
+      pctComisionable,
+    };
   }, [recaudos]);
 
   if (loadingRecaudoCargas) {
@@ -95,7 +121,9 @@ export default function RecaudoTab({ hook }) {
             </select>
           </div>
         ) : (
-          <span className="text-xs text-slate-400 font-medium">Sin recaudos cargados</span>
+          <span className="text-xs text-slate-400 font-medium">
+            Sin recaudos cargados
+          </span>
         )}
 
         <div className="flex-1" />
@@ -112,7 +140,8 @@ export default function RecaudoTab({ hook }) {
             onClick={async () => {
               const ok = await confirm({
                 title: "Eliminar carga de recaudos",
-                message: "¿Estás seguro? Se eliminarán todos los recaudos de esta carga. Esta acción no se puede deshacer.",
+                message:
+                  "¿Estás seguro? Se eliminarán todos los recaudos de esta carga. Esta acción no se puede deshacer.",
                 confirmText: "Eliminar",
                 cancelText: "Cancelar",
                 variant: "danger",
@@ -140,20 +169,46 @@ export default function RecaudoTab({ hook }) {
         <>
           {/* KPI Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <KpiCard title="Total Recaudado" value={formatCurrency(totals.totalRecaudado)} icon={DollarSign} type="info" />
-            <KpiCard title={`Comisionable (≤${DIAS_MORA_LIMITE}d)`} value={formatCurrency(totals.totalComisionable)} icon={CheckCircle} type="success" />
-            <KpiCard title={`Excluido (>${DIAS_MORA_LIMITE}d)`} value={formatCurrency(totals.totalExcluido)} icon={XCircle} type="danger" />
-            <KpiCard title="% Comisionable" value={`${totals.pctComisionable.toFixed(1)}%`} icon={Percent} type="warning" />
+            <KpiCard
+              title="Total Recaudado"
+              value={formatCurrency(totals.totalRecaudado)}
+              icon={DollarSign}
+              type="info"
+            />
+            <KpiCard
+              title={`Comisionable (≤${DIAS_MORA_LIMITE}d)`}
+              value={formatCurrency(totals.totalComisionable)}
+              icon={CheckCircle}
+              type="success"
+            />
+            <KpiCard
+              title={`Excluido (>${DIAS_MORA_LIMITE}d)`}
+              value={formatCurrency(totals.totalExcluido)}
+              icon={XCircle}
+              type="danger"
+            />
+            <KpiCard
+              title="% Comisionable"
+              value={`${totals.pctComisionable.toFixed(1)}%`}
+              icon={Percent}
+              type="warning"
+            />
           </div>
 
           {/* Vendedores table */}
           {loadingRecaudos ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 size={24} className="text-emerald-600 animate-spin" />
-              <span className="ml-2 text-sm text-slate-500">Cargando recaudos...</span>
+              <span className="ml-2 text-sm text-slate-500">
+                Cargando recaudos...
+              </span>
             </div>
           ) : vendedorStats.length === 0 ? (
-            <EmptyState icon={Wallet} title="Sin resultados" subtitle="No se encontraron datos para esta carga." />
+            <EmptyState
+              icon={Wallet}
+              title="Sin resultados"
+              subtitle="No se encontraron datos para esta carga."
+            />
           ) : (
             <Card className="overflow-hidden !p-0">
               <div className="overflow-x-auto">
@@ -175,15 +230,39 @@ export default function RecaudoTab({ hook }) {
                         <React.Fragment key={v.vendedor_codigo}>
                           <tr
                             className="hover:bg-slate-50 cursor-pointer transition-colors"
-                            onClick={() => setExpandedVendedor(isExpanded ? null : v.vendedor_codigo)}
+                            {...clickableProps(() =>
+                              setExpandedVendedor(
+                                isExpanded ? null : v.vendedor_codigo,
+                              ),
+                            )}
                           >
-                            <td className="px-4 py-3 font-bold text-slate-900">{v.vendedor_codigo}</td>
-                            <td className="px-4 py-3 text-right font-mono text-slate-700">{formatFullCurrency(v.totalRecaudado)}</td>
-                            <td className="px-4 py-3 text-right font-mono font-bold text-emerald-700">{formatFullCurrency(v.totalComisionable)}</td>
-                            <td className="px-4 py-3 text-right font-mono text-rose-500">{formatFullCurrency(v.totalExcluido)}</td>
-                            <td className="px-4 py-3 text-center text-xs text-slate-500">{v.items.length}</td>
+                            <td className="px-4 py-3 font-bold text-slate-900">
+                              {v.vendedor_codigo}
+                            </td>
+                            <td className="px-4 py-3 text-right font-mono text-slate-700">
+                              {formatFullCurrency(v.totalRecaudado)}
+                            </td>
+                            <td className="px-4 py-3 text-right font-mono font-bold text-emerald-700">
+                              {formatFullCurrency(v.totalComisionable)}
+                            </td>
+                            <td className="px-4 py-3 text-right font-mono text-rose-500">
+                              {formatFullCurrency(v.totalExcluido)}
+                            </td>
+                            <td className="px-4 py-3 text-center text-xs text-slate-500">
+                              {v.items.length}
+                            </td>
                             <td className="px-4 py-3">
-                              {isExpanded ? <ChevronUp size={16} className="text-slate-400" /> : <ChevronDown size={16} className="text-slate-400" />}
+                              {isExpanded ? (
+                                <ChevronUp
+                                  size={16}
+                                  className="text-slate-400"
+                                />
+                              ) : (
+                                <ChevronDown
+                                  size={16}
+                                  className="text-slate-400"
+                                />
+                              )}
                             </td>
                           </tr>
 
@@ -196,34 +275,71 @@ export default function RecaudoTab({ hook }) {
                                       <tr>
                                         <th className="px-6 py-2">Cliente</th>
                                         <th className="px-4 py-2">Factura</th>
-                                        <th className="px-4 py-2">Fecha Abono</th>
-                                        <th className="px-4 py-2 text-right">Base</th>
-                                        <th className="px-4 py-2 text-center">Días</th>
-                                        <th className="px-4 py-2 text-center">Aplica</th>
+                                        <th className="px-4 py-2">
+                                          Fecha Abono
+                                        </th>
+                                        <th className="px-4 py-2 text-right">
+                                          Base
+                                        </th>
+                                        <th className="px-4 py-2 text-center">
+                                          Días
+                                        </th>
+                                        <th className="px-4 py-2 text-center">
+                                          Aplica
+                                        </th>
                                       </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
                                       {v.items
-                                        .toSorted((a, b) => Number(b.valor_recaudo) - Number(a.valor_recaudo))
+                                        .toSorted(
+                                          (a, b) =>
+                                            Number(b.valor_recaudo) -
+                                            Number(a.valor_recaudo),
+                                        )
                                         .map((item) => (
-                                          <tr key={item.id} className="hover:bg-white">
-                                            <td className="px-6 py-2 truncate max-w-[180px]">{item.cliente_nombre || item.cliente_nit}</td>
-                                            <td className="px-4 py-2 font-mono">{item.factura}</td>
-                                            <td className="px-4 py-2 font-mono">{item.fecha_abono}</td>
-                                            <td className="px-4 py-2 text-right font-mono">{formatFullCurrency(item.valor_recaudo)}</td>
+                                          <tr
+                                            key={item.id}
+                                            className="hover:bg-white"
+                                          >
+                                            <td className="px-6 py-2 truncate max-w-[180px]">
+                                              {item.cliente_nombre ||
+                                                item.cliente_nit}
+                                            </td>
+                                            <td className="px-4 py-2 font-mono">
+                                              {item.factura}
+                                            </td>
+                                            <td className="px-4 py-2 font-mono">
+                                              {item.fecha_abono}
+                                            </td>
+                                            <td className="px-4 py-2 text-right font-mono">
+                                              {formatFullCurrency(
+                                                item.valor_recaudo,
+                                              )}
+                                            </td>
                                             <td className="px-4 py-2 text-center">
-                                              <span className={item.dias_mora > DIAS_MORA_LIMITE ? "text-rose-600 font-bold" : "text-slate-600"}>
+                                              <span
+                                                className={
+                                                  item.dias_mora >
+                                                  DIAS_MORA_LIMITE
+                                                    ? "text-rose-600 font-bold"
+                                                    : "text-slate-600"
+                                                }
+                                              >
                                                 {item.dias_mora}
                                               </span>
                                             </td>
                                             <td className="px-4 py-2 text-center">
-                                              <span className={cn(
-                                                "text-[10px] font-bold px-2 py-0.5 rounded-full",
-                                                item.aplica_comision
-                                                  ? "bg-emerald-100 text-emerald-700"
-                                                  : "bg-rose-100 text-rose-700"
-                                              )}>
-                                                {item.aplica_comision ? "Sí" : "No"}
+                                              <span
+                                                className={cn(
+                                                  "text-[10px] font-bold px-2 py-0.5 rounded-full",
+                                                  item.aplica_comision
+                                                    ? "bg-emerald-100 text-emerald-700"
+                                                    : "bg-rose-100 text-rose-700",
+                                                )}
+                                              >
+                                                {item.aplica_comision
+                                                  ? "Sí"
+                                                  : "No"}
                                               </span>
                                             </td>
                                           </tr>

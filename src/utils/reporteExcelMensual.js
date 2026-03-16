@@ -1,11 +1,19 @@
-import * as XLSX from "xlsx-js-style";
-
 const MESES = [
-  "Enero","Febrero","Marzo","Abril","Mayo","Junio",
-  "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre",
+  "Enero",
+  "Febrero",
+  "Marzo",
+  "Abril",
+  "Mayo",
+  "Junio",
+  "Julio",
+  "Agosto",
+  "Septiembre",
+  "Octubre",
+  "Noviembre",
+  "Diciembre",
 ];
 
-export function generarReporteExcelMensual({
+export async function generarReporteExcelMensual({
   vendedorData,
   classifiedVentas,
   cargas,
@@ -78,7 +86,8 @@ export function generarReporteExcelMensual({
   const ventasPorDia = {};
   classifiedVentas.forEach((v) => {
     const d = v.fecha || "sin-fecha";
-    if (!ventasPorDia[d]) ventasPorDia[d] = { total: 0, comisionable: 0, excluido: 0 };
+    if (!ventasPorDia[d])
+      ventasPorDia[d] = { total: 0, comisionable: 0, excluido: 0 };
     const val = Number(v.valor_total || 0);
     ventasPorDia[d].total += val;
     if (v.excluded) ventasPorDia[d].excluido += val;
@@ -94,23 +103,72 @@ export function generarReporteExcelMensual({
       Excluidas: vals.excluido,
     }));
 
+  const XLSX = await import("xlsx-js-style");
+
   const wb = XLSX.utils.book_new();
 
   const ws1 = XLSX.utils.json_to_sheet(resumenRows);
-  ws1["!cols"] = [{ wch: 35 }, { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 20 }, { wch: 16 }, { wch: 10 }, { wch: 20 }];
+  ws1["!cols"] = [
+    { wch: 35 },
+    { wch: 16 },
+    { wch: 16 },
+    { wch: 16 },
+    { wch: 20 },
+    { wch: 16 },
+    { wch: 10 },
+    { wch: 20 },
+  ];
   XLSX.utils.book_append_sheet(wb, ws1, "Resumen Mensual");
 
-  const ws2 = XLSX.utils.json_to_sheet(comisionableRows.length > 0 ? comisionableRows : [{}]);
-  ws2["!cols"] = [{ wch: 20 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 30 }, { wch: 25 }, { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 10 }];
+  const ws2 = XLSX.utils.json_to_sheet(
+    comisionableRows.length > 0 ? comisionableRows : [{}],
+  );
+  ws2["!cols"] = [
+    { wch: 20 },
+    { wch: 12 },
+    { wch: 12 },
+    { wch: 12 },
+    { wch: 30 },
+    { wch: 25 },
+    { wch: 10 },
+    { wch: 14 },
+    { wch: 14 },
+    { wch: 14 },
+    { wch: 10 },
+  ];
   XLSX.utils.book_append_sheet(wb, ws2, "Detalle Comisionable");
 
-  const ws3 = XLSX.utils.json_to_sheet(excluidoRows.length > 0 ? excluidoRows : [{}]);
-  ws3["!cols"] = [{ wch: 20 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 30 }, { wch: 25 }, { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 10 }, { wch: 22 }];
+  const ws3 = XLSX.utils.json_to_sheet(
+    excluidoRows.length > 0 ? excluidoRows : [{}],
+  );
+  ws3["!cols"] = [
+    { wch: 20 },
+    { wch: 12 },
+    { wch: 12 },
+    { wch: 12 },
+    { wch: 30 },
+    { wch: 25 },
+    { wch: 10 },
+    { wch: 14 },
+    { wch: 14 },
+    { wch: 14 },
+    { wch: 10 },
+    { wch: 22 },
+  ];
   XLSX.utils.book_append_sheet(wb, ws3, "Detalle Excluido");
 
   const ws4 = XLSX.utils.json_to_sheet(diaRows.length > 0 ? diaRows : [{}]);
-  ws4["!cols"] = [{ wch: 12 }, { wch: 35 }, { wch: 16 }, { wch: 16 }, { wch: 16 }];
+  ws4["!cols"] = [
+    { wch: 12 },
+    { wch: 35 },
+    { wch: 16 },
+    { wch: 16 },
+    { wch: 16 },
+  ];
   XLSX.utils.book_append_sheet(wb, ws4, "Resumen por Dia");
 
-  XLSX.writeFile(wb, `Reporte_Comisiones_${MESES[selectedMonth - 1]}_${selectedYear}.xlsx`);
+  XLSX.writeFile(
+    wb,
+    `Reporte_Comisiones_${MESES[selectedMonth - 1]}_${selectedYear}.xlsx`,
+  );
 }

@@ -16,7 +16,6 @@ import {
   Download,
   Undo2,
 } from "lucide-react";
-import * as XLSX from "xlsx-js-style";
 import { sileo } from "sileo";
 import {
   getExclusionInfo,
@@ -27,6 +26,7 @@ import {
   formatFullCurrency,
   formatDateUTC,
 } from "../../utils/formatters";
+import { clickableProps } from "@/utils/a11y";
 import { Card, KpiCard, EmptyState } from "./ComisionesShared";
 import VentasUploadModal from "./VentasUploadModal";
 import CatalogoUploadModal from "./CatalogoUploadModal";
@@ -34,9 +34,17 @@ import VendedorDetail from "./VendedorDetail";
 
 export default function VentasTab({ hook }) {
   const {
-    cargas, selectedCargaId, selectedCarga, loadingCargas, selectCarga, deleteCarga,
-    comisiones, loadingComisiones, totals,
-    ventasDetail, loadingVentas,
+    cargas,
+    selectedCargaId,
+    selectedCarga,
+    loadingCargas,
+    selectCarga,
+    deleteCarga,
+    comisiones,
+    loadingComisiones,
+    totals,
+    ventasDetail,
+    loadingVentas,
   } = hook;
 
   const [confirmProps, confirm] = useConfirm();
@@ -65,7 +73,10 @@ export default function VentasTab({ hook }) {
   // DV (devolucion) summary across all items in this carga
   const dvTotals = useMemo(() => {
     const dvItems = ventasDetail.filter((v) => v.tipo === "DV");
-    const totalDevoluciones = dvItems.reduce((s, v) => s + Math.abs(Number(v.valor_total || 0)), 0);
+    const totalDevoluciones = dvItems.reduce(
+      (s, v) => s + Math.abs(Number(v.valor_total || 0)),
+      0,
+    );
     return { count: dvItems.length, total: totalDevoluciones };
   }, [ventasDetail]);
 
@@ -78,8 +89,9 @@ export default function VentasTab({ hook }) {
   }, [expandedVendedor, ventasDetail]);
 
   // ── Export to Excel ──
-  const handleExport = useCallback(() => {
+  const handleExport = useCallback(async () => {
     if (!comisiones.length || !ventasDetail.length) return;
+    const XLSX = await import("xlsx-js-style");
     const fechaLabel = selectedCarga?.fecha_ventas || "sin-fecha";
 
     // Sheet 1: Resumen por Vendedor
@@ -97,9 +109,18 @@ export default function VentasTab({ hook }) {
       "Ventas Totales": totals.totalVentas,
       Excluidas: totals.ventasExcluidas,
       Comisionables: totals.ventasComisionables,
-      "Items Total": comisiones.reduce((s, v) => s + Number(v.items_total || 0), 0),
-      "Items Excluidos": comisiones.reduce((s, v) => s + Number(v.items_excluidos || 0), 0),
-      "Items Comisionables": comisiones.reduce((s, v) => s + Number(v.items_comisionables || 0), 0),
+      "Items Total": comisiones.reduce(
+        (s, v) => s + Number(v.items_total || 0),
+        0,
+      ),
+      "Items Excluidos": comisiones.reduce(
+        (s, v) => s + Number(v.items_excluidos || 0),
+        0,
+      ),
+      "Items Comisionables": comisiones.reduce(
+        (s, v) => s + Number(v.items_comisionables || 0),
+        0,
+      ),
     });
 
     // Sheet 2: Detalle de Ventas
@@ -137,21 +158,61 @@ export default function VentasTab({ hook }) {
     const wb = XLSX.utils.book_new();
     const ws1 = XLSX.utils.json_to_sheet(resumenRows);
     const ws2 = XLSX.utils.json_to_sheet(detalleRows);
-    const ws3 = XLSX.utils.json_to_sheet(exclusionesRows.length > 0 ? exclusionesRows : [{ Tipo: "", Valor: "", Descripcion: "", Motivo: "" }]);
+    const ws3 = XLSX.utils.json_to_sheet(
+      exclusionesRows.length > 0
+        ? exclusionesRows
+        : [{ Tipo: "", Valor: "", Descripcion: "", Motivo: "" }],
+    );
 
     // Set column widths
-    ws1["!cols"] = [{ wch: 35 }, { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 12 }, { wch: 14 }, { wch: 16 }];
-    ws2["!cols"] = [{ wch: 20 }, { wch: 10 }, { wch: 12 }, { wch: 30 }, { wch: 14 }, { wch: 25 }, { wch: 12 }, { wch: 15 }, { wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 14 }, { wch: 14 }, { wch: 12 }, { wch: 20 }];
+    ws1["!cols"] = [
+      { wch: 35 },
+      { wch: 16 },
+      { wch: 16 },
+      { wch: 16 },
+      { wch: 12 },
+      { wch: 14 },
+      { wch: 16 },
+    ];
+    ws2["!cols"] = [
+      { wch: 20 },
+      { wch: 10 },
+      { wch: 12 },
+      { wch: 30 },
+      { wch: 14 },
+      { wch: 25 },
+      { wch: 12 },
+      { wch: 15 },
+      { wch: 12 },
+      { wch: 10 },
+      { wch: 12 },
+      { wch: 10 },
+      { wch: 12 },
+      { wch: 14 },
+      { wch: 14 },
+      { wch: 12 },
+      { wch: 20 },
+    ];
     ws3["!cols"] = [{ wch: 12 }, { wch: 25 }, { wch: 35 }, { wch: 25 }];
 
     XLSX.utils.book_append_sheet(wb, ws1, "Resumen por Vendedor");
     XLSX.utils.book_append_sheet(wb, ws2, "Detalle de Ventas");
     XLSX.utils.book_append_sheet(wb, ws3, "Exclusiones Activas");
 
-    const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+    const timestamp = new Date()
+      .toISOString()
+      .replace(/[:.]/g, "-")
+      .slice(0, 19);
     XLSX.writeFile(wb, `Comisiones_${fechaLabel}_${timestamp}.xlsx`);
     sileo.success("Reporte exportado");
-  }, [comisiones, ventasDetail, totals, selectedCarga, hook.exclusiones, checkExclusion]);
+  }, [
+    comisiones,
+    ventasDetail,
+    totals,
+    selectedCarga,
+    hook.exclusiones,
+    checkExclusion,
+  ]);
 
   if (loadingCargas) {
     return (
@@ -181,7 +242,9 @@ export default function VentasTab({ hook }) {
             </select>
           </div>
         ) : (
-          <span className="text-xs text-slate-400 font-medium">Sin ventas cargadas</span>
+          <span className="text-xs text-slate-400 font-medium">
+            Sin ventas cargadas
+          </span>
         )}
 
         <div className="flex-1" />
@@ -212,7 +275,8 @@ export default function VentasTab({ hook }) {
             onClick={async () => {
               const ok = await confirm({
                 title: "Eliminar carga de ventas",
-                message: "¿Estás seguro de que deseas eliminar esta carga? Se eliminarán todas sus ventas. Esta acción no se puede deshacer.",
+                message:
+                  "¿Estás seguro de que deseas eliminar esta carga? Se eliminarán todas sus ventas. Esta acción no se puede deshacer.",
                 confirmText: "Eliminar",
                 cancelText: "Cancelar",
                 variant: "danger",
@@ -240,9 +304,24 @@ export default function VentasTab({ hook }) {
         <>
           {/* KPI Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <KpiCard title="Total Ventas" value={formatCurrency(totals.totalVentas)} icon={DollarSign} type="info" />
-            <KpiCard title="Comisionables" value={formatCurrency(totals.ventasComisionables)} icon={TrendingUp} type="success" />
-            <KpiCard title="Excluidas" value={formatCurrency(totals.ventasExcluidas)} icon={Ban} type="danger" />
+            <KpiCard
+              title="Total Ventas"
+              value={formatCurrency(totals.totalVentas)}
+              icon={DollarSign}
+              type="info"
+            />
+            <KpiCard
+              title="Comisionables"
+              value={formatCurrency(totals.ventasComisionables)}
+              icon={TrendingUp}
+              type="success"
+            />
+            <KpiCard
+              title="Excluidas"
+              value={formatCurrency(totals.ventasExcluidas)}
+              icon={Ban}
+              type="danger"
+            />
             <KpiCard
               title={`Devoluciones (${dvTotals.count})`}
               value={formatCurrency(dvTotals.total)}
@@ -255,10 +334,16 @@ export default function VentasTab({ hook }) {
           {loadingComisiones ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 size={24} className="text-indigo-600 animate-spin" />
-              <span className="ml-2 text-sm text-slate-500">Calculando comisiones...</span>
+              <span className="ml-2 text-sm text-slate-500">
+                Calculando comisiones...
+              </span>
             </div>
           ) : comisiones.length === 0 ? (
-            <EmptyState icon={Receipt} title="Sin resultados" subtitle="No se encontraron datos para esta carga." />
+            <EmptyState
+              icon={Receipt}
+              title="Sin resultados"
+              subtitle="No se encontraron datos para esta carga."
+            />
           ) : (
             <Card className="overflow-hidden !p-0">
               <div className="overflow-x-auto">
@@ -280,22 +365,49 @@ export default function VentasTab({ hook }) {
                         <React.Fragment key={v.vendedor_codigo}>
                           <tr
                             className="hover:bg-slate-50 cursor-pointer transition-colors"
-                            onClick={() => setExpandedVendedor(isExpanded ? null : v.vendedor_codigo)}
+                            {...clickableProps(() =>
+                              setExpandedVendedor(
+                                isExpanded ? null : v.vendedor_codigo,
+                              ),
+                            )}
                           >
                             <td className="px-4 py-3">
-                              <span className="font-bold text-slate-900">{v.vendedor_nombre || "Sin nombre"}</span>
-                              <span className="text-xs text-slate-400 ml-2">#{v.vendedor_codigo}</span>
+                              <span className="font-bold text-slate-900">
+                                {v.vendedor_nombre || "Sin nombre"}
+                              </span>
+                              <span className="text-xs text-slate-400 ml-2">
+                                #{v.vendedor_codigo}
+                              </span>
                             </td>
-                            <td className="px-4 py-3 text-right font-mono text-slate-700">{formatFullCurrency(v.total_ventas)}</td>
-                            <td className="px-4 py-3 text-right font-mono text-rose-500">{formatFullCurrency(v.ventas_excluidas)}</td>
-                            <td className="px-4 py-3 text-right font-mono font-bold text-emerald-700">{formatFullCurrency(v.ventas_comisionables)}</td>
+                            <td className="px-4 py-3 text-right font-mono text-slate-700">
+                              {formatFullCurrency(v.total_ventas)}
+                            </td>
+                            <td className="px-4 py-3 text-right font-mono text-rose-500">
+                              {formatFullCurrency(v.ventas_excluidas)}
+                            </td>
+                            <td className="px-4 py-3 text-right font-mono font-bold text-emerald-700">
+                              {formatFullCurrency(v.ventas_comisionables)}
+                            </td>
                             <td className="px-4 py-3 text-center">
                               <span className="text-xs text-slate-500">
-                                {v.items_comisionables}<span className="text-slate-300">/{v.items_total}</span>
+                                {v.items_comisionables}
+                                <span className="text-slate-300">
+                                  /{v.items_total}
+                                </span>
                               </span>
                             </td>
                             <td className="px-4 py-3">
-                              {isExpanded ? <ChevronUp size={16} className="text-slate-400" /> : <ChevronDown size={16} className="text-slate-400" />}
+                              {isExpanded ? (
+                                <ChevronUp
+                                  size={16}
+                                  className="text-slate-400"
+                                />
+                              ) : (
+                                <ChevronDown
+                                  size={16}
+                                  className="text-slate-400"
+                                />
+                              )}
                             </td>
                           </tr>
 
@@ -323,8 +435,16 @@ export default function VentasTab({ hook }) {
         </>
       )}
 
-      <VentasUploadModal isOpen={showVentasModal} onClose={() => setShowVentasModal(false)} onSuccess={hook.refreshAfterUpload} />
-      <CatalogoUploadModal isOpen={showCatalogoModal} onClose={() => setShowCatalogoModal(false)} onSuccess={hook.fetchCatalogo} />
+      <VentasUploadModal
+        isOpen={showVentasModal}
+        onClose={() => setShowVentasModal(false)}
+        onSuccess={hook.refreshAfterUpload}
+      />
+      <CatalogoUploadModal
+        isOpen={showCatalogoModal}
+        onClose={() => setShowCatalogoModal(false)}
+        onSuccess={hook.fetchCatalogo}
+      />
       <ConfirmDialog {...confirmProps} />
     </>
   );

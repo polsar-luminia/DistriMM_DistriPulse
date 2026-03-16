@@ -28,11 +28,7 @@ import { Card, KpiCard, EmptyState, MESES } from "./ComisionesShared";
 import ReporteVendedorDetail from "./ReporteVendedorDetail";
 
 export default function ReporteMensualTab({ hook }) {
-  const {
-    reporteMensual,
-    loadingReporte,
-    generarReporteMensual,
-  } = hook;
+  const { reporteMensual, loadingReporte, generarReporteMensual } = hook;
 
   const now = new Date();
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
@@ -52,10 +48,16 @@ export default function ReporteMensualTab({ hook }) {
   };
 
   // Ventas ya vienen clasificadas (con .excluded y .reason) desde el hook
-  const classifiedVentas = useMemo(() => reporteMensual?.ventas || [], [reporteMensual]);
+  const classifiedVentas = useMemo(
+    () => reporteMensual?.ventas || [],
+    [reporteMensual],
+  );
 
   // Liquidación (resultados del cálculo de comisiones)
-  const liquidacion = useMemo(() => reporteMensual?.liquidacion || [], [reporteMensual]);
+  const liquidacion = useMemo(
+    () => reporteMensual?.liquidacion || [],
+    [reporteMensual],
+  );
 
   // Group ventas by vendedor
   const vendedorData = useMemo(() => {
@@ -117,7 +119,13 @@ export default function ReporteMensualTab({ hook }) {
   }, [liquidacion, filtroVendedorId]);
 
   const grandTotals = useMemo(() => {
-    const t = { totalVentas: 0, ventasExcluidas: 0, ventasComisionables: 0, costoComisionable: 0, margenComisionable: 0 };
+    const t = {
+      totalVentas: 0,
+      ventasExcluidas: 0,
+      ventasComisionables: 0,
+      costoComisionable: 0,
+      margenComisionable: 0,
+    };
     vendedorData.forEach((v) => {
       t.totalVentas += v.totalVentas;
       t.ventasExcluidas += v.ventasExcluidas;
@@ -125,13 +133,22 @@ export default function ReporteMensualTab({ hook }) {
       t.costoComisionable += v.costoComisionable;
       t.margenComisionable += v.margenComisionable;
     });
-    t.margenPct = t.ventasComisionables > 0 ? (t.margenComisionable / t.ventasComisionables) * 100 : 0;
+    t.margenPct =
+      t.ventasComisionables > 0
+        ? (t.margenComisionable / t.ventasComisionables) * 100
+        : 0;
     return t;
   }, [vendedorData]);
 
   const displayTotals = useMemo(() => {
     if (filtroVendedorId === "todos") return grandTotals;
-    const t = { totalVentas: 0, ventasExcluidas: 0, ventasComisionables: 0, costoComisionable: 0, margenComisionable: 0 };
+    const t = {
+      totalVentas: 0,
+      ventasExcluidas: 0,
+      ventasComisionables: 0,
+      costoComisionable: 0,
+      margenComisionable: 0,
+    };
     filteredVendedorData.forEach((v) => {
       t.totalVentas += v.totalVentas;
       t.ventasExcluidas += v.ventasExcluidas;
@@ -139,12 +156,19 @@ export default function ReporteMensualTab({ hook }) {
       t.costoComisionable += v.costoComisionable;
       t.margenComisionable += v.margenComisionable;
     });
-    t.margenPct = t.ventasComisionables > 0 ? (t.margenComisionable / t.ventasComisionables) * 100 : 0;
+    t.margenPct =
+      t.ventasComisionables > 0
+        ? (t.margenComisionable / t.ventasComisionables) * 100
+        : 0;
     return t;
   }, [filtroVendedorId, grandTotals, filteredVendedorData]);
 
   const comisionTotals = useMemo(() => {
-    const t = { totalComisionVentas: 0, totalComisionRecaudo: 0, totalComision: 0 };
+    const t = {
+      totalComisionVentas: 0,
+      totalComisionRecaudo: 0,
+      totalComision: 0,
+    };
     filteredLiquidacion.forEach((l) => {
       t.totalComisionVentas += l.comisionVentas.totalComisionVentas;
       t.totalComisionRecaudo += l.comisionRecaudo.comisionRecaudo;
@@ -177,16 +201,42 @@ export default function ReporteMensualTab({ hook }) {
       sileo.success("PDF exportado");
     } catch (err) {
       sileo.error("Error al generar PDF");
-      if (import.meta.env.DEV) console.error("[ReporteMensualTab] Error generando PDF:", err);
+      if (import.meta.env.DEV)
+        console.error("[ReporteMensualTab] Error generando PDF:", err);
     }
-  }, [hasData, filteredVendedorData, selectedYear, selectedMonth, cargas, filtroVendedorId, displayTotals, daysInMonth, filteredLiquidacion]);
+  }, [
+    hasData,
+    filteredVendedorData,
+    selectedYear,
+    selectedMonth,
+    cargas,
+    filtroVendedorId,
+    displayTotals,
+    daysInMonth,
+    filteredLiquidacion,
+  ]);
 
   // ── Excel Export ──
-  const handleExport = useCallback(() => {
+  const handleExport = useCallback(async () => {
     if (!hasData) return;
-    generarReporteExcelMensual({ vendedorData, classifiedVentas, cargas, grandTotals, selectedMonth, selectedYear });
+    await generarReporteExcelMensual({
+      vendedorData,
+      classifiedVentas,
+      cargas,
+      grandTotals,
+      selectedMonth,
+      selectedYear,
+    });
     sileo.success("Reporte mensual exportado");
-  }, [hasData, vendedorData, classifiedVentas, cargas, grandTotals, selectedMonth, selectedYear]);
+  }, [
+    hasData,
+    vendedorData,
+    classifiedVentas,
+    cargas,
+    grandTotals,
+    selectedMonth,
+    selectedYear,
+  ]);
 
   return (
     <div>
@@ -199,7 +249,11 @@ export default function ReporteMensualTab({ hook }) {
             onChange={(e) => setSelectedMonth(Number(e.target.value))}
             className="bg-transparent border-none text-xs font-bold focus:ring-0 cursor-pointer outline-none text-slate-700"
           >
-            {MESES.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
+            {MESES.map((m, i) => (
+              <option key={i} value={i + 1}>
+                {m}
+              </option>
+            ))}
           </select>
         </div>
         <div className="flex items-center gap-2 bg-slate-100 rounded-lg px-3 py-2 border border-slate-200">
@@ -208,14 +262,21 @@ export default function ReporteMensualTab({ hook }) {
             onChange={(e) => setSelectedYear(Number(e.target.value))}
             className="bg-transparent border-none text-xs font-bold focus:ring-0 cursor-pointer outline-none text-slate-700"
           >
-            {years.map((y) => <option key={y} value={y}>{y}</option>)}
+            {years.map((y) => (
+              <option key={y} value={y}>
+                {y}
+              </option>
+            ))}
           </select>
         </div>
         <div className="flex items-center gap-2 bg-slate-100 rounded-lg px-3 py-2 border border-slate-200">
           <Filter size={14} className="text-indigo-600 shrink-0" />
           <select
             value={filtroVendedorId}
-            onChange={(e) => { setFiltroVendedorId(e.target.value); setExpandedVendedor(null); }}
+            onChange={(e) => {
+              setFiltroVendedorId(e.target.value);
+              setExpandedVendedor(null);
+            }}
             disabled={!hasData}
             className="bg-transparent border-none text-xs font-bold focus:ring-0 cursor-pointer outline-none text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed min-w-[160px]"
           >
@@ -233,7 +294,11 @@ export default function ReporteMensualTab({ hook }) {
           disabled={loadingReporte}
           className="px-4 py-2 bg-indigo-600 rounded-lg text-xs font-bold text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors shadow-sm flex items-center gap-1.5"
         >
-          {loadingReporte ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} />}
+          {loadingReporte ? (
+            <Loader2 size={14} className="animate-spin" />
+          ) : (
+            <FileText size={14} />
+          )}
           Generar Reporte
         </button>
 
@@ -241,10 +306,16 @@ export default function ReporteMensualTab({ hook }) {
 
         {hasData && (
           <>
-            <button onClick={handleExportPDF} className="px-3 py-2 bg-emerald-600 rounded-lg text-xs font-bold text-white hover:bg-emerald-700 transition-colors shadow-sm flex items-center gap-1.5">
+            <button
+              onClick={handleExportPDF}
+              className="px-3 py-2 bg-emerald-600 rounded-lg text-xs font-bold text-white hover:bg-emerald-700 transition-colors shadow-sm flex items-center gap-1.5"
+            >
               <FileDown size={14} /> PDF
             </button>
-            <button onClick={handleExport} className="px-3 py-2 bg-slate-700 rounded-lg text-xs font-bold text-white hover:bg-slate-800 transition-colors shadow-sm flex items-center gap-1.5">
+            <button
+              onClick={handleExport}
+              className="px-3 py-2 bg-slate-700 rounded-lg text-xs font-bold text-white hover:bg-slate-800 transition-colors shadow-sm flex items-center gap-1.5"
+            >
               <Download size={14} /> Excel
             </button>
           </>
@@ -255,7 +326,9 @@ export default function ReporteMensualTab({ hook }) {
       {loadingReporte && (
         <div className="flex items-center justify-center py-20">
           <Loader2 size={32} className="text-indigo-600 animate-spin" />
-          <span className="ml-3 text-sm text-slate-500">Generando reporte de {periodoLabel}...</span>
+          <span className="ml-3 text-sm text-slate-500">
+            Generando reporte de {periodoLabel}...
+          </span>
         </div>
       )}
 
@@ -282,12 +355,42 @@ export default function ReporteMensualTab({ hook }) {
         <>
           {/* ── KPI Cards (ventas) ── */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-            <KpiCard title="Periodo" value={periodoLabel} icon={CalendarRange} type="info" />
-            <KpiCard title="Dias con Datos" value={`${cargas.length}/${daysInMonth}`} icon={CalendarRange} type="neutral" />
-            <KpiCard title="Total Ventas" value={formatCurrency(displayTotals.totalVentas)} icon={TrendingUp} type="neutral" />
-            <KpiCard title="Comisionable" value={formatCurrency(displayTotals.ventasComisionables)} icon={CheckCircle} type="success" />
-            <KpiCard title="Excluido" value={formatCurrency(displayTotals.ventasExcluidas)} icon={XCircle} type="danger" />
-            <KpiCard title="Margen %" value={formatPercentage(displayTotals.margenPct)} icon={TrendingUp} type="warning" />
+            <KpiCard
+              title="Periodo"
+              value={periodoLabel}
+              icon={CalendarRange}
+              type="info"
+            />
+            <KpiCard
+              title="Dias con Datos"
+              value={`${cargas.length}/${daysInMonth}`}
+              icon={CalendarRange}
+              type="neutral"
+            />
+            <KpiCard
+              title="Total Ventas"
+              value={formatCurrency(displayTotals.totalVentas)}
+              icon={TrendingUp}
+              type="neutral"
+            />
+            <KpiCard
+              title="Comisionable"
+              value={formatCurrency(displayTotals.ventasComisionables)}
+              icon={CheckCircle}
+              type="success"
+            />
+            <KpiCard
+              title="Excluido"
+              value={formatCurrency(displayTotals.ventasExcluidas)}
+              icon={XCircle}
+              type="danger"
+            />
+            <KpiCard
+              title="Margen %"
+              value={formatPercentage(displayTotals.margenPct)}
+              icon={TrendingUp}
+              type="warning"
+            />
           </div>
 
           {/* ══════════ LIQUIDACIÓN DE COMISIONES ══════════ */}
@@ -298,16 +401,35 @@ export default function ReporteMensualTab({ hook }) {
                   <DollarSign size={18} className="text-amber-600" />
                 </div>
                 <div>
-                  <h2 className="text-sm font-black text-slate-900 uppercase tracking-wide">Liquidación de Comisiones</h2>
+                  <h2 className="text-sm font-black text-slate-900 uppercase tracking-wide">
+                    Liquidación de Comisiones
+                  </h2>
                   <p className="text-xs text-slate-500">{periodoLabel}</p>
                 </div>
               </div>
 
               {/* KPI comisiones */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-                <KpiCard title="Comisión Ventas (Marca)" value={formatFullCurrency(comisionTotals.totalComisionVentas)} icon={Tag} type="info" />
-                <KpiCard title="Comisión Recaudo" value={formatFullCurrency(comisionTotals.totalComisionRecaudo)} icon={Wallet} type="success" />
-                <KpiCard title="TOTAL COMISIONES" value={formatFullCurrency(comisionTotals.totalComision)} icon={DollarSign} type="warning" />
+                <KpiCard
+                  title="Comisión Ventas (Marca)"
+                  value={formatFullCurrency(comisionTotals.totalComisionVentas)}
+                  icon={Tag}
+                  type="info"
+                />
+                <KpiCard
+                  title="Comisión Recaudo"
+                  value={formatFullCurrency(
+                    comisionTotals.totalComisionRecaudo,
+                  )}
+                  icon={Wallet}
+                  type="success"
+                />
+                <KpiCard
+                  title="TOTAL COMISIONES"
+                  value={formatFullCurrency(comisionTotals.totalComision)}
+                  icon={DollarSign}
+                  type="warning"
+                />
               </div>
 
               {/* Tabla de liquidación por vendedor */}
@@ -319,34 +441,61 @@ export default function ReporteMensualTab({ hook }) {
                         <th className="px-4 py-3">Vendedor</th>
                         <th className="px-4 py-3 text-right">Com. Ventas</th>
                         <th className="px-4 py-3 text-right">Com. Recaudo</th>
-                        <th className="px-4 py-3 text-right font-black">Total</th>
+                        <th className="px-4 py-3 text-right font-black">
+                          Total
+                        </th>
                         <th className="px-4 py-3 w-8"></th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {filteredLiquidacion.map((liq) => {
-                        const isExpanded = expandedVendedor === `liq-${liq.vendedor_codigo}`;
+                        const isExpanded =
+                          expandedVendedor === `liq-${liq.vendedor_codigo}`;
                         return (
                           <React.Fragment key={liq.vendedor_codigo}>
                             <tr
                               className="hover:bg-slate-50 cursor-pointer transition-colors"
-                              onClick={() => setExpandedVendedor(isExpanded ? null : `liq-${liq.vendedor_codigo}`)}
+                              onClick={() =>
+                                setExpandedVendedor(
+                                  isExpanded
+                                    ? null
+                                    : `liq-${liq.vendedor_codigo}`,
+                                )
+                              }
                             >
                               <td className="px-4 py-3">
-                                <span className="font-bold text-slate-900">{liq.vendedor_nombre || "Sin nombre"}</span>
-                                <span className="text-xs text-slate-400 ml-2">#{liq.vendedor_codigo}</span>
+                                <span className="font-bold text-slate-900">
+                                  {liq.vendedor_nombre || "Sin nombre"}
+                                </span>
+                                <span className="text-xs text-slate-400 ml-2">
+                                  #{liq.vendedor_codigo}
+                                </span>
                               </td>
                               <td className="px-4 py-3 text-right font-mono text-indigo-700 font-bold">
-                                {formatFullCurrency(liq.comisionVentas.totalComisionVentas)}
+                                {formatFullCurrency(
+                                  liq.comisionVentas.totalComisionVentas,
+                                )}
                               </td>
                               <td className="px-4 py-3 text-right font-mono text-emerald-700 font-bold">
-                                {formatFullCurrency(liq.comisionRecaudo.comisionRecaudo)}
+                                {formatFullCurrency(
+                                  liq.comisionRecaudo.comisionRecaudo,
+                                )}
                               </td>
                               <td className="px-4 py-3 text-right font-mono text-amber-700 font-black text-base">
                                 {formatFullCurrency(liq.totalComision)}
                               </td>
                               <td className="px-4 py-3">
-                                {isExpanded ? <ChevronUp size={16} className="text-slate-400" /> : <ChevronDown size={16} className="text-slate-400" />}
+                                {isExpanded ? (
+                                  <ChevronUp
+                                    size={16}
+                                    className="text-slate-400"
+                                  />
+                                ) : (
+                                  <ChevronDown
+                                    size={16}
+                                    className="text-slate-400"
+                                  />
+                                )}
                               </td>
                             </tr>
 
@@ -358,61 +507,128 @@ export default function ReporteMensualTab({ hook }) {
                                     {/* Detalle Comisión por Marca */}
                                     <div>
                                       <h4 className="text-xs font-bold text-indigo-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                                        <Tag size={12} /> Comisión por Marca (Ventas)
+                                        <Tag size={12} /> Comisión por Marca
+                                        (Ventas)
                                       </h4>
-                                      {liq.comisionVentas.detalleMarcas.length === 0 ? (
-                                        <p className="text-xs text-slate-400">Sin ventas en este periodo</p>
+                                      {liq.comisionVentas.detalleMarcas
+                                        .length === 0 ? (
+                                        <p className="text-xs text-slate-400">
+                                          Sin ventas en este periodo
+                                        </p>
                                       ) : (
                                         <div className="overflow-x-auto">
                                           <table className="w-full text-xs">
                                             <thead className="text-slate-400 uppercase font-bold">
                                               <tr>
-                                                <th className="px-3 py-1.5 text-left">Marca</th>
-                                                <th className="px-3 py-1.5 text-right">Costo Vendido</th>
-                                                <th className="px-3 py-1.5 text-right">Meta</th>
-                                                <th className="px-3 py-1.5 text-center">Cumple</th>
-                                                <th className="px-3 py-1.5 text-right">%</th>
-                                                <th className="px-3 py-1.5 text-right">Bono</th>
-                                                <th className="px-3 py-1.5 text-right font-bold">Comisión</th>
+                                                <th className="px-3 py-1.5 text-left">
+                                                  Marca
+                                                </th>
+                                                <th className="px-3 py-1.5 text-right">
+                                                  Costo Vendido
+                                                </th>
+                                                <th className="px-3 py-1.5 text-right">
+                                                  Meta
+                                                </th>
+                                                <th className="px-3 py-1.5 text-center">
+                                                  Cumple
+                                                </th>
+                                                <th className="px-3 py-1.5 text-right">
+                                                  %
+                                                </th>
+                                                <th className="px-3 py-1.5 text-right">
+                                                  Bono
+                                                </th>
+                                                <th className="px-3 py-1.5 text-right font-bold">
+                                                  Comisión
+                                                </th>
                                               </tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-200">
-                                              {liq.comisionVentas.detalleMarcas.map((dm) => (
-                                                <tr key={dm.marca} className={!dm.tienePresupuesto ? "text-slate-400" : "hover:bg-white"}>
-                                                  <td className="px-3 py-1.5 font-medium">
-                                                    {dm.marca}
-                                                    {!dm.tienePresupuesto && (
-                                                      <span className="ml-1 text-[9px] bg-slate-200 text-slate-500 px-1 py-0.5 rounded">Sin config</span>
-                                                    )}
-                                                  </td>
-                                                  <td className="px-3 py-1.5 text-right font-mono">{formatFullCurrency(dm.totalCosto)}</td>
-                                                  <td className="px-3 py-1.5 text-right font-mono">
-                                                    {dm.metaVentas > 0 ? formatFullCurrency(dm.metaVentas) : <span className="text-slate-400">—</span>}
-                                                  </td>
-                                                  <td className="px-3 py-1.5 text-center">
-                                                    {dm.tienePresupuesto && (
-                                                      <span className={cn(
-                                                        "text-[10px] font-bold px-2 py-0.5 rounded-full",
-                                                        dm.cumpleMeta
-                                                          ? "bg-emerald-100 text-emerald-700"
-                                                          : "bg-rose-100 text-rose-700"
-                                                      )}>
-                                                        {dm.cumpleMeta ? "Sí" : "No"}
-                                                      </span>
-                                                    )}
-                                                  </td>
-                                                  <td className="px-3 py-1.5 text-right font-mono">{dm.pctComision > 0 ? `${(dm.pctComision * 100).toFixed(1)}%` : "—"}</td>
-                                                  <td className="px-3 py-1.5 text-right font-mono">
-                                                    {dm.bonoFijo > 0 ? formatFullCurrency(dm.bonoFijo) : "—"}
-                                                  </td>
-                                                  <td className="px-3 py-1.5 text-right font-mono font-bold text-indigo-700">
-                                                    {dm.comision > 0 ? formatFullCurrency(dm.comision) : "—"}
-                                                  </td>
-                                                </tr>
-                                              ))}
+                                              {liq.comisionVentas.detalleMarcas.map(
+                                                (dm) => (
+                                                  <tr
+                                                    key={dm.marca}
+                                                    className={
+                                                      !dm.tienePresupuesto
+                                                        ? "text-slate-400"
+                                                        : "hover:bg-white"
+                                                    }
+                                                  >
+                                                    <td className="px-3 py-1.5 font-medium">
+                                                      {dm.marca}
+                                                      {!dm.tienePresupuesto && (
+                                                        <span className="ml-1 text-[9px] bg-slate-200 text-slate-500 px-1 py-0.5 rounded">
+                                                          Sin config
+                                                        </span>
+                                                      )}
+                                                    </td>
+                                                    <td className="px-3 py-1.5 text-right font-mono">
+                                                      {formatFullCurrency(
+                                                        dm.totalCosto,
+                                                      )}
+                                                    </td>
+                                                    <td className="px-3 py-1.5 text-right font-mono">
+                                                      {dm.metaVentas > 0 ? (
+                                                        formatFullCurrency(
+                                                          dm.metaVentas,
+                                                        )
+                                                      ) : (
+                                                        <span className="text-slate-400">
+                                                          —
+                                                        </span>
+                                                      )}
+                                                    </td>
+                                                    <td className="px-3 py-1.5 text-center">
+                                                      {dm.tienePresupuesto && (
+                                                        <span
+                                                          className={cn(
+                                                            "text-[10px] font-bold px-2 py-0.5 rounded-full",
+                                                            dm.cumpleMeta
+                                                              ? "bg-emerald-100 text-emerald-700"
+                                                              : "bg-rose-100 text-rose-700",
+                                                          )}
+                                                        >
+                                                          {dm.cumpleMeta
+                                                            ? "Sí"
+                                                            : "No"}
+                                                        </span>
+                                                      )}
+                                                    </td>
+                                                    <td className="px-3 py-1.5 text-right font-mono">
+                                                      {dm.pctComision > 0
+                                                        ? `${(dm.pctComision * 100).toFixed(1)}%`
+                                                        : "—"}
+                                                    </td>
+                                                    <td className="px-3 py-1.5 text-right font-mono">
+                                                      {dm.bonoFijo > 0
+                                                        ? formatFullCurrency(
+                                                            dm.bonoFijo,
+                                                          )
+                                                        : "—"}
+                                                    </td>
+                                                    <td className="px-3 py-1.5 text-right font-mono font-bold text-indigo-700">
+                                                      {dm.comision > 0
+                                                        ? formatFullCurrency(
+                                                            dm.comision,
+                                                          )
+                                                        : "—"}
+                                                    </td>
+                                                  </tr>
+                                                ),
+                                              )}
                                               <tr className="bg-indigo-50/50 font-bold border-t-2 border-indigo-200">
-                                                <td colSpan={6} className="px-3 py-2 text-right text-indigo-700 uppercase text-[10px] tracking-wide">Subtotal Ventas</td>
-                                                <td className="px-3 py-2 text-right font-mono text-indigo-700">{formatFullCurrency(liq.comisionVentas.totalComisionVentas)}</td>
+                                                <td
+                                                  colSpan={6}
+                                                  className="px-3 py-2 text-right text-indigo-700 uppercase text-[10px] tracking-wide"
+                                                >
+                                                  Subtotal Ventas
+                                                </td>
+                                                <td className="px-3 py-2 text-right font-mono text-indigo-700">
+                                                  {formatFullCurrency(
+                                                    liq.comisionVentas
+                                                      .totalComisionVentas,
+                                                  )}
+                                                </td>
                                               </tr>
                                             </tbody>
                                           </table>
@@ -423,32 +639,73 @@ export default function ReporteMensualTab({ hook }) {
                                     {/* Detalle Comisión por Recaudo */}
                                     <div>
                                       <h4 className="text-xs font-bold text-emerald-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                                        <Wallet size={12} /> Comisión por Recaudo (Cobranza)
+                                        <Wallet size={12} /> Comisión por
+                                        Recaudo (Cobranza)
                                       </h4>
                                       {liq.comisionRecaudo.metaRecaudo === 0 ? (
-                                        <p className="text-xs text-slate-400">Sin presupuesto de recaudo configurado para este vendedor</p>
+                                        <p className="text-xs text-slate-400">
+                                          Sin presupuesto de recaudo configurado
+                                          para este vendedor
+                                        </p>
                                       ) : (
                                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                           <div className="bg-white rounded-lg border border-slate-200 p-3">
-                                            <p className="text-[10px] text-slate-400 font-bold uppercase">Meta Recaudo</p>
-                                            <p className="text-sm font-black text-slate-900 tabular-nums">{formatFullCurrency(liq.comisionRecaudo.metaRecaudo)}</p>
+                                            <p className="text-[10px] text-slate-400 font-bold uppercase">
+                                              Meta Recaudo
+                                            </p>
+                                            <p className="text-sm font-black text-slate-900 tabular-nums">
+                                              {formatFullCurrency(
+                                                liq.comisionRecaudo.metaRecaudo,
+                                              )}
+                                            </p>
                                           </div>
                                           <div className="bg-white rounded-lg border border-slate-200 p-3">
-                                            <p className="text-[10px] text-slate-400 font-bold uppercase">Recaudo Comisionable</p>
-                                            <p className="text-sm font-black text-emerald-700 tabular-nums">{formatFullCurrency(liq.comisionRecaudo.totalComisionable)}</p>
+                                            <p className="text-[10px] text-slate-400 font-bold uppercase">
+                                              Recaudo Comisionable
+                                            </p>
+                                            <p className="text-sm font-black text-emerald-700 tabular-nums">
+                                              {formatFullCurrency(
+                                                liq.comisionRecaudo
+                                                  .totalComisionable,
+                                              )}
+                                            </p>
                                           </div>
                                           <div className="bg-white rounded-lg border border-slate-200 p-3">
-                                            <p className="text-[10px] text-slate-400 font-bold uppercase">% Cumplimiento</p>
-                                            <p className="text-sm font-black text-slate-900 tabular-nums">{formatPercentage(liq.comisionRecaudo.pctCumplimiento)}</p>
-                                            {liq.comisionRecaudo.tramoAplicado && (
+                                            <p className="text-[10px] text-slate-400 font-bold uppercase">
+                                              % Cumplimiento
+                                            </p>
+                                            <p className="text-sm font-black text-slate-900 tabular-nums">
+                                              {formatPercentage(
+                                                liq.comisionRecaudo
+                                                  .pctCumplimiento,
+                                              )}
+                                            </p>
+                                            {liq.comisionRecaudo
+                                              .tramoAplicado && (
                                               <span className="text-[9px] bg-emerald-100 text-emerald-700 font-bold px-1.5 py-0.5 rounded-full">
-                                                {liq.comisionRecaudo.tramoAplicado} ({(liq.comisionRecaudo.pctComision * 100).toFixed(2)}%)
+                                                {
+                                                  liq.comisionRecaudo
+                                                    .tramoAplicado
+                                                }{" "}
+                                                (
+                                                {(
+                                                  liq.comisionRecaudo
+                                                    .pctComision * 100
+                                                ).toFixed(2)}
+                                                %)
                                               </span>
                                             )}
                                           </div>
                                           <div className="bg-emerald-50 rounded-lg border border-emerald-200 p-3">
-                                            <p className="text-[10px] text-emerald-600 font-bold uppercase">Comisión Recaudo</p>
-                                            <p className="text-sm font-black text-emerald-700 tabular-nums">{formatFullCurrency(liq.comisionRecaudo.comisionRecaudo)}</p>
+                                            <p className="text-[10px] text-emerald-600 font-bold uppercase">
+                                              Comisión Recaudo
+                                            </p>
+                                            <p className="text-sm font-black text-emerald-700 tabular-nums">
+                                              {formatFullCurrency(
+                                                liq.comisionRecaudo
+                                                  .comisionRecaudo,
+                                              )}
+                                            </p>
                                           </div>
                                         </div>
                                       )}
@@ -457,7 +714,9 @@ export default function ReporteMensualTab({ hook }) {
                                     {/* Total del vendedor */}
                                     <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex justify-between items-center">
                                       <span className="text-sm font-bold text-amber-800 uppercase">
-                                        Total Comisión {liq.vendedor_nombre || liq.vendedor_codigo}
+                                        Total Comisión{" "}
+                                        {liq.vendedor_nombre ||
+                                          liq.vendedor_codigo}
                                       </span>
                                       <span className="text-lg font-black text-amber-700 tabular-nums">
                                         {formatFullCurrency(liq.totalComision)}
@@ -474,9 +733,19 @@ export default function ReporteMensualTab({ hook }) {
                       {/* Totals row */}
                       <tr className="bg-slate-50 border-t-2 border-slate-300 font-bold">
                         <td className="px-4 py-3 text-slate-900">TOTALES</td>
-                        <td className="px-4 py-3 text-right font-mono text-indigo-700">{formatFullCurrency(comisionTotals.totalComisionVentas)}</td>
-                        <td className="px-4 py-3 text-right font-mono text-emerald-700">{formatFullCurrency(comisionTotals.totalComisionRecaudo)}</td>
-                        <td className="px-4 py-3 text-right font-mono text-amber-700 text-base">{formatFullCurrency(comisionTotals.totalComision)}</td>
+                        <td className="px-4 py-3 text-right font-mono text-indigo-700">
+                          {formatFullCurrency(
+                            comisionTotals.totalComisionVentas,
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-right font-mono text-emerald-700">
+                          {formatFullCurrency(
+                            comisionTotals.totalComisionRecaudo,
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-right font-mono text-amber-700 text-base">
+                          {formatFullCurrency(comisionTotals.totalComision)}
+                        </td>
                         <td className="px-4 py-3"></td>
                       </tr>
                     </tbody>
@@ -492,8 +761,12 @@ export default function ReporteMensualTab({ hook }) {
               <TrendingUp size={18} className="text-indigo-600" />
             </div>
             <div>
-              <h2 className="text-sm font-black text-slate-900 uppercase tracking-wide">Detalle de Ventas</h2>
-              <p className="text-xs text-slate-500">Desglose por vendedor con facturas comisionables y excluidas</p>
+              <h2 className="text-sm font-black text-slate-900 uppercase tracking-wide">
+                Detalle de Ventas
+              </h2>
+              <p className="text-xs text-slate-500">
+                Desglose por vendedor con facturas comisionables y excluidas
+              </p>
             </div>
           </div>
 
@@ -515,28 +788,58 @@ export default function ReporteMensualTab({ hook }) {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {filteredVendedorData.map((v) => {
-                    const isExp = expandedVendedor === `det-${v.vendedor_codigo}`;
+                    const isExp =
+                      expandedVendedor === `det-${v.vendedor_codigo}`;
                     return (
                       <React.Fragment key={v.vendedor_codigo}>
                         <tr
                           className="hover:bg-slate-50 cursor-pointer transition-colors"
-                          onClick={() => setExpandedVendedor(isExp ? null : `det-${v.vendedor_codigo}`)}
+                          onClick={() =>
+                            setExpandedVendedor(
+                              isExp ? null : `det-${v.vendedor_codigo}`,
+                            )
+                          }
                         >
                           <td className="px-4 py-3">
-                            <span className="font-bold text-slate-900">{v.vendedor_nombre || "Sin nombre"}</span>
-                            <span className="text-xs text-slate-400 ml-2">#{v.vendedor_codigo}</span>
+                            <span className="font-bold text-slate-900">
+                              {v.vendedor_nombre || "Sin nombre"}
+                            </span>
+                            <span className="text-xs text-slate-400 ml-2">
+                              #{v.vendedor_codigo}
+                            </span>
                           </td>
-                          <td className="px-4 py-3 text-center text-xs font-bold text-slate-600">{v.diasTrabajados}</td>
-                          <td className="px-4 py-3 text-right font-mono text-slate-700">{formatFullCurrency(v.totalVentas)}</td>
-                          <td className="px-4 py-3 text-right font-mono text-rose-500">{formatFullCurrency(v.ventasExcluidas)}</td>
-                          <td className="px-4 py-3 text-right font-mono font-bold text-emerald-700">{formatFullCurrency(v.ventasComisionables)}</td>
-                          <td className="px-4 py-3 text-right font-mono text-slate-700">{formatFullCurrency(v.costoComisionable)}</td>
+                          <td className="px-4 py-3 text-center text-xs font-bold text-slate-600">
+                            {v.diasTrabajados}
+                          </td>
+                          <td className="px-4 py-3 text-right font-mono text-slate-700">
+                            {formatFullCurrency(v.totalVentas)}
+                          </td>
+                          <td className="px-4 py-3 text-right font-mono text-rose-500">
+                            {formatFullCurrency(v.ventasExcluidas)}
+                          </td>
+                          <td className="px-4 py-3 text-right font-mono font-bold text-emerald-700">
+                            {formatFullCurrency(v.ventasComisionables)}
+                          </td>
+                          <td className="px-4 py-3 text-right font-mono text-slate-700">
+                            {formatFullCurrency(v.costoComisionable)}
+                          </td>
                           <td className="px-4 py-3 text-right">
-                            <span className="text-xs font-bold tabular-nums">{formatPercentage(v.margenPct)}</span>
+                            <span className="text-xs font-bold tabular-nums">
+                              {formatPercentage(v.margenPct)}
+                            </span>
                           </td>
-                          <td className="px-4 py-3 text-center text-xs font-bold text-slate-600">{v.numFacturas}</td>
+                          <td className="px-4 py-3 text-center text-xs font-bold text-slate-600">
+                            {v.numFacturas}
+                          </td>
                           <td className="px-4 py-3">
-                            {isExp ? <ChevronUp size={16} className="text-slate-400" /> : <ChevronDown size={16} className="text-slate-400" />}
+                            {isExp ? (
+                              <ChevronUp size={16} className="text-slate-400" />
+                            ) : (
+                              <ChevronDown
+                                size={16}
+                                className="text-slate-400"
+                              />
+                            )}
                           </td>
                         </tr>
                         {isExp && (
@@ -554,11 +857,21 @@ export default function ReporteMensualTab({ hook }) {
                   <tr className="bg-slate-50 border-t-2 border-slate-300 font-bold">
                     <td className="px-4 py-3 text-slate-900">TOTALES</td>
                     <td className="px-4 py-3"></td>
-                    <td className="px-4 py-3 text-right font-mono text-slate-900">{formatFullCurrency(displayTotals.totalVentas)}</td>
-                    <td className="px-4 py-3 text-right font-mono text-rose-600">{formatFullCurrency(displayTotals.ventasExcluidas)}</td>
-                    <td className="px-4 py-3 text-right font-mono text-emerald-700">{formatFullCurrency(displayTotals.ventasComisionables)}</td>
-                    <td className="px-4 py-3 text-right font-mono text-slate-900">{formatFullCurrency(displayTotals.costoComisionable)}</td>
-                    <td className="px-4 py-3 text-right text-xs font-bold">{formatPercentage(displayTotals.margenPct)}</td>
+                    <td className="px-4 py-3 text-right font-mono text-slate-900">
+                      {formatFullCurrency(displayTotals.totalVentas)}
+                    </td>
+                    <td className="px-4 py-3 text-right font-mono text-rose-600">
+                      {formatFullCurrency(displayTotals.ventasExcluidas)}
+                    </td>
+                    <td className="px-4 py-3 text-right font-mono text-emerald-700">
+                      {formatFullCurrency(displayTotals.ventasComisionables)}
+                    </td>
+                    <td className="px-4 py-3 text-right font-mono text-slate-900">
+                      {formatFullCurrency(displayTotals.costoComisionable)}
+                    </td>
+                    <td className="px-4 py-3 text-right text-xs font-bold">
+                      {formatPercentage(displayTotals.margenPct)}
+                    </td>
                     <td className="px-4 py-3"></td>
                     <td className="px-4 py-3"></td>
                   </tr>

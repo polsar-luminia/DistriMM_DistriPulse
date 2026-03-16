@@ -14,7 +14,6 @@ import {
   Users,
   FileText,
 } from "lucide-react";
-import * as XLSX from "xlsx-js-style";
 import { supabase } from "../lib/supabase";
 import { sileo } from "sileo";
 import { cn } from "@/lib/utils";
@@ -74,7 +73,8 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
         .select("count", { count: "exact", head: true });
 
       if (connError) {
-        if (import.meta.env.DEV) console.error("Connection Check Failed:", connError);
+        if (import.meta.env.DEV)
+          console.error("Connection Check Failed:", connError);
         if (connError.message === "FetchError: Failed to fetch") {
           setError(
             "Error de conexion: No se pudo contactar con Supabase. Revisa tu internet o la URL del proyecto.",
@@ -124,15 +124,22 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
     // Validate magic bytes before processing
     const { valid } = await validateExcelMIME(file);
     if (!valid) {
-      sileo.error({ title: "Archivo invalido", description: "El archivo no es un Excel valido (.xlsx o .xls). Verifica que no sea un archivo renombrado." });
-      setError("El archivo no tiene un formato Excel valido. Solo se aceptan archivos .xlsx y .xls reales.");
+      sileo.error({
+        title: "Archivo invalido",
+        description:
+          "El archivo no es un Excel valido (.xlsx o .xls). Verifica que no sea un archivo renombrado.",
+      });
+      setError(
+        "El archivo no tiene un formato Excel valido. Solo se aceptan archivos .xlsx y .xls reales.",
+      );
       return;
     }
 
     try {
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         try {
+          const XLSX = await import("xlsx-js-style");
           const data = new Uint8Array(e.target.result);
           const workbook = XLSX.read(data, { type: "array", cellDates: false });
           const firstSheetName = workbook.SheetNames[0];
@@ -161,7 +168,9 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
           }
 
           if (!fileType) {
-            setError("No se pudo determinar el tipo de archivo. Verifique que sea un Excel de Cartera o Clientes.");
+            setError(
+              "No se pudo determinar el tipo de archivo. Verifique que sea un Excel de Cartera o Clientes.",
+            );
             return;
           }
 
@@ -178,7 +187,9 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
           }
 
           if (processed.length === 0)
-            throw new Error("No se encontraron registros validos en el archivo.");
+            throw new Error(
+              "No se encontraron registros validos en el archivo.",
+            );
 
           setFullData(processed);
           setPreviewData(processed.slice(0, 5));
@@ -225,15 +236,20 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
       setProgress(30);
 
       // 2. Extract unique vendedores and upsert
-      const vendedorCodes = [...new Set(fullData.map(i => i.vendedor_codigo).filter(Boolean))];
+      const vendedorCodes = [
+        ...new Set(fullData.map((i) => i.vendedor_codigo).filter(Boolean)),
+      ];
       if (vendedorCodes.length > 0) {
-        const vendedorRows = vendedorCodes.map(code => ({
+        const vendedorRows = vendedorCodes.map((code) => ({
           codigo: code,
           nombre: `Vendedor ${code}`,
         }));
         await supabase
           .from("distrimm_vendedores")
-          .upsert(vendedorRows, { onConflict: "codigo", ignoreDuplicates: true });
+          .upsert(vendedorRows, {
+            onConflict: "codigo",
+            ignoreDuplicates: true,
+          });
       }
 
       // 3. Prepare Final Batch
@@ -277,7 +293,8 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
       if (import.meta.env.DEV) console.error("Upload Error (Raw):", err);
 
       if (createdLoadId) {
-        if (import.meta.env.DEV) console.warn("Rolling back load:", createdLoadId);
+        if (import.meta.env.DEV)
+          console.warn("Rolling back load:", createdLoadId);
         await supabase
           .from("historial_cargas")
           .delete()
@@ -322,7 +339,8 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
           .select("no_identif")
           .in("no_identif", batch);
         if (prefetchError) throw prefetchError;
-        if (batchRows) prefetchedNits.push(...batchRows.map((r) => r.no_identif));
+        if (batchRows)
+          prefetchedNits.push(...batchRows.map((r) => r.no_identif));
       }
       preExistingNits = new Set(prefetchedNits);
 
@@ -404,9 +422,14 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
       if (import.meta.env.DEV) console.error("Upload Clientes Error:", err);
 
       // Rollback: delete only NEW records introduced by this upload (protect pre-existing)
-      const newNitsToRollback = processedNits.filter((nit) => !preExistingNits.has(nit));
+      const newNitsToRollback = processedNits.filter(
+        (nit) => !preExistingNits.has(nit),
+      );
       if (newNitsToRollback.length > 0) {
-        if (import.meta.env.DEV) console.warn(`Rolling back ${newNitsToRollback.length} client records`);
+        if (import.meta.env.DEV)
+          console.warn(
+            `Rolling back ${newNitsToRollback.length} client records`,
+          );
         // Delete in batches to avoid query size limits
         for (let i = 0; i < newNitsToRollback.length; i += 100) {
           const nitBatch = newNitsToRollback.slice(i, i + 100);
@@ -446,8 +469,12 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
         .limit(1);
 
       if (existing && existing.length > 0) {
-        const displayDate = new Date(cutOffDate + "T12:00:00").toLocaleDateString("es-CO", {
-          day: "2-digit", month: "2-digit", year: "numeric",
+        const displayDate = new Date(
+          cutOffDate + "T12:00:00",
+        ).toLocaleDateString("es-CO", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
         });
         const ok = await confirm({
           title: "Carga duplicada",
@@ -511,15 +538,20 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
                   <div className="flex items-center gap-2">
                     <FileText size={16} className="text-indigo-500" />
-                    <span><strong>Cartera</strong> - Cuentas por cobrar</span>
+                    <span>
+                      <strong>Cartera</strong> - Cuentas por cobrar
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Users size={16} className="text-indigo-500" />
-                    <span><strong>Clientes</strong> - Maestro de terceros</span>
+                    <span>
+                      <strong>Clientes</strong> - Maestro de terceros
+                    </span>
                   </div>
                 </div>
                 <p className="text-xs text-indigo-500 mt-2">
-                  El tipo se detecta automaticamente por las columnas del archivo.
+                  El tipo se detecta automaticamente por las columnas del
+                  archivo.
                 </p>
               </div>
 
@@ -551,7 +583,12 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
                   Archivo Excel
                 </label>
                 <div
-                  className={cn("border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-all duration-200 group", file ? "border-indigo-500 bg-indigo-50/50" : "border-slate-300 hover:border-indigo-400 hover:bg-slate-50")}
+                  className={cn(
+                    "border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-all duration-200 group",
+                    file
+                      ? "border-indigo-500 bg-indigo-50/50"
+                      : "border-slate-300 hover:border-indigo-400 hover:bg-slate-50",
+                  )}
                 >
                   <input
                     type="file"
@@ -612,19 +649,40 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
           {step === "preview" && (
             <div className="space-y-6 animate-in slide-in-from-right-4">
               {/* Type Badge */}
-              <div className={cn("rounded-lg p-4 flex gap-3", detectedType === UPLOAD_TYPES.CLIENTES ? "bg-blue-50 border border-blue-200" : "bg-amber-50 border border-amber-200")}>
+              <div
+                className={cn(
+                  "rounded-lg p-4 flex gap-3",
+                  detectedType === UPLOAD_TYPES.CLIENTES
+                    ? "bg-blue-50 border border-blue-200"
+                    : "bg-amber-50 border border-amber-200",
+                )}
+              >
                 {detectedType === UPLOAD_TYPES.CLIENTES ? (
                   <Users className="text-blue-600 shrink-0" size={24} />
                 ) : (
                   <ShieldAlert className="text-amber-600 shrink-0" size={24} />
                 )}
                 <div>
-                  <h4 className={cn("font-bold text-sm uppercase tracking-wide mb-1", detectedType === UPLOAD_TYPES.CLIENTES ? "text-blue-800" : "text-amber-800")}>
+                  <h4
+                    className={cn(
+                      "font-bold text-sm uppercase tracking-wide mb-1",
+                      detectedType === UPLOAD_TYPES.CLIENTES
+                        ? "text-blue-800"
+                        : "text-amber-800",
+                    )}
+                  >
                     {detectedType === UPLOAD_TYPES.CLIENTES
                       ? "Maestro de Clientes Detectado"
                       : "Archivo de Cartera Detectado"}
                   </h4>
-                  <p className={cn("text-sm leading-relaxed", detectedType === UPLOAD_TYPES.CLIENTES ? "text-blue-700" : "text-amber-700")}>
+                  <p
+                    className={cn(
+                      "text-sm leading-relaxed",
+                      detectedType === UPLOAD_TYPES.CLIENTES
+                        ? "text-blue-700"
+                        : "text-amber-700",
+                    )}
+                  >
                     {detectedType === UPLOAD_TYPES.CLIENTES
                       ? `Se encontraron ${fullData.length} clientes. Los existentes se actualizaran automaticamente.`
                       : `Se encontraron ${fullData.length} registros de cartera. Verifica las fechas antes de guardar.`}
@@ -664,7 +722,14 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
                               {row.nombreCompleto}
                             </td>
                             <td className="px-4 py-2">
-                              <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", row.tipo_persona === "Juridica" ? "bg-indigo-100 text-indigo-700" : "bg-slate-100 text-slate-600")}>
+                              <span
+                                className={cn(
+                                  "text-[10px] font-bold px-2 py-0.5 rounded-full",
+                                  row.tipo_persona === "Juridica"
+                                    ? "bg-indigo-100 text-indigo-700"
+                                    : "bg-slate-100 text-slate-600",
+                                )}
+                              >
                                 {row.tipo_persona || "N/A"}
                               </span>
                             </td>
@@ -702,11 +767,14 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
                             </td>
                             <td className="px-4 py-2 font-bold text-slate-800">
                               {row.fecha_emision
-                                ? row.fecha_emision.toLocaleDateString("es-CO", {
-                                  day: "numeric",
-                                  month: "long",
-                                  year: "numeric",
-                                })
+                                ? row.fecha_emision.toLocaleDateString(
+                                    "es-CO",
+                                    {
+                                      day: "numeric",
+                                      month: "long",
+                                      year: "numeric",
+                                    },
+                                  )
                                 : "-"}
                             </td>
                             <td className="px-4 py-2 text-xs text-slate-500">
