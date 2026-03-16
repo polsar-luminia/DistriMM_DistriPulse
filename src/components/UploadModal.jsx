@@ -57,6 +57,13 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
     setDetectedType(null);
   };
 
+  // Cleanup success timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (successTimeoutRef.current) clearTimeout(successTimeoutRef.current);
+    };
+  }, []);
+
   // --- CONNECTION DIAGNOSTIC ---
   useEffect(() => {
     if (!isOpen) return;
@@ -324,6 +331,7 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
 
         const rowsToUpsert = batch.map((item) => ({
           no_identif: item.no_identif,
+          nombre_completo: item.nombreCompleto || null,
           tipo_ident: item.tipo_ident,
           tipo_persona: item.tipo_persona,
           primer_nombre: item.primer_nombre,
