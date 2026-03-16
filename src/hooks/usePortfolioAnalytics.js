@@ -236,15 +236,39 @@ export function usePortfolioAnalytics() {
             if (newCurrentId && newCurrentId !== latestCurrentId) {
                 fetchData(newCurrentId, updatedLoads);
             } else if (!newCurrentId) {
-                // No loads left, clear data
+                // No loads left, fully reset all data to initial state
                 setData(prev => ({
                     ...prev,
                     items: [],
                     availableLoads: [],
                     currentLoadId: null,
-                    stats: { ...prev.stats, total: 0, vencida: 0 }, // Reset minimal stats
-                    charts: { ...prev.charts, aging: [], projection: [] },
-                    lists: { ...prev.lists, upcomingItems: [] }
+                    stats: {
+                        total: 0,
+                        vencida: 0,
+                        porVencer: 0,
+                        porcentajeVencida: 0,
+                        trendPercentage: null,
+                        paretoPercentage: 0,
+                        unrecoverableTotal: 0,
+                    },
+                    charts: {
+                        aging: [],
+                        projection: [],
+                        invoicesByStatus: [],
+                        radarData: [],
+                        topOldest: [],
+                    },
+                    lists: {
+                        upcomingItems: [],
+                        urgentItems: [],
+                        aggregatedClients: [],
+                    },
+                    vendedores: {
+                        stats: [],
+                        uniqueCodes: [],
+                        count: 0,
+                    },
+                    healthScore: 100,
                 }));
             }
         }

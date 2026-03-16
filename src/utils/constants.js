@@ -84,11 +84,6 @@ export const DATE_FORMATS = {
   TIMEZONE: "America/Bogota",
 };
 
-export const UPLOAD_TYPES = {
-  CARTERA: "cartera",
-  CLIENTES: "clientes",
-};
-
 export const VENDEDOR_THRESHOLDS = {
   /** % vencida above which vendedor is high risk */
   HIGH_RISK_PCT: 30,

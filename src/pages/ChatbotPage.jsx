@@ -155,8 +155,8 @@ export default function ChatbotPage() {
       const text = (messageText || inputValue).trim();
       if (!text || isLoading) return;
 
-      // Ensure we have an active session
-      let currentSessionId = sessionId;
+      // Ensure we have an active session — prefer activeSession.session_id over state
+      let currentSessionId = activeSession?.session_id || sessionId;
       let currentActiveSession = activeSession;
 
       if (!currentActiveSession) {

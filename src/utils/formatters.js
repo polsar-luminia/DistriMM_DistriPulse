@@ -50,7 +50,7 @@ export const formatPercentage = (value, decimals = 1) => {
 };
 
 export const formatNumber = (value) => {
-  if (value === undefined || value === null) return "0";
+  if (!Number.isFinite(value)) return "0";
   return new Intl.NumberFormat("es-CO").format(value);
 };
 

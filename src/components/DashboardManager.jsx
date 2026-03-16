@@ -116,11 +116,13 @@ export default function DashboardManager() {
     await refresh();
   }, [refresh]);
 
-  // --- CALCULATE MISSING METRICS ---
-  const avgTicket = items && items.length > 0 ? (stats.total / items.length) : 0;
+  // --- CALCULATE MISSING METRICS (memoized to avoid recalc on unrelated state changes) ---
+  const avgTicket = useMemo(
+    () => items && items.length > 0 ? (stats.total / items.length) : 0,
+    [items, stats.total]
+  );
 
-  // Calculate Cash Flow for next 7 days from projection
-  const cashFlow7Days = (charts.projection || [])
+  const cashFlow7Days = useMemo(() => (charts.projection || [])
     .filter(p => {
       const pDate = new Date(p.date);
       const today = new Date();
@@ -128,7 +130,9 @@ export default function DashboardManager() {
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       return diffDays >= 0 && diffDays <= 7;
     })
-    .reduce((sum, p) => sum + (p.total || 0), 0);
+    .reduce((sum, p) => sum + (p.total || 0), 0),
+    [charts.projection]
+  );
 
   // Stable callback for upload click
   const onUploadClick = useCallback(() => setIsUploadModalOpen(true), []);
@@ -190,9 +194,11 @@ export default function DashboardManager() {
     // FILTERS & UI STATE
     filters,
     setFilters,
+    sortConfig,
+    setSortConfig,
     upcomingDays,
     setUpcomingDays
-  }), [availableLoads, currentLoadId, onUploadClick, deleteLoad, sortedItems, items, stats, lists, healthScore, charts, avgTicket, cashFlow7Days, vendedores, loading, error, handleRefresh, changeLoad, markRemindersAsSent, filters, upcomingDays]);
+  }), [availableLoads, currentLoadId, onUploadClick, deleteLoad, sortedItems, items, stats, lists, healthScore, charts, avgTicket, cashFlow7Days, vendedores, loading, error, handleRefresh, changeLoad, markRemindersAsSent, filters, sortConfig, upcomingDays]);
 
   const filterContextValue = useMemo(() => ({
     filters,

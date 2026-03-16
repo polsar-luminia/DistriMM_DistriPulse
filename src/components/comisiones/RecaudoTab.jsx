@@ -141,8 +141,8 @@ export default function RecaudoTab({ hook }) {
           {/* KPI Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <KpiCard title="Total Recaudado" value={formatCurrency(totals.totalRecaudado)} icon={DollarSign} type="info" />
-            <KpiCard title="Comisionable (≤{DIAS_MORA_LIMITE}d)" value={formatCurrency(totals.totalComisionable)} icon={CheckCircle} type="success" />
-            <KpiCard title="Excluido (>{DIAS_MORA_LIMITE}d)" value={formatCurrency(totals.totalExcluido)} icon={XCircle} type="danger" />
+            <KpiCard title={`Comisionable (≤${DIAS_MORA_LIMITE}d)`} value={formatCurrency(totals.totalComisionable)} icon={CheckCircle} type="success" />
+            <KpiCard title={`Excluido (>${DIAS_MORA_LIMITE}d)`} value={formatCurrency(totals.totalExcluido)} icon={XCircle} type="danger" />
             <KpiCard title="% Comisionable" value={`${totals.pctComisionable.toFixed(1)}%`} icon={Percent} type="warning" />
           </div>
 
