@@ -389,7 +389,7 @@ export async function generarCarteraPDF({ items, groupBy, filters }) {
         if (data.section !== "body") return;
         // % vencido coloring
         if (data.column.index === 5) {
-          const val = parseFloat(data.cell.raw);
+          const val = parseFloat(String(data.cell.raw).replace(",", "."));
           if (val > 50) data.cell.styles.textColor = C.rose;
           else if (val > 25) data.cell.styles.textColor = C.amber;
           else data.cell.styles.textColor = C.emerald;

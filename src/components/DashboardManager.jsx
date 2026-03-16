@@ -54,7 +54,7 @@ export default function DashboardManager() {
       // 1. Search Query
       if (
         filters.searchQuery &&
-        !item.cliente_nombre
+        !(item.cliente_nombre || "")
           .toLowerCase()
           .includes(filters.searchQuery.toLowerCase()) &&
         !String(item.documento_id).includes(filters.searchQuery)
@@ -124,9 +124,9 @@ export default function DashboardManager() {
     .filter(p => {
       const pDate = new Date(p.date);
       const today = new Date();
-      const diffTime = Math.abs(pDate - today);
+      const diffTime = pDate - today;
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      return diffDays <= 7;
+      return diffDays >= 0 && diffDays <= 7;
     })
     .reduce((sum, p) => sum + (p.total || 0), 0);
 

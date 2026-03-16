@@ -1,7 +1,7 @@
 ﻿import { DATE_FORMATS } from "./constants";
 
 export const formatCurrency = (value) => {
-  if (value === undefined || value === null) return "$0";
+  if (!Number.isFinite(value)) return "$0";
   return new Intl.NumberFormat("es-CO", {
     style: "currency",
     currency: "COP",
@@ -11,7 +11,7 @@ export const formatCurrency = (value) => {
 };
 
 export const formatFullCurrency = (value) => {
-  if (value === undefined || value === null) return "$ 0";
+  if (!Number.isFinite(value)) return "$ 0";
   return new Intl.NumberFormat("es-CO", {
     style: "currency",
     currency: "COP",

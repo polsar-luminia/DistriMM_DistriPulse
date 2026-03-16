@@ -204,7 +204,7 @@ export default function RecaudoTab({ hook }) {
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
                                       {v.items
-                                        .sort((a, b) => Number(b.valor_recaudo) - Number(a.valor_recaudo))
+                                        .toSorted((a, b) => Number(b.valor_recaudo) - Number(a.valor_recaudo))
                                         .map((item) => (
                                           <tr key={item.id} className="hover:bg-white">
                                             <td className="px-6 py-2 truncate max-w-[180px]">{item.cliente_nombre || item.cliente_nit}</td>
