@@ -45,16 +45,23 @@ export function useMessageSending({ markRemindersAsSent } = {}) {
         return { success: false, error: hourCheck.reason };
       }
 
-      const { data: logEntry } = await logMessage({
-        tipo,
-        destinatarioNombre: clientName,
-        destinatarioTelefono: phone,
-        destinatarioNit: nit,
-        plantillaId,
-        mensajeRenderizado: message,
-        estado: "pendiente",
-        facturasIds: invoiceIds || [],
-      });
+      // Log first, but don't let logging failures block the actual send
+      let logEntry = null;
+      try {
+        const res = await logMessage({
+          tipo,
+          destinatarioNombre: clientName,
+          destinatarioTelefono: phone,
+          destinatarioNit: nit,
+          plantillaId,
+          mensajeRenderizado: message,
+          estado: "pendiente",
+          facturasIds: invoiceIds || [],
+        });
+        logEntry = res.data;
+      } catch (logErr) {
+        if (import.meta.env.DEV) console.error("[useMessageSending] logMessage failed:", logErr);
+      }
 
       const { success, error } = await sendWhatsAppMessage({
         phone,
@@ -64,11 +71,15 @@ export function useMessageSending({ markRemindersAsSent } = {}) {
       });
 
       if (logEntry?.id) {
-        await updateLogStatus(
-          logEntry.id,
-          success ? "enviado" : "fallido",
-          error ? (error.message || String(error)) : null,
-        );
+        try {
+          await updateLogStatus(
+            logEntry.id,
+            success ? "enviado" : "fallido",
+            error ? (error.message || String(error)) : null,
+          );
+        } catch (updateErr) {
+          if (import.meta.env.DEV) console.error("[useMessageSending] updateLogStatus failed:", updateErr);
+        }
       }
 
       if (success && tipo === "recordatorio" && invoiceIds?.length > 0 && markRemindersAsSent) {

@@ -92,13 +92,9 @@ export function useComisionesRecaudos() {
     const { success } = await deleteRecaudoCargaSvc(id);
     if (success) {
       await fetchRecaudoCargas();
-      setSelectedRecaudoCargaId((prev) => {
-        if (prev === id) {
-          setRecaudos([]);
-          return null;
-        }
-        return prev;
-      });
+      // Clear selection if we deleted the active carga
+      // (useEffect on selectedRecaudoCargaId handles clearing recaudos)
+      setSelectedRecaudoCargaId((prev) => (prev === id ? null : prev));
     }
     return success;
   }, [fetchRecaudoCargas]);

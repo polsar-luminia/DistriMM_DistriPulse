@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   getTemplates,
   saveTemplate as saveTemplateSvc,
@@ -8,8 +8,10 @@ import {
 export function useTemplates() {
   const [templates, setTemplates] = useState([]);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
+  const lastTipoRef = useRef(undefined);
 
   const loadTemplates = useCallback(async (tipo) => {
+    lastTipoRef.current = tipo;
     setLoadingTemplates(true);
     try {
       const { data, error } = await getTemplates(tipo);
@@ -26,7 +28,7 @@ export function useTemplates() {
     async (template) => {
       const { data, error } = await saveTemplateSvc(template);
       if (!error) {
-        await loadTemplates();
+        await loadTemplates(lastTipoRef.current);
       }
       return { data, error };
     },
@@ -37,7 +39,7 @@ export function useTemplates() {
     async (id) => {
       const { success, error } = await deleteTemplateSvc(id);
       if (success) {
-        await loadTemplates();
+        await loadTemplates(lastTipoRef.current);
       }
       return { success, error };
     },
