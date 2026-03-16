@@ -1,4 +1,4 @@
-import { supabase } from "../lib/supabase";
+import { supabase, fetchAllRows } from "../lib/supabase";
 
 export const getChatSessions = async (userId) => {
   try {
@@ -71,13 +71,14 @@ export const deleteChatSession = async (sessionId) => {
 
 export const getChatMessages = async (chatSessionId) => {
   try {
-    const { data, error } = await supabase
-      .from("distrimm_chat_messages")
-      .select("*")
-      .eq("chat_session_id", chatSessionId)
-      .order("created_at", { ascending: true });
-
-    if (error) throw error;
+    const data = await fetchAllRows((from, to) =>
+      supabase
+        .from("distrimm_chat_messages")
+        .select("*")
+        .eq("chat_session_id", chatSessionId)
+        .order("created_at", { ascending: true })
+        .range(from, to),
+    );
     return { data, error: null };
   } catch (error) {
     if (import.meta.env.DEV) console.error("[chatSessionService] Error fetching messages:", error);

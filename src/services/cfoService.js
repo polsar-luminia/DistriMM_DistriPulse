@@ -57,6 +57,6 @@ export const getHistoricoCartera = async () => {
     return { data: data || [], error: null };
   } catch (err) {
     if (import.meta.env.DEV) console.error("[cfoService] Error fetching historico:", err);
-    return { data: null, error: err.message };
+    return { data: null, error: err };
   }
 };

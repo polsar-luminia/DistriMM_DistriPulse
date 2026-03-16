@@ -107,9 +107,14 @@ export const testConnection = async () => {
 export const rollbackUpload = async (loadId) => {
   try {
     const { error } = await supabase.from("historial_cargas").delete().eq("id", loadId);
-    if (error && import.meta.env.DEV) console.error("[portfolioService] Rollback query error:", error);
+    if (error) {
+      if (import.meta.env.DEV) console.error("[portfolioService] Rollback query error:", error);
+      return { success: false, error };
+    }
+    return { success: true, error: null };
   } catch (error) {
     if (import.meta.env.DEV) console.error("[portfolioService] Error during rollback:", error);
+    return { success: false, error };
   }
 };
 
@@ -236,12 +241,13 @@ export const getClientCreditScore = async (nit) => {
 export const getClientCreditScoreV2 = async (nit) => {
   if (!nit) return { data: null, error: new Error("NIT is required") };
   try {
-    const { data: configRow } = await supabase
+    const { data: configRow, error: configError } = await supabase
       .from("distrimm_config")
       .select("score_config")
       .eq("id", 1)
       .single();
 
+    if (configError && import.meta.env.DEV) console.warn("[portfolioService] Config fetch failed, using defaults:", configError);
     const scoreConfig = configRow?.score_config || null;
 
     const { data, error } = await supabase.rpc("fn_calcular_credit_score_v2", {
@@ -253,7 +259,7 @@ export const getClientCreditScoreV2 = async (nit) => {
     return { data, error: null };
   } catch (err) {
     if (import.meta.env.DEV) console.error("[portfolioService] Error calculating credit score v2:", err);
-    return { data: null, error: err.message };
+    return { data: null, error: err };
   }
 };
 

@@ -1,4 +1,4 @@
-import { supabase } from "../lib/supabase";
+import { supabase, fetchAllRows } from "../lib/supabase";
 import { COLOMBIA_OFFSET, DAILY_LIMIT } from "../constants";
 
 export const getColombiaHour = () => {
@@ -148,7 +148,7 @@ export const sendWhatsAppMessage = async ({
     return { success: true, data, error: null };
   } catch (err) {
     if (import.meta.env.DEV) console.error("[messagingService] Error sending WhatsApp:", err);
-    return { success: false, data: null, error: err.message };
+    return { success: false, data: null, error: err };
   }
 };
 
@@ -272,8 +272,11 @@ export const getMessageLog = async (filters = {}) => {
 
     if (filters.tipo) query = query.eq("tipo", filters.tipo);
     if (filters.estado) query = query.eq("estado", filters.estado);
-    if (filters.limit) query = query.limit(filters.limit);
-    if (filters.offset != null) query = query.range(filters.offset, filters.offset + (filters.limit || 50) - 1);
+    if (filters.offset != null) {
+      query = query.range(filters.offset, filters.offset + (filters.limit || 50) - 1);
+    } else if (filters.limit) {
+      query = query.limit(filters.limit);
+    }
 
     const { data, count, error } = await query;
     if (error) throw error;
@@ -358,10 +361,22 @@ export async function createLote(lote, destinatarios = []) {
       facturas_ids: d.facturas_ids || [],
     }));
 
-    const { data: detalle, error: detalleError } = await supabase
-      .from("distrimm_recordatorios_detalle")
-      .insert(detalleRows)
-      .select();
+    // Batch insert to avoid PostgREST request size limits
+    const DETAIL_BATCH = 100;
+    let detalle = [];
+    let detalleError = null;
+    for (let i = 0; i < detalleRows.length; i += DETAIL_BATCH) {
+      const batch = detalleRows.slice(i, i + DETAIL_BATCH);
+      const { data: batchData, error: batchErr } = await supabase
+        .from("distrimm_recordatorios_detalle")
+        .insert(batch)
+        .select();
+      if (batchErr) {
+        detalleError = batchErr;
+        break;
+      }
+      detalle = detalle.concat(batchData || []);
+    }
 
     if (detalleError) {
       // Cleanup orphaned lote to keep operation atomic
@@ -397,13 +412,14 @@ export async function getLotes(limit = 20) {
 
 export async function getLoteDetalle(loteId) {
   try {
-    const { data, error } = await supabase
-      .from("distrimm_recordatorios_detalle")
-      .select("*")
-      .eq("lote_id", loteId)
-      .order("created_at", { ascending: true });
-
-    if (error) throw error;
+    const data = await fetchAllRows((from, to) =>
+      supabase
+        .from("distrimm_recordatorios_detalle")
+        .select("*")
+        .eq("lote_id", loteId)
+        .order("created_at", { ascending: true })
+        .range(from, to),
+    );
     return { data, error: null };
   } catch (err) {
     if (import.meta.env.DEV) console.error("[messagingService] Error fetching lote detalle:", err);
@@ -450,7 +466,7 @@ export async function triggerLoteProcessing(loteId, destinatarios = []) {
     return { success: true, data, error: null };
   } catch (err) {
     if (import.meta.env.DEV) console.error("[messagingService] Error triggering lote processing:", err);
-    return { success: false, data: null, error: err.message };
+    return { success: false, data: null, error: err };
   }
 }
 
@@ -504,13 +520,13 @@ export async function retryLoteFailed(loteId) {
         .from("distrimm_recordatorios_lote")
         .update({ estado: "fallido", updated_at: new Date().toISOString() })
         .eq("id", loteId);
-      throw new Error(triggerResult.error);
+      throw triggerResult.error || new Error("Error al reintentar envío");
     }
 
     return { success: true, retriedCount: failedIds.length, error: null };
   } catch (err) {
     if (import.meta.env.DEV) console.error("[messagingService] Error retrying lote failed:", err);
-    return { success: false, retriedCount: 0, error: err.message };
+    return { success: false, retriedCount: 0, error: err };
   }
 }
 

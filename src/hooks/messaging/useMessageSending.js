@@ -67,7 +67,7 @@ export function useMessageSending({ markRemindersAsSent } = {}) {
         await updateLogStatus(
           logEntry.id,
           success ? "enviado" : "fallido",
-          error,
+          error ? (error.message || String(error)) : null,
         );
       }
 

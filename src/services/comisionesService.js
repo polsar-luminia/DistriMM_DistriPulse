@@ -64,18 +64,17 @@ export const getProductosCatalogo = async () => {
 
 export const upsertProductosCatalogo = async (rows) => {
   try {
-    const { data, error } = await supabase
-      .from("distrimm_productos_catalogo")
-      .upsert(
-        rows.map((r) => ({
-          ...r,
-          updated_at: new Date().toISOString(),
-        })),
-        { onConflict: "codigo" },
-      );
-
-    if (error) throw error;
-    return { data, error: null };
+    const now = new Date().toISOString();
+    const prepared = rows.map((r) => ({ ...r, updated_at: now }));
+    const BATCH_SIZE = 100;
+    for (let i = 0; i < prepared.length; i += BATCH_SIZE) {
+      const batch = prepared.slice(i, i + BATCH_SIZE);
+      const { error } = await supabase
+        .from("distrimm_productos_catalogo")
+        .upsert(batch, { onConflict: "codigo" });
+      if (error) throw error;
+    }
+    return { data: null, error: null };
   } catch (error) {
     if (import.meta.env.DEV) console.error("[comisionesService] Error upserting catálogo:", error);
     return { data: null, error };

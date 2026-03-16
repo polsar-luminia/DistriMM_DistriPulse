@@ -188,7 +188,7 @@ export function useLotes() {
             .from("distrimm_recordatorios_lote")
             .update({ estado: "fallido", updated_at: new Date().toISOString() })
             .eq("id", loteId);
-          throw new Error(triggerResult.error || "Error al enviar mensajes");
+          throw triggerResult.error || new Error("Error al enviar mensajes");
         }
 
         // 5. Start polling for this lote's progress
