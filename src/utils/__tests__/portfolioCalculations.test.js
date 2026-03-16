@@ -26,6 +26,8 @@ import {
   buildRadarData,
   buildTopOldest,
   buildVendedorStats,
+  calculateMoraPonderada,
+  calculateHHI,
 } from "../portfolioCalculations";
 
 function isoDate(d) {
@@ -461,5 +463,85 @@ describe("buildVendedorStats", () => {
     const items = [makeItem({ vendedor_codigo: null, valor_saldo: 100000 })];
     const { vendedorStats } = buildVendedorStats(items);
     expect(vendedorStats[0].codigo).toBe("Sin Asignar");
+  });
+});
+
+describe("calculateMoraPonderada", () => {
+  test("pondera mora por saldo correctamente", () => {
+    const items = [
+      makeItem({ dias_mora: 30, valor_saldo: 200000 }),
+      makeItem({ dias_mora: 60, valor_saldo: 800000 }),
+    ];
+    // weighted = (30*200000 + 60*800000) / (200000+800000) = 54000000/1000000 = 54
+    const result = calculateMoraPonderada(items);
+    expect(result).toBe(54);
+  });
+
+  test("items al día (dias_mora=0) se excluyen del cálculo", () => {
+    const items = [
+      makeItem({ dias_mora: 0, valor_saldo: 500000 }),
+      makeItem({ dias_mora: 30, valor_saldo: 200000 }),
+    ];
+    // Solo el item con mora>0 cuenta: 30*200000/200000 = 30
+    const result = calculateMoraPonderada(items);
+    expect(result).toBe(30);
+  });
+
+  test("retorna 0 con array vacío", () => {
+    expect(calculateMoraPonderada([])).toBe(0);
+  });
+
+  test("retorna 0 cuando todos están al día", () => {
+    const items = [
+      makeItem({ dias_mora: 0, valor_saldo: 500000 }),
+      makeItem({ dias_mora: 0, valor_saldo: 300000 }),
+    ];
+    expect(calculateMoraPonderada(items)).toBe(0);
+  });
+});
+
+describe("calculateHHI", () => {
+  test("un solo cliente tiene HHI=10000 (concentración máxima)", () => {
+    const clients = [{ deuda: 1000000, name: "Único" }];
+    const { hhi, riskLevel } = calculateHHI(clients, 1000000);
+    expect(hhi).toBe(10000);
+    expect(riskLevel).toBe("Alto");
+  });
+
+  test("2 clientes iguales tienen HHI=5000", () => {
+    const clients = [
+      { deuda: 500000, name: "A" },
+      { deuda: 500000, name: "B" },
+    ];
+    const { hhi } = calculateHHI(clients, 1000000);
+    expect(hhi).toBe(5000);
+  });
+
+  test("10 clientes iguales tienen HHI=1000 (bajo riesgo)", () => {
+    const clients = Array.from({ length: 10 }, (_, i) => ({
+      deuda: 100000, name: `C${i}`,
+    }));
+    const { hhi, riskLevel } = calculateHHI(clients, 1000000);
+    expect(hhi).toBe(1000);
+    expect(riskLevel).toBe("Bajo");
+  });
+
+  test("retorna ceros con array vacío", () => {
+    const { hhi, top3Pct, riskLevel } = calculateHHI([], 0);
+    expect(hhi).toBe(0);
+    expect(top3Pct).toBe(0);
+    expect(riskLevel).toBe("Bajo");
+  });
+
+  test("top3Pct se calcula correctamente", () => {
+    const clients = [
+      { deuda: 400000, name: "A" },
+      { deuda: 300000, name: "B" },
+      { deuda: 200000, name: "C" },
+      { deuda: 100000, name: "D" },
+    ];
+    const { top3Pct } = calculateHHI(clients, 1000000);
+    // top3 = (400000+300000+200000)/1000000 * 100 = 90%
+    expect(top3Pct).toBe(90);
   });
 });

@@ -90,24 +90,24 @@ export function calcularComisionRecaudo({ recaudos, presupuestoRecaudo }) {
   const tramos = [
     {
       nombre: "Tramo 4",
-      min: Number(presupuestoRecaudo.tramo4_min || Infinity),
-      pct: Number(presupuestoRecaudo.tramo4_pct || 0),
+      min: Number(presupuestoRecaudo.tramo4_min ?? Infinity),
+      pct: Number(presupuestoRecaudo.tramo4_pct ?? 0),
     },
     {
       nombre: "Tramo 3",
-      min: Number(presupuestoRecaudo.tramo3_min || Infinity),
-      pct: Number(presupuestoRecaudo.tramo3_pct || 0),
+      min: Number(presupuestoRecaudo.tramo3_min ?? Infinity),
+      pct: Number(presupuestoRecaudo.tramo3_pct ?? 0),
     },
     {
       nombre: "Tramo 2",
-      min: Number(presupuestoRecaudo.tramo2_min || Infinity),
-      pct: Number(presupuestoRecaudo.tramo2_pct || 0),
+      min: Number(presupuestoRecaudo.tramo2_min ?? Infinity),
+      pct: Number(presupuestoRecaudo.tramo2_pct ?? 0),
     },
     {
       nombre: "Tramo 1",
       min: 0,
-      max: Number(presupuestoRecaudo.tramo1_max || 0),
-      pct: Number(presupuestoRecaudo.tramo1_pct || 0),
+      max: Number(presupuestoRecaudo.tramo1_max ?? 0),
+      pct: Number(presupuestoRecaudo.tramo1_pct ?? 0),
     },
   ];
 

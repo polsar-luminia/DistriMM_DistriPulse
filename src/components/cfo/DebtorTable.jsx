@@ -25,7 +25,7 @@ export default function DebtorTable({ deudores }) {
             const semKey = d.semaforo || d.riesgo;
             const riesgoSem = semKey ? getSemaphore(semKey) : null;
             return (
-              <tr key={d.cliente || d.nombre || i} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
+              <tr key={d.cliente || d.nombre || `debtor-${i}`} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
                 <td className="py-2 px-2 font-bold text-slate-400">{d.posicion || i + 1}</td>
                 <td className="py-2 px-2 font-semibold text-slate-700 max-w-[200px] truncate">{d.cliente || d.nombre}</td>
                 <td className="py-2 px-2 text-right font-bold text-slate-900">{displayCurrency(d.deuda_total || d.saldo || d.valor_saldo)}</td>

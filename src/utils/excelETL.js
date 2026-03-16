@@ -82,12 +82,17 @@ export const processCarteraData = (jsonData) => {
         fecha_emision: fechaEmision,
         rawVence,
         fecha_vencimiento: fechaVencimiento,
-        dias_mora: parseInt(
-          row["Días Mora"] || row["Dias Mora"] || row["Mora"] || 0,
-        ),
-        valor_saldo: parseFloat(
-          row["Valor Saldo"] || row["Saldo"] || row["Total"] || 0,
-        ),
+        dias_mora: (() => {
+          const raw = row["Días Mora"] || row["Dias Mora"] || row["Mora"] || 0;
+          const parsed = parseInt(raw, 10);
+          return Number.isNaN(parsed) ? 0 : parsed;
+        })(),
+        valor_saldo: (() => {
+          const raw = row["Valor Saldo"] || row["Saldo"] || row["Total"] || 0;
+          const cleaned = typeof raw === "string" ? raw.replace(/,/g, "") : raw;
+          const parsed = parseFloat(cleaned);
+          return Number.isNaN(parsed) ? 0 : parsed;
+        })(),
         estado: row["Estado"] || row["Est"],
         // New fields from enriched Excel
         vendedor_codigo: String(row["Vend"] || row["Vendedor"] || "").trim() || null,

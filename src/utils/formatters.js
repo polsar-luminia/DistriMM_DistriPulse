@@ -45,7 +45,7 @@ export const formatDateShort = (dateString) => {
 };
 
 export const formatPercentage = (value, decimals = 1) => {
-  if (value === undefined || value === null || !isFinite(value)) return "0%";
+  if (value === undefined || value === null || !Number.isFinite(value)) return "0%";
   return `${value.toFixed(decimals)}%`;
 };
 

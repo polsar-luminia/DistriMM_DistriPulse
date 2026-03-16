@@ -204,6 +204,7 @@ export function usePortfolioAnalytics() {
 
     // Handler for deleting a load — uses refs to avoid stale closures
     const handleDeleteLoad = useCallback(async (loadIdToDelete) => {
+        setError(null);
         const { success, error } = await deleteLoad(loadIdToDelete);
 
         if (success) {

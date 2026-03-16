@@ -57,9 +57,10 @@ export default function VendedoresPage() {
   const [clientesDataMap, setClientesDataMap] = useState({});
 
   useEffect(() => {
+    let cancelled = false;
     getVendedores().then(({ data }) => {
-      if (data) setVendedoresDB(data);
-    });
+      if (!cancelled && data) setVendedoresDB(data);
+    }).catch(() => {});
     // Build NIT→vendedor map from clientes + ventas (two lightweight queries)
     Promise.all([
       supabase
@@ -71,6 +72,7 @@ export default function VendedoresPage() {
         .select("cliente_nit, vendedor_codigo")
         .not("vendedor_codigo", "is", null),
     ]).then(([clientesRes, ventasRes]) => {
+      if (cancelled) return;
       const map = {};
       // Ventas first (lower priority), clientes overwrites (higher priority)
       if (ventasRes.data) {
@@ -80,20 +82,23 @@ export default function VendedoresPage() {
         clientesRes.data.forEach((c) => { map[c.no_identif] = c.vendedor_codigo; });
       }
       setNitVendedorMap(map);
-    });
+    }).catch(() => {});
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
     supabase
       .from("distrimm_clientes")
       .select("no_identif, nombre_completo, celular, telefono_1, direccion, barrio, municipio, vendedor_codigo")
       .then(({ data }) => {
-        if (data) {
+        if (!cancelled && data) {
           const map = {};
           data.forEach((c) => { map[c.no_identif] = c; });
           setClientesDataMap(map);
         }
-      });
+      }).catch(() => {});
+    return () => { cancelled = true; };
   }, []);
 
   const nombreMap = useMemo(() => {

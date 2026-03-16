@@ -81,7 +81,7 @@ export function calculatePareto(sortedClients, totalCartera, uniqueClientsCount)
         paretoClientsCount++;
         if (accumulatedDebt >= totalCartera * THRESHOLDS.PARETO_PERCENTAGE) break;
     }
-    return uniqueClientsCount > 0 ? (paretoClientsCount / uniqueClientsCount) * 100 : 0;
+    return uniqueClientsCount > 0 ? Math.round((paretoClientsCount / uniqueClientsCount) * 1000) / 10 : 0;
 }
 
 export function calculateAging(items) {
