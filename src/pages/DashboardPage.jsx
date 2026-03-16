@@ -1,4 +1,4 @@
-﻿import { useState, useMemo, useEffect, useRef } from "react";
+﻿import { useState, useMemo } from "react";
 import { useOutletContext } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
@@ -53,9 +53,6 @@ export default function DashboardPage() {
   const [itemsPerPage, setItemsPerPage] = useState(50);
   const [isParetoModalOpen, setIsParetoModalOpen] = useState(false);
   const [isUnrecoverableModalOpen, setIsUnrecoverableModalOpen] = useState(false);
-  const prevFilteredLenRef = useRef(0);
-  const prevPageSizeRef = useRef(50);
-
   const formatMoney = (val) =>
     showExactNumbers ? formatFullCurrency(val) : formatCurrency(val);
 
@@ -72,20 +69,13 @@ export default function DashboardPage() {
   const allItems = useMemo(() => data.items || [], [data.items]);
   const filteredItems = useMemo(() => data.items || [], [data.items]);
 
-  // Reset pagination when filtered data or page size changes
-  useEffect(() => {
-    if (filteredItems.length !== prevFilteredLenRef.current || itemsPerPage !== prevPageSizeRef.current) {
-      prevFilteredLenRef.current = filteredItems.length;
-      prevPageSizeRef.current = itemsPerPage;
-      setCurrentPage(1);
-    }
-  }, [filteredItems.length, itemsPerPage]);
-
-  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / itemsPerPage));
+  // Clamp page to valid range (auto-resets when data shrinks or page size changes)
+  const effectivePage = Math.min(currentPage, totalPages);
   const paginatedItems = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
+    const start = (effectivePage - 1) * itemsPerPage;
     return filteredItems.slice(start, start + itemsPerPage);
-  }, [filteredItems, currentPage, itemsPerPage]);
+  }, [filteredItems, effectivePage, itemsPerPage]);
 
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -330,7 +320,7 @@ export default function DashboardPage() {
         setFilters,
         sortConfig,
         setSortConfig,
-        currentPage,
+        currentPage: effectivePage,
         setCurrentPage,
         totalPages,
         handlePageChange,

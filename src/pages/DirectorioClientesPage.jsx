@@ -116,15 +116,12 @@ export default function DirectorioClientesPage() {
     });
   }, [clientes, searchQuery, filterTipo, filterMunicipio, filterTelefono, filterVendedor]);
 
-  // Reset page on filter change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, filterTipo, filterMunicipio, filterTelefono, filterVendedor]);
-
-  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage));
+  // Clamp page to valid range (auto-resets when filters reduce results)
+  const effectivePage = Math.min(currentPage, totalPages);
   const paginatedClients = filtered.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage,
+    (effectivePage - 1) * itemsPerPage,
+    effectivePage * itemsPerPage,
   );
 
   // Chart data
@@ -393,17 +390,17 @@ export default function DirectorioClientesPage() {
           </div>
           <div className="flex items-center gap-3">
             <button
-              disabled={currentPage === 1}
+              disabled={effectivePage === 1}
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               className="p-1.5 bg-white border border-slate-200 rounded-md hover:bg-slate-50 disabled:opacity-30 transition-colors"
             >
               <ChevronLeft size={14} />
             </button>
             <span className="font-mono text-[11px] font-medium">
-              {currentPage} / {totalPages}
+              {effectivePage} / {totalPages}
             </span>
             <button
-              disabled={currentPage >= totalPages}
+              disabled={effectivePage >= totalPages}
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               className="p-1.5 bg-white border border-slate-200 rounded-md hover:bg-slate-50 disabled:opacity-30 transition-colors"
             >
