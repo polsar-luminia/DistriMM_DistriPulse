@@ -32,12 +32,13 @@ export const deleteComisionesCarga = async (id) => {
 
 export const getComisionesVentas = async (cargaId) => {
   try {
-    const { data, error } = await supabase
-      .from("distrimm_comisiones_ventas")
-      .select("*")
-      .eq("carga_id", cargaId);
-
-    if (error) throw error;
+    const data = await fetchAllRows((from, to) =>
+      supabase
+        .from("distrimm_comisiones_ventas")
+        .select("*")
+        .eq("carga_id", cargaId)
+        .range(from, to),
+    );
     return { data, error: null };
   } catch (error) {
     if (import.meta.env.DEV) console.error("[comisionesService] Error fetching ventas:", error);
@@ -202,6 +203,7 @@ export const getCargasByMonth = async (year, month) => {
 };
 
 export const getVentasByCargas = async (cargaIds) => {
+  if (!cargaIds || cargaIds.length === 0) return { data: [], error: null };
   try {
     const data = await fetchAllRows((from, to) =>
       supabase

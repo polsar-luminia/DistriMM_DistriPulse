@@ -106,7 +106,8 @@ export const testConnection = async () => {
 
 export const rollbackUpload = async (loadId) => {
   try {
-    await supabase.from("historial_cargas").delete().eq("id", loadId);
+    const { error } = await supabase.from("historial_cargas").delete().eq("id", loadId);
+    if (error && import.meta.env.DEV) console.error("[portfolioService] Rollback query error:", error);
   } catch (error) {
     if (import.meta.env.DEV) console.error("[portfolioService] Error during rollback:", error);
   }
