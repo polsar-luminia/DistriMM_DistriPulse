@@ -10,7 +10,8 @@ export const getComisionesCargas = async () => {
     if (error) throw error;
     return { data, error: null };
   } catch (error) {
-    if (import.meta.env.DEV) console.error("[comisionesService] Error fetching cargas:", error);
+    if (import.meta.env.DEV)
+      console.error("[comisionesService] Error fetching cargas:", error);
     return { data: null, error };
   }
 };
@@ -25,7 +26,8 @@ export const deleteComisionesCarga = async (id) => {
     if (error) throw error;
     return { success: true, error: null };
   } catch (error) {
-    if (import.meta.env.DEV) console.error("[comisionesService] Error deleting carga:", error);
+    if (import.meta.env.DEV)
+      console.error("[comisionesService] Error deleting carga:", error);
     return { success: false, error };
   }
 };
@@ -37,11 +39,13 @@ export const getComisionesVentas = async (cargaId) => {
         .from("distrimm_comisiones_ventas")
         .select("*")
         .eq("carga_id", cargaId)
+        .order("id")
         .range(from, to),
     );
     return { data, error: null };
   } catch (error) {
-    if (import.meta.env.DEV) console.error("[comisionesService] Error fetching ventas:", error);
+    if (import.meta.env.DEV)
+      console.error("[comisionesService] Error fetching ventas:", error);
     return { data: null, error };
   }
 };
@@ -53,11 +57,13 @@ export const getProductosCatalogo = async () => {
         .from("distrimm_productos_catalogo")
         .select("*")
         .order("nombre", { ascending: true })
+        .order("id", { ascending: true })
         .range(from, to),
     );
     return { data, error: null };
   } catch (error) {
-    if (import.meta.env.DEV) console.error("[comisionesService] Error fetching catálogo:", error);
+    if (import.meta.env.DEV)
+      console.error("[comisionesService] Error fetching catálogo:", error);
     return { data: null, error };
   }
 };
@@ -76,7 +82,8 @@ export const upsertProductosCatalogo = async (rows) => {
     }
     return { data: null, error: null };
   } catch (error) {
-    if (import.meta.env.DEV) console.error("[comisionesService] Error upserting catálogo:", error);
+    if (import.meta.env.DEV)
+      console.error("[comisionesService] Error upserting catálogo:", error);
     return { data: null, error };
   }
 };
@@ -89,6 +96,7 @@ export const getMarcasUnicas = async () => {
         .select("marca")
         .not("marca", "is", null)
         .order("marca", { ascending: true })
+        .order("id", { ascending: true })
         .range(from, to),
     );
 
@@ -96,7 +104,8 @@ export const getMarcasUnicas = async () => {
     const unique = [...new Set(data.map((r) => r.marca))].filter(Boolean);
     return { data: unique, error: null };
   } catch (error) {
-    if (import.meta.env.DEV) console.error("[comisionesService] Error fetching marcas:", error);
+    if (import.meta.env.DEV)
+      console.error("[comisionesService] Error fetching marcas:", error);
     return { data: null, error };
   }
 };
@@ -111,7 +120,8 @@ export const clearProductosCatalogo = async () => {
     if (error) throw error;
     return { success: true };
   } catch (error) {
-    if (import.meta.env.DEV) console.error("[comisionesService] Error clearing catálogo:", error);
+    if (import.meta.env.DEV)
+      console.error("[comisionesService] Error clearing catálogo:", error);
     return { success: false, error };
   }
 };
@@ -127,7 +137,8 @@ export const getExclusiones = async () => {
     if (error) throw error;
     return { data, error: null };
   } catch (error) {
-    if (import.meta.env.DEV) console.error("[comisionesService] Error fetching exclusiones:", error);
+    if (import.meta.env.DEV)
+      console.error("[comisionesService] Error fetching exclusiones:", error);
     return { data: null, error };
   }
 };
@@ -143,7 +154,8 @@ export const addExclusion = async ({ tipo, valor, descripcion, motivo }) => {
     if (error) throw error;
     return { data, error: null };
   } catch (error) {
-    if (import.meta.env.DEV) console.error("[comisionesService] Error adding exclusion:", error);
+    if (import.meta.env.DEV)
+      console.error("[comisionesService] Error adding exclusion:", error);
     return { data: null, error };
   }
 };
@@ -158,7 +170,8 @@ export const removeExclusion = async (id) => {
     if (error) throw error;
     return { success: true, error: null };
   } catch (error) {
-    if (import.meta.env.DEV) console.error("[comisionesService] Error removing exclusion:", error);
+    if (import.meta.env.DEV)
+      console.error("[comisionesService] Error removing exclusion:", error);
     return { success: false, error };
   }
 };
@@ -173,7 +186,8 @@ export const toggleExclusion = async (id, activa) => {
     if (error) throw error;
     return { success: true, error: null };
   } catch (error) {
-    if (import.meta.env.DEV) console.error("[comisionesService] Error toggling exclusion:", error);
+    if (import.meta.env.DEV)
+      console.error("[comisionesService] Error toggling exclusion:", error);
     return { success: false, error };
   }
 };
@@ -196,7 +210,11 @@ export const getCargasByMonth = async (year, month) => {
     if (error) throw error;
     return { data, error: null };
   } catch (error) {
-    if (import.meta.env.DEV) console.error("[comisionesService] Error fetching cargas by month:", error);
+    if (import.meta.env.DEV)
+      console.error(
+        "[comisionesService] Error fetching cargas by month:",
+        error,
+      );
     return { data: null, error };
   }
 };
@@ -210,11 +228,16 @@ export const getVentasByCargas = async (cargaIds) => {
         .select("*")
         .in("carga_id", cargaIds)
         .order("fecha", { ascending: true })
+        .order("id", { ascending: true })
         .range(from, to),
     );
     return { data, error: null };
   } catch (error) {
-    if (import.meta.env.DEV) console.error("[comisionesService] Error fetching ventas by cargas:", error);
+    if (import.meta.env.DEV)
+      console.error(
+        "[comisionesService] Error fetching ventas by cargas:",
+        error,
+      );
     return { data: null, error };
   }
 };
@@ -228,7 +251,11 @@ export const getRecaudoCargas = async () => {
     if (error) throw error;
     return { data, error: null };
   } catch (error) {
-    if (import.meta.env.DEV) console.error("[comisionesService] Error fetching recaudo cargas:", error);
+    if (import.meta.env.DEV)
+      console.error(
+        "[comisionesService] Error fetching recaudo cargas:",
+        error,
+      );
     return { data: null, error };
   }
 };
@@ -242,7 +269,8 @@ export const deleteRecaudoCarga = async (id) => {
     if (error) throw error;
     return { success: true, error: null };
   } catch (error) {
-    if (import.meta.env.DEV) console.error("[comisionesService] Error deleting recaudo carga:", error);
+    if (import.meta.env.DEV)
+      console.error("[comisionesService] Error deleting recaudo carga:", error);
     return { success: false, error };
   }
 };
@@ -255,11 +283,16 @@ export const getRecaudosByPeriodo = async (year, month) => {
         .select("*")
         .eq("periodo_year", year)
         .eq("periodo_month", month)
+        .order("id")
         .range(from, to),
     );
     return { data, error: null };
   } catch (error) {
-    if (import.meta.env.DEV) console.error("[comisionesService] Error fetching recaudos by periodo:", error);
+    if (import.meta.env.DEV)
+      console.error(
+        "[comisionesService] Error fetching recaudos by periodo:",
+        error,
+      );
     return { data: null, error };
   }
 };
@@ -273,7 +306,11 @@ export const getRecaudosByCarga = async (cargaId) => {
     if (error) throw error;
     return { data, error: null };
   } catch (error) {
-    if (import.meta.env.DEV) console.error("[comisionesService] Error fetching recaudos by carga:", error);
+    if (import.meta.env.DEV)
+      console.error(
+        "[comisionesService] Error fetching recaudos by carga:",
+        error,
+      );
     return { data: null, error };
   }
 };
@@ -290,7 +327,11 @@ export const getPresupuestosRecaudo = async (year, month) => {
     if (error) throw error;
     return { data, error: null };
   } catch (error) {
-    if (import.meta.env.DEV) console.error("[comisionesService] Error fetching presupuestos recaudo:", error);
+    if (import.meta.env.DEV)
+      console.error(
+        "[comisionesService] Error fetching presupuestos recaudo:",
+        error,
+      );
     return { data: null, error };
   }
 };
@@ -298,16 +339,24 @@ export const getPresupuestosRecaudo = async (year, month) => {
 export const upsertPresupuestoRecaudo = async (row) => {
   try {
     const { id, ...rest } = row;
-    const payload = id ? { id, ...rest, updated_at: new Date().toISOString() } : { ...rest, updated_at: new Date().toISOString() };
+    const payload = id
+      ? { id, ...rest, updated_at: new Date().toISOString() }
+      : { ...rest, updated_at: new Date().toISOString() };
     const { data, error } = await supabase
       .from("distrimm_comisiones_presupuestos_recaudo")
-      .upsert(payload, { onConflict: "vendedor_codigo,periodo_year,periodo_month" })
+      .upsert(payload, {
+        onConflict: "vendedor_codigo,periodo_year,periodo_month",
+      })
       .select()
       .single();
     if (error) throw error;
     return { data, error: null };
   } catch (error) {
-    if (import.meta.env.DEV) console.error("[comisionesService] Error upserting presupuesto recaudo:", error);
+    if (import.meta.env.DEV)
+      console.error(
+        "[comisionesService] Error upserting presupuesto recaudo:",
+        error,
+      );
     return { data: null, error };
   }
 };
@@ -321,7 +370,11 @@ export const deletePresupuestoRecaudo = async (id) => {
     if (error) throw error;
     return { success: true, error: null };
   } catch (error) {
-    if (import.meta.env.DEV) console.error("[comisionesService] Error deleting presupuesto recaudo:", error);
+    if (import.meta.env.DEV)
+      console.error(
+        "[comisionesService] Error deleting presupuesto recaudo:",
+        error,
+      );
     return { success: false, error };
   }
 };
@@ -339,7 +392,11 @@ export const getPresupuestosMarca = async (year, month) => {
     if (error) throw error;
     return { data, error: null };
   } catch (error) {
-    if (import.meta.env.DEV) console.error("[comisionesService] Error fetching presupuestos marca:", error);
+    if (import.meta.env.DEV)
+      console.error(
+        "[comisionesService] Error fetching presupuestos marca:",
+        error,
+      );
     return { data: null, error };
   }
 };
@@ -347,16 +404,24 @@ export const getPresupuestosMarca = async (year, month) => {
 export const upsertPresupuestoMarca = async (row) => {
   try {
     const { id, _id, _isNew, ...rest } = row;
-    const payload = id ? { id, ...rest, updated_at: new Date().toISOString() } : { ...rest, updated_at: new Date().toISOString() };
+    const payload = id
+      ? { id, ...rest, updated_at: new Date().toISOString() }
+      : { ...rest, updated_at: new Date().toISOString() };
     const { data, error } = await supabase
       .from("distrimm_comisiones_presupuestos_marca")
-      .upsert(payload, { onConflict: "vendedor_codigo,marca,periodo_year,periodo_month" })
+      .upsert(payload, {
+        onConflict: "vendedor_codigo,marca,periodo_year,periodo_month",
+      })
       .select()
       .single();
     if (error) throw error;
     return { data, error: null };
   } catch (error) {
-    if (import.meta.env.DEV) console.error("[comisionesService] Error upserting presupuesto marca:", error);
+    if (import.meta.env.DEV)
+      console.error(
+        "[comisionesService] Error upserting presupuesto marca:",
+        error,
+      );
     return { data: null, error };
   }
 };
@@ -370,16 +435,35 @@ export const deletePresupuestoMarca = async (id) => {
     if (error) throw error;
     return { success: true, error: null };
   } catch (error) {
-    if (import.meta.env.DEV) console.error("[comisionesService] Error deleting presupuesto marca:", error);
+    if (import.meta.env.DEV)
+      console.error(
+        "[comisionesService] Error deleting presupuesto marca:",
+        error,
+      );
     return { success: false, error };
   }
 };
 
-export const copiarPresupuestosMes = async (fromYear, fromMonth, toYear, toMonth) => {
+export const copiarPresupuestosMes = async (
+  fromYear,
+  fromMonth,
+  toYear,
+  toMonth,
+) => {
   try {
     const [recaudoResult, marcasResult] = await Promise.all([
-      supabase.from("distrimm_comisiones_presupuestos_recaudo").select("*").eq("periodo_year", fromYear).eq("periodo_month", fromMonth).eq("activo", true),
-      supabase.from("distrimm_comisiones_presupuestos_marca").select("*").eq("periodo_year", fromYear).eq("periodo_month", fromMonth).eq("activo", true),
+      supabase
+        .from("distrimm_comisiones_presupuestos_recaudo")
+        .select("*")
+        .eq("periodo_year", fromYear)
+        .eq("periodo_month", fromMonth)
+        .eq("activo", true),
+      supabase
+        .from("distrimm_comisiones_presupuestos_marca")
+        .select("*")
+        .eq("periodo_year", fromYear)
+        .eq("periodo_month", fromMonth)
+        .eq("activo", true),
     ]);
 
     if (recaudoResult.error) throw recaudoResult.error;
@@ -392,8 +476,16 @@ export const copiarPresupuestosMes = async (fromYear, fromMonth, toYear, toMonth
     const errors = [];
 
     if (recaudo?.length) {
-      const copies = recaudo.map(({ id, created_at, updated_at, ...rest }) => ({ ...rest, periodo_year: toYear, periodo_month: toMonth }));
-      const { error: recErr } = await supabase.from("distrimm_comisiones_presupuestos_recaudo").upsert(copies, { onConflict: "vendedor_codigo,periodo_year,periodo_month" });
+      const copies = recaudo.map(({ id, created_at, updated_at, ...rest }) => ({
+        ...rest,
+        periodo_year: toYear,
+        periodo_month: toMonth,
+      }));
+      const { error: recErr } = await supabase
+        .from("distrimm_comisiones_presupuestos_recaudo")
+        .upsert(copies, {
+          onConflict: "vendedor_codigo,periodo_year,periodo_month",
+        });
       if (recErr) {
         errors.push(`Recaudo: ${recErr.message}`);
       } else {
@@ -401,8 +493,16 @@ export const copiarPresupuestosMes = async (fromYear, fromMonth, toYear, toMonth
       }
     }
     if (marcas?.length) {
-      const copies = marcas.map(({ id, created_at, updated_at, ...rest }) => ({ ...rest, periodo_year: toYear, periodo_month: toMonth }));
-      const { error: marcErr } = await supabase.from("distrimm_comisiones_presupuestos_marca").upsert(copies, { onConflict: "vendedor_codigo,marca,periodo_year,periodo_month" });
+      const copies = marcas.map(({ id, created_at, updated_at, ...rest }) => ({
+        ...rest,
+        periodo_year: toYear,
+        periodo_month: toMonth,
+      }));
+      const { error: marcErr } = await supabase
+        .from("distrimm_comisiones_presupuestos_marca")
+        .upsert(copies, {
+          onConflict: "vendedor_codigo,marca,periodo_year,periodo_month",
+        });
       if (marcErr) {
         errors.push(`Marcas: ${marcErr.message}`);
       } else {
@@ -412,13 +512,23 @@ export const copiarPresupuestosMes = async (fromYear, fromMonth, toYear, toMonth
 
     if (errors.length > 0) {
       const partialError = new Error(`Copia parcial: ${errors.join("; ")}`);
-      if (import.meta.env.DEV) console.error("[comisionesService] Partial copy failure:", errors);
-      return { success: false, data: { copiedRecaudo, copiedMarcas }, error: partialError };
+      if (import.meta.env.DEV)
+        console.error("[comisionesService] Partial copy failure:", errors);
+      return {
+        success: false,
+        data: { copiedRecaudo, copiedMarcas },
+        error: partialError,
+      };
     }
 
-    return { success: true, data: { copiedRecaudo, copiedMarcas }, error: null };
+    return {
+      success: true,
+      data: { copiedRecaudo, copiedMarcas },
+      error: null,
+    };
   } catch (error) {
-    if (import.meta.env.DEV) console.error("[comisionesService] Error copying presupuestos:", error);
+    if (import.meta.env.DEV)
+      console.error("[comisionesService] Error copying presupuestos:", error);
     return { success: false, data: null, error };
   }
 };
@@ -432,7 +542,119 @@ export const calcularComisiones = async (cargaId) => {
     if (error) throw error;
     return { data, error: null };
   } catch (error) {
-    if (import.meta.env.DEV) console.error("[comisionesService] Error calculating comisiones:", error);
+    if (import.meta.env.DEV)
+      console.error("[comisionesService] Error calculating comisiones:", error);
     return { data: null, error };
   }
 };
+
+// ── Snapshots de liquidación mensual ──
+
+/**
+ * Obtiene el snapshot congelado de un periodo, si existe.
+ * @param {number} year
+ * @param {number} month
+ * @returns {Promise<{ data: object|null, error: Error|null }>}
+ */
+export const getSnapshot = async (year, month) => {
+  try {
+    const { data, error } = await supabase
+      .from("distrimm_comisiones_snapshots")
+      .select("*")
+      .eq("periodo_year", year)
+      .eq("periodo_month", month)
+      .maybeSingle();
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    if (import.meta.env.DEV)
+      console.error("[comisionesService] Error fetching snapshot:", error);
+    return { data: null, error };
+  }
+};
+
+/**
+ * Guarda (o reemplaza) el snapshot de liquidación de un periodo.
+ * Idempotente: upsert por (periodo_year, periodo_month).
+ * Incluye hash de inputs para detectar invalidación.
+ */
+export const saveSnapshot = async ({
+  year,
+  month,
+  cargaIds,
+  totalVentas,
+  totalRecaudos,
+  liquidacion,
+  resumen,
+  presupuestosMarcaIds,
+  presupuestosRecaudoIds,
+  totalesVentas,
+}) => {
+  // Hash simple: fingerprint de inputs para detectar si cambiaron
+  const inputHash = [
+    ...(cargaIds || []).sort(),
+    `v:${totalVentas}`,
+    `r:${totalRecaudos}`,
+    ...(presupuestosMarcaIds || []).sort(),
+    ...(presupuestosRecaudoIds || []).sort(),
+  ].join("|");
+
+  try {
+    const { data, error } = await supabase
+      .from("distrimm_comisiones_snapshots")
+      .upsert(
+        {
+          periodo_year: year,
+          periodo_month: month,
+          carga_ids: cargaIds,
+          total_ventas_count: totalVentas,
+          total_recaudos_count: totalRecaudos,
+          liquidacion,
+          resumen,
+          presupuestos_marca_ids: presupuestosMarcaIds || [],
+          presupuestos_recaudo_ids: presupuestosRecaudoIds || [],
+          input_hash: inputHash,
+          totales_ventas: totalesVentas || {},
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "periodo_year,periodo_month" },
+      )
+      .select()
+      .single();
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    if (import.meta.env.DEV)
+      console.error("[comisionesService] Error saving snapshot:", error);
+    return { data: null, error };
+  }
+};
+
+/**
+ * Genera el hash de inputs actual para comparar con el snapshot guardado.
+ */
+export function buildInputHash({
+  cargaIds,
+  totalVentas,
+  totalRecaudos,
+  presupuestosMarcaIds,
+  presupuestosRecaudoIds,
+  exclusiones,
+  catalogoCount,
+}) {
+  // Fingerprint de exclusiones: ids + tipo + valor para detectar cambios de reglas
+  const exclFingerprint = (exclusiones || [])
+    .map((e) => `${e.id}:${e.tipo}:${e.valor}`)
+    .sort()
+    .join(",");
+
+  return [
+    ...(cargaIds || []).sort(),
+    `v:${totalVentas}`,
+    `r:${totalRecaudos}`,
+    ...(presupuestosMarcaIds || []).sort(),
+    ...(presupuestosRecaudoIds || []).sort(),
+    `excl:${exclFingerprint}`,
+    `cat:${catalogoCount || 0}`,
+  ].join("|");
+}

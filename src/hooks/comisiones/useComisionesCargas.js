@@ -22,7 +22,8 @@ export function useComisionesCargas() {
         currentCargaRef.current = firstId;
       }
     } catch (err) {
-      if (import.meta.env.DEV) console.error("[useComisionesCargas] Error fetching cargas:", err);
+      if (import.meta.env.DEV)
+        console.error("[useComisionesCargas] Error fetching cargas:", err);
       setCargas([]);
     }
     setLoadingCargas(false);
@@ -43,13 +44,16 @@ export function useComisionesCargas() {
       })
       .catch((err) => {
         if (cancelled) return;
-        if (import.meta.env.DEV) console.error("[useComisionesCargas] Error fetching cargas:", err);
+        if (import.meta.env.DEV)
+          console.error("[useComisionesCargas] Error fetching cargas:", err);
         setCargas([]);
       })
       .finally(() => {
         if (!cancelled) setLoadingCargas(false);
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const selectCarga = useCallback((id) => {
@@ -61,11 +65,12 @@ export function useComisionesCargas() {
     async (id) => {
       const { success } = await deleteComisionesCarga(id);
       if (success) {
-        await fetchCargas();
+        // Limpiar selección ANTES de refetch para que fetchCargas auto-seleccione el primero
         if (id === currentCargaRef.current) {
           setSelectedCargaId(null);
           currentCargaRef.current = null;
         }
+        await fetchCargas();
       }
       return success;
     },

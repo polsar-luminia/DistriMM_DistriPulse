@@ -508,6 +508,7 @@ export async function getLoteDetalle(loteId) {
         .select("*")
         .eq("lote_id", loteId)
         .order("created_at", { ascending: true })
+        .order("id", { ascending: true })
         .range(from, to),
     );
     return { data, error: null };

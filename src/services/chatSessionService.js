@@ -12,12 +12,17 @@ export const getChatSessions = async (userId) => {
     if (error) throw error;
     return { data, error: null };
   } catch (error) {
-    if (import.meta.env.DEV) console.error("[chatSessionService] Error fetching sessions:", error);
+    if (import.meta.env.DEV)
+      console.error("[chatSessionService] Error fetching sessions:", error);
     return { data: null, error };
   }
 };
 
-export const createChatSession = async (userId, sessionId, title = "Nueva conversacion") => {
+export const createChatSession = async (
+  userId,
+  sessionId,
+  title = "Nueva conversacion",
+) => {
   try {
     const { data, error } = await supabase
       .from("distrimm_chat_sessions")
@@ -34,7 +39,8 @@ export const createChatSession = async (userId, sessionId, title = "Nueva conver
     if (error) throw error;
     return { data, error: null };
   } catch (error) {
-    if (import.meta.env.DEV) console.error("[chatSessionService] Error creating session:", error);
+    if (import.meta.env.DEV)
+      console.error("[chatSessionService] Error creating session:", error);
     return { data: null, error };
   }
 };
@@ -49,7 +55,11 @@ export const updateChatSessionTitle = async (sessionId, title) => {
     if (error) throw error;
     return { success: true, error: null };
   } catch (error) {
-    if (import.meta.env.DEV) console.error("[chatSessionService] Error updating session title:", error);
+    if (import.meta.env.DEV)
+      console.error(
+        "[chatSessionService] Error updating session title:",
+        error,
+      );
     return { success: false, error };
   }
 };
@@ -64,7 +74,8 @@ export const deleteChatSession = async (sessionId) => {
     if (error) throw error;
     return { success: true, error: null };
   } catch (error) {
-    if (import.meta.env.DEV) console.error("[chatSessionService] Error deleting session:", error);
+    if (import.meta.env.DEV)
+      console.error("[chatSessionService] Error deleting session:", error);
     return { success: false, error };
   }
 };
@@ -77,18 +88,25 @@ export const getChatMessages = async (chatSessionId) => {
         .select("*")
         .eq("chat_session_id", chatSessionId)
         .order("created_at", { ascending: true })
+        .order("id", { ascending: true })
         .range(from, to),
     );
     return { data, error: null };
   } catch (error) {
-    if (import.meta.env.DEV) console.error("[chatSessionService] Error fetching messages:", error);
+    if (import.meta.env.DEV)
+      console.error("[chatSessionService] Error fetching messages:", error);
     return { data: null, error };
   }
 };
 
 // DB trigger auto-updates the parent session's message_count and last_message_at
 
-export const saveChatMessage = async (chatSessionId, role, content, isError = false) => {
+export const saveChatMessage = async (
+  chatSessionId,
+  role,
+  content,
+  isError = false,
+) => {
   try {
     const { data, error } = await supabase
       .from("distrimm_chat_messages")
@@ -104,23 +122,24 @@ export const saveChatMessage = async (chatSessionId, role, content, isError = fa
     if (error) throw error;
     return { data, error: null };
   } catch (error) {
-    if (import.meta.env.DEV) console.error("[chatSessionService] Error saving message:", error);
+    if (import.meta.env.DEV)
+      console.error("[chatSessionService] Error saving message:", error);
     return { data: null, error };
   }
 };
 
 export const searchChatSessions = async (userId, query) => {
   try {
-    const { data, error } = await supabase
-      .rpc("search_chat_sessions", {
-        p_user_id: userId,
-        p_query: query,
-      });
+    const { data, error } = await supabase.rpc("search_chat_sessions", {
+      p_user_id: userId,
+      p_query: query,
+    });
 
     if (error) throw error;
     return { data, error: null };
   } catch (error) {
-    if (import.meta.env.DEV) console.error("[chatSessionService] Error searching sessions:", error);
+    if (import.meta.env.DEV)
+      console.error("[chatSessionService] Error searching sessions:", error);
     return { data: null, error };
   }
 };

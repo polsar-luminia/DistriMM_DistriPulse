@@ -23,6 +23,7 @@ import {
   addExclusion,
   removeExclusion,
   getCargasByMonth,
+  buildInputHash,
 } from "../comisionesService";
 
 function makeChain(overrides = {}) {
@@ -280,5 +281,60 @@ describe("getCargasByMonth", () => {
     const result = await getCargasByMonth(2025, 3);
     expect(result.data).toEqual(mockData);
     expect(result.error).toBeNull();
+  });
+});
+
+describe("buildInputHash", () => {
+  const base = {
+    cargaIds: ["id-1", "id-2"],
+    totalVentas: 100,
+    totalRecaudos: 50,
+    presupuestosMarcaIds: ["pm-1"],
+    presupuestosRecaudoIds: ["pr-1"],
+    exclusiones: [{ id: "e1", tipo: "marca", valor: "CONTEGRAL" }],
+    catalogoCount: 4000,
+  };
+
+  test("mismo input produce mismo hash (determinista)", () => {
+    expect(buildInputHash(base)).toBe(buildInputHash(base));
+  });
+
+  test("cambio en exclusiones produce hash diferente", () => {
+    const modified = {
+      ...base,
+      exclusiones: [{ id: "e1", tipo: "marca", valor: "OUROFINO" }],
+    };
+    expect(buildInputHash(modified)).not.toBe(buildInputHash(base));
+  });
+
+  test("agregar exclusion produce hash diferente", () => {
+    const modified = {
+      ...base,
+      exclusiones: [
+        ...base.exclusiones,
+        { id: "e2", tipo: "producto", valor: "PROD-001" },
+      ],
+    };
+    expect(buildInputHash(modified)).not.toBe(buildInputHash(base));
+  });
+
+  test("cambio en catalogoCount produce hash diferente", () => {
+    const modified = { ...base, catalogoCount: 4001 };
+    expect(buildInputHash(modified)).not.toBe(buildInputHash(base));
+  });
+
+  test("cambio en cargaIds produce hash diferente", () => {
+    const modified = { ...base, cargaIds: ["id-1", "id-3"] };
+    expect(buildInputHash(modified)).not.toBe(buildInputHash(base));
+  });
+
+  test("orden de cargaIds no afecta el hash", () => {
+    const reversed = { ...base, cargaIds: ["id-2", "id-1"] };
+    expect(buildInputHash(reversed)).toBe(buildInputHash(base));
+  });
+
+  test("exclusiones vacías produce hash válido", () => {
+    const empty = { ...base, exclusiones: [], catalogoCount: 0 };
+    expect(buildInputHash(empty)).toBeTruthy();
   });
 });

@@ -3,6 +3,7 @@ import React, { useState, useMemo, useCallback } from "react";
 import MainLayout from "../layouts/MainLayout";
 import { usePortfolioAnalytics } from "../hooks/usePortfolioAnalytics";
 import UploadModal from "./UploadModal";
+import { getPeriodoOperativo } from "../utils/periodoOperativo";
 
 // Dashboard and Filter contexts for the page-based architecture
 export const DashboardContext = React.createContext();
@@ -23,7 +24,7 @@ export default function DashboardManager() {
     changeLoad,
     refresh,
     markRemindersAsSent,
-    deleteLoad
+    deleteLoad,
   } = usePortfolioAnalytics();
 
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -72,19 +73,31 @@ export default function DashboardManager() {
       // 3. Dias Mora Interval (Dropdown)
       if (filters.daysOverdue !== "all") {
         const mora = item.dias_mora || 0;
-        if (filters.daysOverdue === "0-30" && (mora <= 0 || mora > 30)) return false;
-        if (filters.daysOverdue === "30-60" && (mora <= 30 || mora > 60)) return false;
-        if (filters.daysOverdue === "60-90" && (mora <= 60 || mora > 90)) return false;
+        if (filters.daysOverdue === "0-30" && (mora <= 0 || mora > 30))
+          return false;
+        if (filters.daysOverdue === "30-60" && (mora <= 30 || mora > 60))
+          return false;
+        if (filters.daysOverdue === "60-90" && (mora <= 60 || mora > 90))
+          return false;
         if (filters.daysOverdue === "90+" && mora <= 90) return false;
       }
 
       // 4. Min/Max Mora Manual
-      if (filters.moraMin !== "" && (item.dias_mora || 0) < Number(filters.moraMin)) return false;
-      if (filters.moraMax !== "" && (item.dias_mora || 0) > Number(filters.moraMax)) return false;
+      if (
+        filters.moraMin !== "" &&
+        (item.dias_mora || 0) < Number(filters.moraMin)
+      )
+        return false;
+      if (
+        filters.moraMax !== "" &&
+        (item.dias_mora || 0) > Number(filters.moraMax)
+      )
+        return false;
 
       // 5. Municipio filter (items may not have municipio directly; skip if not present)
       if (filters.municipio !== "all") {
-        if (item.municipio && item.municipio !== filters.municipio) return false;
+        if (item.municipio && item.municipio !== filters.municipio)
+          return false;
       }
 
       return true;
@@ -103,7 +116,6 @@ export default function DashboardManager() {
     });
   }, [filteredItems, sortConfig]);
 
-
   // --- HANDLERS ---
   const handleSort = useCallback((key) => {
     setSortConfig((prev) => ({
@@ -118,96 +130,140 @@ export default function DashboardManager() {
 
   // --- CALCULATE MISSING METRICS (memoized to avoid recalc on unrelated state changes) ---
   const avgTicket = useMemo(
-    () => items && items.length > 0 ? (stats.total / items.length) : 0,
-    [items, stats.total]
+    () => (items && items.length > 0 ? stats.total / items.length : 0),
+    [items, stats.total],
   );
 
-  const cashFlow7Days = useMemo(() => (charts.projection || [])
-    .filter(p => {
-      const pDate = new Date(p.date);
-      const today = new Date();
-      const diffTime = pDate - today;
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      return diffDays >= 0 && diffDays <= 7;
-    })
-    .reduce((sum, p) => sum + (p.total || 0), 0),
-    [charts.projection]
+  const cashFlow7Days = useMemo(
+    () =>
+      (charts.projection || [])
+        .filter((p) => {
+          const pDate = new Date(p.date);
+          const today = new Date();
+          const diffTime = pDate - today;
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          return diffDays >= 0 && diffDays <= 7;
+        })
+        .reduce((sum, p) => sum + (p.total || 0), 0),
+    [charts.projection],
   );
 
   // Stable callback for upload click
   const onUploadClick = useCallback(() => setIsUploadModalOpen(true), []);
 
   // --- MEMOIZED CONTEXT VALUES (prevents unnecessary consumer re-renders) ---
-  const dashboardContextValue = useMemo(() => ({
-    // Top-level properties for MainLayout & FilesPage
-    availableLoads,
-    currentLoadId,
-    onUploadClick,
-    onDeleteLoad: deleteLoad,
+  const dashboardContextValue = useMemo(
+    () => ({
+      // Periodo operativo derivado de la última carga (NO de new Date())
+      periodoOperativo: getPeriodoOperativo(availableLoads?.[0]?.fecha_corte),
 
-    // Data object for Pages (DashboardPage, ClientsPage)
-    data: {
-      // items: filtered + sorted via DashboardManager filters
-      items: sortedItems,
-      // allItems: raw unfiltered items from the analytics hook (used by VendedoresPage)
-      allItems: items,
+      // Top-level properties for MainLayout & FilesPage
+      availableLoads,
+      currentLoadId,
+      onUploadClick,
+      onDeleteLoad: deleteLoad,
 
-      // MAPPINGS for DashboardPage compatibility
-      kpi: {
-        ...stats,
-        uniqueClients: stats.uniqueClients || (lists.aggregatedClients ? lists.aggregatedClients.length : 0)
-      },
-      advanced: {
-        ...stats,
-        uniqueClients: stats.uniqueClients || (lists.aggregatedClients ? lists.aggregatedClients.length : 0),
+      // Data object for Pages (DashboardPage, ClientsPage)
+      data: {
+        // items: filtered + sorted via DashboardManager filters
+        items: sortedItems,
+        // allItems: raw unfiltered items from the analytics hook (used by VendedoresPage)
+        allItems: items,
+
+        // MAPPINGS for DashboardPage compatibility
+        kpi: {
+          ...stats,
+          uniqueClients:
+            stats.uniqueClients ||
+            (lists.aggregatedClients ? lists.aggregatedClients.length : 0),
+        },
+        advanced: {
+          ...stats,
+          uniqueClients:
+            stats.uniqueClients ||
+            (lists.aggregatedClients ? lists.aggregatedClients.length : 0),
+          healthScore,
+          radarData: charts.radarData,
+          avgTicket,
+          cashFlow7Days,
+          // Approximate Pareto count (usually 20% of clients) logic if not provided
+          paretoClientsCount: Math.ceil(
+            (lists.aggregatedClients?.length || 0) * 0.2,
+          ),
+          clientsWithOverdue: (lists.aggregatedClients || []).filter(
+            (c) => c.status === "Vencido",
+          ).length,
+          moraPonderada: stats.moraPonderada,
+          hhi: stats.hhi,
+          top3Pct: stats.top3Pct,
+          hhiRiskLevel: stats.hhiRiskLevel,
+          lastLoadDate:
+            availableLoads?.[0]?.fecha_corte ||
+            availableLoads?.[0]?.created_at ||
+            null,
+        },
+
+        // FLATTEN CHARTS for DashboardPage (aging, projection, etc.)
+        ...charts,
+
+        // Raw data
+        lists,
+        aggregatedClients: lists.aggregatedClients,
         healthScore,
-        radarData: charts.radarData,
-        avgTicket,
-        cashFlow7Days,
-        // Approximate Pareto count (usually 20% of clients) logic if not provided
-        paretoClientsCount: Math.ceil((lists.aggregatedClients?.length || 0) * 0.2),
-        clientsWithOverdue: (lists.aggregatedClients || []).filter(c => c.status === "Vencido").length,
-        moraPonderada: stats.moraPonderada,
-        hhi: stats.hhi,
-        top3Pct: stats.top3Pct,
-        hhiRiskLevel: stats.hhiRiskLevel,
-        lastLoadDate: availableLoads?.[0]?.fecha_corte || availableLoads?.[0]?.created_at || null,
+        upcomingItems: lists.upcomingItems,
+        vendedores,
       },
 
-      // FLATTEN CHARTS for DashboardPage (aging, projection, etc.)
-      ...charts,
+      loading,
+      error,
+      onRefresh: handleRefresh,
+      onLoadChange: changeLoad,
+      markRemindersAsSent,
 
-      // Raw data
+      // FILTERS & UI STATE
+      filters,
+      setFilters,
+      sortConfig,
+      setSortConfig,
+      upcomingDays,
+      setUpcomingDays,
+    }),
+    [
+      availableLoads,
+      currentLoadId,
+      onUploadClick,
+      deleteLoad,
+      sortedItems,
+      items,
+      stats,
       lists,
-      aggregatedClients: lists.aggregatedClients,
       healthScore,
-      upcomingItems: lists.upcomingItems,
+      charts,
+      avgTicket,
+      cashFlow7Days,
       vendedores,
-    },
+      loading,
+      error,
+      handleRefresh,
+      changeLoad,
+      markRemindersAsSent,
+      filters,
+      sortConfig,
+      upcomingDays,
+    ],
+  );
 
-    loading,
-    error,
-    onRefresh: handleRefresh,
-    onLoadChange: changeLoad,
-    markRemindersAsSent,
-
-    // FILTERS & UI STATE
-    filters,
-    setFilters,
-    sortConfig,
-    setSortConfig,
-    upcomingDays,
-    setUpcomingDays
-  }), [availableLoads, currentLoadId, onUploadClick, deleteLoad, sortedItems, items, stats, lists, healthScore, charts, avgTicket, cashFlow7Days, vendedores, loading, error, handleRefresh, changeLoad, markRemindersAsSent, filters, sortConfig, upcomingDays]);
-
-  const filterContextValue = useMemo(() => ({
-    filters,
-    setFilters,
-    sortConfig,
-    handleSort,
-    upcomingDays,
-    setUpcomingDays,
-  }), [filters, sortConfig, handleSort, upcomingDays]);
+  const filterContextValue = useMemo(
+    () => ({
+      filters,
+      setFilters,
+      sortConfig,
+      handleSort,
+      upcomingDays,
+      setUpcomingDays,
+    }),
+    [filters, sortConfig, handleSort, upcomingDays],
+  );
 
   return (
     <DashboardContext.Provider value={dashboardContextValue}>

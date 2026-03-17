@@ -34,7 +34,6 @@ import DataFreshnessBadge from "../components/dashboard/DataFreshnessBadge";
 import VendedoresKpiCards from "../components/dashboard/VendedoresKpiCards";
 import CfoHealthWidget from "../components/dashboard/CfoHealthWidget";
 
-
 export default function DashboardPage() {
   const context = useOutletContext();
   const {
@@ -52,7 +51,8 @@ export default function DashboardPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(50);
   const [isParetoModalOpen, setIsParetoModalOpen] = useState(false);
-  const [isUnrecoverableModalOpen, setIsUnrecoverableModalOpen] = useState(false);
+  const [isUnrecoverableModalOpen, setIsUnrecoverableModalOpen] =
+    useState(false);
   const formatMoney = (val) =>
     showExactNumbers ? formatFullCurrency(val) : formatCurrency(val);
 
@@ -69,7 +69,10 @@ export default function DashboardPage() {
   const allItems = useMemo(() => data.items || [], [data.items]);
   const filteredItems = useMemo(() => data.items || [], [data.items]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredItems.length / itemsPerPage));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredItems.length / itemsPerPage),
+  );
   // Clamp page to valid range (auto-resets when data shrinks or page size changes)
   const effectivePage = Math.min(currentPage, totalPages);
   const paginatedItems = useMemo(() => {
@@ -92,8 +95,7 @@ export default function DashboardPage() {
       data.lists?.upcomingItems ||
       allItems.filter((i) => (i.dias_mora || 0) <= 0);
     return source.filter((item) => {
-      const days =
-        item.days_until_due !== undefined ? item.days_until_due : 0;
+      const days = item.days_until_due !== undefined ? item.days_until_due : 0;
       if (upcomingDays === "0-5") return days >= 0 && days <= 5;
       if (upcomingDays === "5-10") return days > 5 && days <= 10;
       if (upcomingDays === "10-15") return days > 10 && days <= 15;
@@ -155,21 +157,39 @@ export default function DashboardPage() {
             value={`${(data.advanced?.moraPonderada || 0).toFixed(0)}d`}
             subtext="Promedio ponderado por saldo"
             icon={Clock}
-            type={data.advanced?.moraPonderada > 30 ? "danger" : data.advanced?.moraPonderada > 15 ? "warning" : "success"}
+            type={
+              data.advanced?.moraPonderada > 30
+                ? "danger"
+                : data.advanced?.moraPonderada > 15
+                  ? "warning"
+                  : "success"
+            }
             tooltip="Promedio de días de mora ponderado por el valor de cada factura. Las facturas de mayor monto pesan más. >30d = riesgo alto."
           />
           <StatCard
             title="Concentración (HHI)"
-            value={data.advanced?.hhi != null ? data.advanced.hhi.toFixed(0) : "N/A"}
+            value={
+              data.advanced?.hhi != null ? data.advanced.hhi.toFixed(0) : "N/A"
+            }
             subtext={data.advanced?.hhiRiskLevel || "Sin datos"}
             icon={Scale}
-            type={data.advanced?.hhiRiskLevel === "Alto" ? "danger" : data.advanced?.hhiRiskLevel === "Moderado" ? "warning" : "success"}
+            type={
+              data.advanced?.hhiRiskLevel === "Alto"
+                ? "danger"
+                : data.advanced?.hhiRiskLevel === "Moderado"
+                  ? "warning"
+                  : "success"
+            }
             tooltip="Índice Herfindahl-Hirschman: mide qué tan concentrada está la cartera en pocos clientes. <2500 = Bajo (diversificado), >2500 = Alto (dependencia de pocos clientes)."
           />
           <StatCard
             title="Cartera > 360d"
             value={formatMoney(data.advanced?.unrecoverableTotal || 0)}
-            subtext={data.advanced?.unrecoverableTotal > 0 ? "Cartera castigada" : "Sin cartera castigada"}
+            subtext={
+              data.advanced?.unrecoverableTotal > 0
+                ? "Cartera castigada"
+                : "Sin cartera castigada"
+            }
             icon={ShieldAlert}
             type={data.advanced?.unrecoverableTotal > 0 ? "danger" : "success"}
           />
@@ -207,7 +227,11 @@ export default function DashboardPage() {
           <MetricCard
             icon={Scale}
             label="Índice Concentración"
-            value={data.advanced?.top3Pct ? `${data.advanced.top3Pct.toFixed(0)}% Top 3` : "N/A"}
+            value={
+              data.advanced?.top3Pct
+                ? `${data.advanced.top3Pct.toFixed(0)}% Top 3`
+                : "N/A"
+            }
             accent="text-amber-500"
             hint={data.advanced?.hhiRiskLevel || "Sin datos"}
             tooltip="Porcentaje de la cartera total que representan los 3 clientes más grandes. Un % alto indica riesgo de dependencia."
@@ -219,7 +243,7 @@ export default function DashboardPage() {
       <VendedoresKpiCards vendedores={data.vendedores} />
 
       {/* CFO Health Widget */}
-      <CfoHealthWidget />
+      <CfoHealthWidget currentLoadId={context.currentLoadId} />
 
       {/* Historical */}
       <HistoricalEvolution />
@@ -238,10 +262,11 @@ export default function DashboardPage() {
               <button
                 key={days}
                 onClick={() => setUpcomingDays?.(days)}
-                className={cn("px-3 py-1.5 rounded-md text-[10px] font-semibold transition-all",
+                className={cn(
+                  "px-3 py-1.5 rounded-md text-[10px] font-semibold transition-all",
                   upcomingDays === days
                     ? "bg-navy-800 text-white shadow-sm"
-                    : "text-navy-400 hover:text-navy-600 hover:bg-navy-50"
+                    : "text-navy-400 hover:text-navy-600 hover:bg-navy-50",
                 )}
               >
                 {days}d
@@ -265,7 +290,11 @@ export default function DashboardPage() {
                 {filteredUpcomingItems?.length > 0 ? (
                   filteredUpcomingItems.map((item) => (
                     <tr
-                      key={item.documento_id || item.id || `${item.tercero_nit}-${item.documento}`}
+                      key={
+                        item.documento_id ||
+                        item.id ||
+                        `${item.tercero_nit}-${item.documento}`
+                      }
                       className="hover:bg-navy-50/30 transition-colors"
                     >
                       <td className="px-4 py-2.5 font-medium text-navy-800">
@@ -281,10 +310,11 @@ export default function DashboardPage() {
                       </td>
                       <td className="px-4 py-2.5 text-right">
                         <span
-                          className={cn("inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold font-mono",
+                          className={cn(
+                            "inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold font-mono",
                             (item.days_until_due ?? 0) <= 5
                               ? "bg-rose-50 text-rose-500"
-                              : "bg-emerald-50 text-emerald-600"
+                              : "bg-emerald-50 text-emerald-600",
                           )}
                         >
                           {item.days_until_due ?? 0}d
@@ -312,21 +342,23 @@ export default function DashboardPage() {
       </section>
 
       {/* Detailed Table */}
-      <TableProvider value={{
-        filteredItems,
-        paginatedItems,
-        allItems,
-        filters,
-        setFilters,
-        sortConfig,
-        setSortConfig,
-        currentPage: effectivePage,
-        setCurrentPage,
-        totalPages,
-        handlePageChange,
-        itemsPerPage,
-        setItemsPerPage,
-      }}>
+      <TableProvider
+        value={{
+          filteredItems,
+          paginatedItems,
+          allItems,
+          filters,
+          setFilters,
+          sortConfig,
+          setSortConfig,
+          currentPage: effectivePage,
+          setCurrentPage,
+          totalPages,
+          handlePageChange,
+          itemsPerPage,
+          setItemsPerPage,
+        }}
+      >
         <DetailedTableSection />
       </TableProvider>
 
@@ -350,4 +382,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-

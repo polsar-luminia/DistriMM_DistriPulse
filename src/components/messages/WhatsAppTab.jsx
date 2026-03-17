@@ -154,12 +154,21 @@ export default function WhatsAppTab() {
   // ────────────────────────────────────────────────────────────────────────
   useEffect(() => {
     async function loadStats() {
-      const todayStart = new Date();
-      todayStart.setHours(0, 0, 0, 0);
+      // Calcular midnight Colombia (UTC-5) para counters consistentes
+      const COLOMBIA_OFFSET_MINS = -5 * 60;
+      const now = new Date();
+      const colombiaMs =
+        now.getTime() +
+        (now.getTimezoneOffset() + COLOMBIA_OFFSET_MINS) * 60000;
+      const colombiaMidnight = new Date(colombiaMs);
+      colombiaMidnight.setHours(0, 0, 0, 0);
+      const todayStart = new Date(
+        colombiaMidnight.getTime() -
+          (now.getTimezoneOffset() + COLOMBIA_OFFSET_MINS) * 60000,
+      );
 
-      const weekStart = new Date();
+      const weekStart = new Date(todayStart);
       weekStart.setDate(weekStart.getDate() - 7);
-      weekStart.setHours(0, 0, 0, 0);
 
       try {
         const [{ count: todayCount }, { count: weekCount }] = await Promise.all(

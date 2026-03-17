@@ -58,6 +58,7 @@ wf_*.json
 
 # SQL migration files (expose table structure)
 *.sql
+!sql/**/*.sql
 !src/**/*.sql
 
 # Business/strategy documents
@@ -97,3 +98,6 @@ Ejemplo Excel/
 _dev/
 .claude/
 .playwright-mcp/
+
+# Archivos de ejemplo (no versionar datos de cliente)
+Ejemplos de Archivos para Subir/

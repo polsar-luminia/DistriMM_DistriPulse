@@ -132,7 +132,7 @@ export default function MainLayout({ dashboardContext }) {
             <Layers size={18} className="text-indigo-600" />
           </div>
           <span className="font-extrabold text-base tracking-tight text-slate-800">
-            Distri<span className="text-indigo-600">Pulse</span>
+            Distri<span className="text-indigo-600">MM</span>
           </span>
         </div>
         {/* Collapse toggle (desktop only) */}
@@ -255,7 +255,7 @@ export default function MainLayout({ dashboardContext }) {
                 <Layers size={14} className="text-indigo-600" />
               </div>
               <span className="font-extrabold text-sm tracking-tight text-slate-800">
-                Distri<span className="text-indigo-600">Pulse</span>
+                Distri<span className="text-indigo-600">MM</span>
               </span>
             </div>
           )}
@@ -336,7 +336,8 @@ export default function MainLayout({ dashboardContext }) {
         {/* Compact footer */}
         <footer className="py-4 border-t border-slate-100 text-center">
           <p className="text-[11px] text-slate-400">
-            &copy; {new Date().getFullYear()} DistriPulse Analytics · Powered by{" "}
+            &copy; {new Date().getFullYear()} DistriPulse Analytics Diseñado
+            para DistriMM · Powered by{" "}
             <a
               href="https://hola.luminiatech.digital"
               target="_blank"

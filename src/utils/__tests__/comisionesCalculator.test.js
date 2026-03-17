@@ -36,10 +36,16 @@ function makeRecaudo(valor_recaudo, aplica_comision, opts = {}) {
 describe("calcularComisionVentas", () => {
   test("aplica comision cuando ventas cumplen la meta (con bono fijo)", () => {
     const ventas = [makeVenta("P1", 200000)];
-    const presupuestosMarca = [makePresupuestoMarca("CONTEGRAL", 150000, 0.02, { bono_fijo: 50000 })];
+    const presupuestosMarca = [
+      makePresupuestoMarca("CONTEGRAL", 150000, 0.02, { bono_fijo: 50000 }),
+    ];
     const productBrandMap = { P1: "CONTEGRAL AVES" }; // normaliza a CONTEGRAL
 
-    const result = calcularComisionVentas({ ventas, presupuestosMarca, productBrandMap });
+    const result = calcularComisionVentas({
+      ventas,
+      presupuestosMarca,
+      productBrandMap,
+    });
 
     expect(result.totalComisionVentas).toBe(54000); // 200000*0.02 + 50000
     expect(result.detalleMarcas[0].cumpleMeta).toBe(true);
@@ -52,7 +58,11 @@ describe("calcularComisionVentas", () => {
     const presupuestosMarca = [makePresupuestoMarca("CONTEGRAL", 150000, 0.02)];
     const productBrandMap = { P1: "CONTEGRAL AVES" };
 
-    const result = calcularComisionVentas({ ventas, presupuestosMarca, productBrandMap });
+    const result = calcularComisionVentas({
+      ventas,
+      presupuestosMarca,
+      productBrandMap,
+    });
 
     expect(result.totalComisionVentas).toBe(0);
     expect(result.detalleMarcas[0].cumpleMeta).toBe(false);
@@ -67,7 +77,11 @@ describe("calcularComisionVentas", () => {
     const presupuestosMarca = [makePresupuestoMarca("CONTEGRAL", 200000, 0.02)];
     const productBrandMap = { P1: "CONTEGRAL AVES" };
 
-    const result = calcularComisionVentas({ ventas, presupuestosMarca, productBrandMap });
+    const result = calcularComisionVentas({
+      ventas,
+      presupuestosMarca,
+      productBrandMap,
+    });
 
     expect(result.detalleMarcas[0].totalCosto).toBe(250000);
     expect(result.detalleMarcas[0].cumpleMeta).toBe(true);
@@ -79,7 +93,11 @@ describe("calcularComisionVentas", () => {
     const presupuestosMarca = []; // sin presupuestos
     const productBrandMap = { P1: "CONTEGRAL" };
 
-    const result = calcularComisionVentas({ ventas, presupuestosMarca, productBrandMap });
+    const result = calcularComisionVentas({
+      ventas,
+      presupuestosMarca,
+      productBrandMap,
+    });
 
     expect(result.totalComisionVentas).toBe(0);
     expect(result.detalleMarcas[0].tienePresupuesto).toBe(false);
@@ -102,7 +120,11 @@ describe("calcularComisionVentas", () => {
       P3: "EDO",
     };
 
-    const result = calcularComisionVentas({ ventas, presupuestosMarca, productBrandMap });
+    const result = calcularComisionVentas({
+      ventas,
+      presupuestosMarca,
+      productBrandMap,
+    });
 
     const contegral = result.detalleMarcas.find((d) => d.marca === "CONTEGRAL");
     const vicar = result.detalleMarcas.find((d) => d.marca === "VICAR");
@@ -122,23 +144,28 @@ describe("calcularComisionVentas", () => {
     const presupuestosMarca = [];
     const productBrandMap = {}; // no tiene el codigo
 
-    const result = calcularComisionVentas({ ventas, presupuestosMarca, productBrandMap });
+    const result = calcularComisionVentas({
+      ventas,
+      presupuestosMarca,
+      productBrandMap,
+    });
 
     expect(result.detalleMarcas[0].marca).toBe("SIN MARCA");
   });
 
   test("normalizacion de marca se aplica: 'CONTEGRAL AVES' agrupa bajo 'CONTEGRAL'", () => {
-    const ventas = [
-      makeVenta("P1", 100000),
-      makeVenta("P2", 150000),
-    ];
+    const ventas = [makeVenta("P1", 100000), makeVenta("P2", 150000)];
     const presupuestosMarca = [makePresupuestoMarca("CONTEGRAL", 200000, 0.05)];
     const productBrandMap = {
       P1: "CONTEGRAL AVES",
       P2: "CONTEGRAL GANADO",
     };
 
-    const result = calcularComisionVentas({ ventas, presupuestosMarca, productBrandMap });
+    const result = calcularComisionVentas({
+      ventas,
+      presupuestosMarca,
+      productBrandMap,
+    });
 
     const contegral = result.detalleMarcas.find((d) => d.marca === "CONTEGRAL");
     expect(contegral.totalCosto).toBe(250000); // ambos sumados
@@ -165,7 +192,11 @@ describe("calcularComisionVentas", () => {
     const presupuestosMarca = [makePresupuestoMarca("CONTEGRAL", 0, 0.05)];
     const productBrandMap = { P1: "CONTEGRAL" };
 
-    const result = calcularComisionVentas({ ventas, presupuestosMarca, productBrandMap });
+    const result = calcularComisionVentas({
+      ventas,
+      presupuestosMarca,
+      productBrandMap,
+    });
 
     expect(result.detalleMarcas[0].cumpleMeta).toBe(true);
     expect(result.detalleMarcas[0].comision).toBe(500); // 10000*0.05
@@ -176,7 +207,10 @@ describe("calcularComisionRecaudo", () => {
   test("sin presupuesto retorna todo cero", () => {
     const recaudos = [makeRecaudo(500000, true)];
 
-    const result = calcularComisionRecaudo({ recaudos, presupuestoRecaudo: null });
+    const result = calcularComisionRecaudo({
+      recaudos,
+      presupuestoRecaudo: null,
+    });
 
     expect(result.totalRecaudado).toBe(500000);
     expect(result.totalComisionable).toBe(500000);
@@ -260,12 +294,12 @@ describe("calcularComisionRecaudo", () => {
   });
 
   test("totalExcluido = totalRecaudado - totalComisionable", () => {
-    const recaudos = [
-      makeRecaudo(800000, true),
-      makeRecaudo(200000, false),
-    ];
+    const recaudos = [makeRecaudo(800000, true), makeRecaudo(200000, false)];
 
-    const result = calcularComisionRecaudo({ recaudos, presupuestoRecaudo: null });
+    const result = calcularComisionRecaudo({
+      recaudos,
+      presupuestoRecaudo: null,
+    });
 
     expect(result.totalExcluido).toBe(200000);
   });
@@ -273,7 +307,11 @@ describe("calcularComisionRecaudo", () => {
   test("recaudos vacios retornan totales en cero", () => {
     const result = calcularComisionRecaudo({
       recaudos: [],
-      presupuestoRecaudo: { meta_recaudo: 1000000, tramo1_max: 70, tramo1_pct: 0.01 },
+      presupuestoRecaudo: {
+        meta_recaudo: 1000000,
+        tramo1_max: 70,
+        tramo1_pct: 0.01,
+      },
     });
 
     expect(result.totalRecaudado).toBe(0);
@@ -299,13 +337,23 @@ describe("calcularComisionRecaudo", () => {
 describe("calcularComisionesCompletas", () => {
   test("2 vendedores retornan 2 resultados ordenados por totalComision desc", () => {
     const ventas = [
-      makeVenta("P1", 200000, { vendedor_codigo: "V1", vendedor_nombre: "Ana" }),
-      makeVenta("P2", 500000, { vendedor_codigo: "V2", vendedor_nombre: "Luis" }),
+      makeVenta("P1", 200000, {
+        vendedor_codigo: "V1",
+        vendedor_nombre: "Ana",
+      }),
+      makeVenta("P2", 500000, {
+        vendedor_codigo: "V2",
+        vendedor_nombre: "Luis",
+      }),
     ];
     const recaudos = [];
     const presupuestosMarca = [
-      makePresupuestoMarca("CONTEGRAL", 100000, 0.02, { vendedor_codigo: "V1" }),
-      makePresupuestoMarca("CONTEGRAL", 100000, 0.02, { vendedor_codigo: "V2" }),
+      makePresupuestoMarca("CONTEGRAL", 100000, 0.02, {
+        vendedor_codigo: "V1",
+      }),
+      makePresupuestoMarca("CONTEGRAL", 100000, 0.02, {
+        vendedor_codigo: "V2",
+      }),
     ];
     const productBrandMap = { P1: "CONTEGRAL", P2: "CONTEGRAL" };
 
@@ -331,7 +379,9 @@ describe("calcularComisionesCompletas", () => {
       makeVenta("P1", 300000, { vendedor_codigo: "V1", excluded: true }),
     ];
     const presupuestosMarca = [
-      makePresupuestoMarca("CONTEGRAL", 100000, 0.02, { vendedor_codigo: "V1" }),
+      makePresupuestoMarca("CONTEGRAL", 100000, 0.02, {
+        vendedor_codigo: "V1",
+      }),
     ];
     const productBrandMap = { P1: "CONTEGRAL" };
 
@@ -349,11 +399,12 @@ describe("calcularComisionesCompletas", () => {
 
   test("vendedor que solo tiene recaudos (sin ventas) aparece con comision ventas=0", () => {
     const ventas = [
-      makeVenta("P1", 100000, { vendedor_codigo: "V1", vendedor_nombre: "Ana" }),
+      makeVenta("P1", 100000, {
+        vendedor_codigo: "V1",
+        vendedor_nombre: "Ana",
+      }),
     ];
-    const recaudos = [
-      makeRecaudo(500000, true, { vendedor_codigo: "V2" }),
-    ];
+    const recaudos = [makeRecaudo(500000, true, { vendedor_codigo: "V2" })];
     const presupuestosMarca = [
       makePresupuestoMarca("CONTEGRAL", 50000, 0.02, { vendedor_codigo: "V1" }),
     ];
@@ -383,13 +434,16 @@ describe("calcularComisionesCompletas", () => {
 
   test("totalComision = comisionVentas + comisionRecaudo", () => {
     const ventas = [
-      makeVenta("P1", 200000, { vendedor_codigo: "V1", vendedor_nombre: "Ana" }),
+      makeVenta("P1", 200000, {
+        vendedor_codigo: "V1",
+        vendedor_nombre: "Ana",
+      }),
     ];
-    const recaudos = [
-      makeRecaudo(800000, true, { vendedor_codigo: "V1" }),
-    ];
+    const recaudos = [makeRecaudo(800000, true, { vendedor_codigo: "V1" })];
     const presupuestosMarca = [
-      makePresupuestoMarca("CONTEGRAL", 100000, 0.02, { vendedor_codigo: "V1" }),
+      makePresupuestoMarca("CONTEGRAL", 100000, 0.02, {
+        vendedor_codigo: "V1",
+      }),
     ];
     const presupuestosRecaudo = [
       {
@@ -421,5 +475,69 @@ describe("calcularComisionesCompletas", () => {
     expect(v1.comisionVentas.totalComisionVentas).toBe(expectedVentas);
     expect(v1.comisionRecaudo.comisionRecaudo).toBe(expectedRecaudo);
     expect(v1.totalComision).toBe(expectedVentas + expectedRecaudo);
+  });
+});
+
+describe("calcularComisionRecaudo — edge cases", () => {
+  test("cumplimiento en gap entre tramos retorna comisión 0", () => {
+    // Tramo 1: 0-50%, Tramo 2: 60-100%. Gap en 50-60%.
+    const recaudos = [
+      { vendedor_codigo: "V1", valor_recaudo: 550000, aplica_comision: true },
+    ];
+    const presupuestoRecaudo = {
+      vendedor_codigo: "V1",
+      meta_recaudo: 1000000,
+      tramo1_max: 50,
+      tramo1_pct: 0.01,
+      tramo2_min: 60,
+      tramo2_max: 100,
+      tramo2_pct: 0.02,
+      tramo3_min: Infinity,
+      tramo3_pct: 0,
+      tramo4_min: Infinity,
+      tramo4_pct: 0,
+    };
+    const result = calcularComisionRecaudo({ recaudos, presupuestoRecaudo });
+    // 55% cumplimiento — cae en gap, ningún tramo aplica
+    expect(result.pctCumplimiento).toBe(55);
+    expect(result.tramoAplicado).toBeNull();
+    expect(result.pctComision).toBe(0);
+    expect(result.comisionRecaudo).toBe(0);
+  });
+
+  test("recaudos con aplica_comision false no cuentan para comisionable", () => {
+    const recaudos = [
+      { vendedor_codigo: "V1", valor_recaudo: 500000, aplica_comision: true },
+      { vendedor_codigo: "V1", valor_recaudo: 300000, aplica_comision: false },
+    ];
+    const presupuestoRecaudo = {
+      vendedor_codigo: "V1",
+      meta_recaudo: 1000000,
+      tramo1_max: 89.99,
+      tramo1_pct: 0.01,
+      tramo2_min: 90,
+      tramo2_pct: 0.02,
+      tramo3_min: Infinity,
+      tramo3_pct: 0,
+      tramo4_min: Infinity,
+      tramo4_pct: 0,
+    };
+    const result = calcularComisionRecaudo({ recaudos, presupuestoRecaudo });
+    expect(result.totalRecaudado).toBe(800000);
+    expect(result.totalComisionable).toBe(500000);
+    expect(result.totalExcluido).toBe(300000);
+  });
+
+  test("sin presupuesto configurado retorna comisión 0", () => {
+    const recaudos = [
+      { vendedor_codigo: "V1", valor_recaudo: 500000, aplica_comision: true },
+    ];
+    const result = calcularComisionRecaudo({
+      recaudos,
+      presupuestoRecaudo: null,
+    });
+    expect(result.totalRecaudado).toBe(500000);
+    expect(result.comisionRecaudo).toBe(0);
+    expect(result.tramoAplicado).toBeNull();
   });
 });

@@ -41,6 +41,7 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
   const [error, setError] = useState(null);
   const [detectedType, setDetectedType] = useState(null); // 'cartera' | 'clientes'
   const successTimeoutRef = useRef(null);
+  const pendingDeleteRef = useRef(null); // ID de carga vieja a borrar DESPUÉS del insert exitoso
 
   const resetState = () => {
     if (successTimeoutRef.current) {
@@ -54,6 +55,7 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
     setError(null);
     setProgress(0);
     setDetectedType(null);
+    pendingDeleteRef.current = null;
   };
 
   // Cleanup success timeout on unmount
@@ -244,12 +246,10 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
           codigo: code,
           nombre: `Vendedor ${code}`,
         }));
-        await supabase
-          .from("distrimm_vendedores")
-          .upsert(vendedorRows, {
-            onConflict: "codigo",
-            ignoreDuplicates: true,
-          });
+        await supabase.from("distrimm_vendedores").upsert(vendedorRows, {
+          onConflict: "codigo",
+          ignoreDuplicates: true,
+        });
       }
 
       // 3. Prepare Final Batch
@@ -284,6 +284,15 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
         setProgress(currentProgress);
       }
 
+      // Insert exitoso — borrar la carga vieja si había duplicado
+      if (pendingDeleteRef.current) {
+        await supabase
+          .from("historial_cargas")
+          .delete()
+          .eq("id", pendingDeleteRef.current);
+        pendingDeleteRef.current = null;
+      }
+
       setStep("success");
       successTimeoutRef.current = setTimeout(() => {
         onUploadSuccess();
@@ -291,6 +300,7 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
       }, 2000);
     } catch (err) {
       if (import.meta.env.DEV) console.error("Upload Error (Raw):", err);
+      pendingDeleteRef.current = null; // No borrar la vieja si el insert falla
 
       if (createdLoadId) {
         if (import.meta.env.DEV)
@@ -349,7 +359,7 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
 
         const rowsToUpsert = batch.map((item) => ({
           no_identif: item.no_identif,
-          nombre_completo: item.nombreCompleto || null,
+          // nombre_completo es GENERATED ALWAYS — Postgres lo computa desde los 4 campos de nombre
           tipo_ident: item.tipo_ident,
           tipo_persona: item.tipo_persona,
           primer_nombre: item.primer_nombre,
@@ -485,11 +495,8 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
         });
         if (!ok) return;
 
-        // Delete the old load (CASCADE deletes cartera_items)
-        await supabase
-          .from("historial_cargas")
-          .delete()
-          .eq("id", existing[0].id);
+        // Guardar ID de la carga vieja — se borra DESPUÉS del insert exitoso
+        pendingDeleteRef.current = existing[0].id;
       }
     } catch (err) {
       if (import.meta.env.DEV) console.error("Error checking duplicates:", err);

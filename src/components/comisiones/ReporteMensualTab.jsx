@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useContext, useMemo, useCallback } from "react";
 import {
   ChevronDown,
   ChevronUp,
@@ -14,6 +14,8 @@ import {
   Tag,
   CheckCircle,
   XCircle,
+  RefreshCw,
+  Lock,
 } from "lucide-react";
 import { sileo } from "sileo";
 import { cn } from "@/lib/utils";
@@ -25,27 +27,45 @@ import {
 import { generarReportePDF } from "../../utils/reportePDF";
 import { generarReporteExcelMensual } from "../../utils/reporteExcelMensual";
 import { Card, KpiCard, EmptyState, MESES } from "./ComisionesShared";
+import { DashboardContext } from "../DashboardManager";
+import { getPeriodoOperativo } from "../../utils/periodoOperativo";
 import ReporteVendedorDetail from "./ReporteVendedorDetail";
 
 export default function ReporteMensualTab({ hook }) {
   const { reporteMensual, loadingReporte, generarReporteMensual } = hook;
 
-  const now = new Date();
-  const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
-  const [selectedYear, setSelectedYear] = useState(now.getFullYear());
+  // Periodo operativo derivado de la última carga
+  const dashCtx = useContext(DashboardContext);
+  const periodo = getPeriodoOperativo(
+    dashCtx?.availableLoads?.[0]?.fecha_corte,
+  );
+
+  const [selectedMonth, setSelectedMonth] = useState(periodo.month);
+  const [selectedYear, setSelectedYear] = useState(periodo.year);
   const [expandedVendedor, setExpandedVendedor] = useState(null);
   const [filtroVendedorId, setFiltroVendedorId] = useState("todos");
 
-  const years = useMemo(() => {
-    const current = new Date().getFullYear();
-    return [current - 1, current, current + 1];
-  }, []);
+  const years = useMemo(
+    () => [periodo.year - 1, periodo.year, periodo.year + 1],
+    [periodo.year],
+  );
 
   const handleGenerar = () => {
     generarReporteMensual(selectedYear, selectedMonth);
     setExpandedVendedor(null);
     setFiltroVendedorId("todos");
   };
+
+  const handleRecalcular = () => {
+    generarReporteMensual(selectedYear, selectedMonth, { forceRecalc: true });
+    setExpandedVendedor(null);
+    setFiltroVendedorId("todos");
+  };
+
+  const isSnapshot = reporteMensual?.isSnapshot || false;
+  const isStale = reporteMensual?.isStale || false;
+  const snapshotDate = reporteMensual?.snapshotDate;
+  const snapshotTotales = reporteMensual?.snapshotTotales;
 
   // Ventas ya vienen clasificadas (con .excluded y .reason) desde el hook
   const classifiedVentas = useMemo(
@@ -182,6 +202,15 @@ export default function ReporteMensualTab({ hook }) {
   const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
   const hasData = reporteMensual && classifiedVentas.length > 0;
 
+  // Días únicos con datos de ventas (no cargas/uploads)
+  const uniqueDays = useMemo(() => {
+    const dateSet = new Set();
+    classifiedVentas.forEach((v) => {
+      if (v.fecha) dateSet.add(v.fecha);
+    });
+    return dateSet.size;
+  }, [classifiedVentas]);
+
   // ── PDF Export ──
   const handleExportPDF = useCallback(async () => {
     if (!hasData) return;
@@ -302,7 +331,34 @@ export default function ReporteMensualTab({ hook }) {
           Generar Reporte
         </button>
 
+        {hasData && isSnapshot && (
+          <button
+            onClick={handleRecalcular}
+            disabled={loadingReporte}
+            className="px-3 py-2 bg-amber-500 rounded-lg text-xs font-bold text-white hover:bg-amber-600 disabled:opacity-50 transition-colors shadow-sm flex items-center gap-1.5"
+            title="Recalcular con catálogo y exclusiones actuales. Reemplaza el snapshot guardado."
+          >
+            <RefreshCw size={14} /> Recalcular
+          </button>
+        )}
+
         <div className="flex-1" />
+
+        {hasData && isSnapshot && (
+          <span
+            className={cn(
+              "flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full border",
+              isStale
+                ? "text-amber-700 bg-amber-50 border-amber-200"
+                : "text-emerald-700 bg-emerald-50 border-emerald-200",
+            )}
+          >
+            {isStale ? <RefreshCw size={10} /> : <Lock size={10} />}
+            {isStale
+              ? "Snapshot desactualizado"
+              : `Guardado ${snapshotDate ? new Date(snapshotDate).toLocaleDateString("es-CO") : ""}`}
+          </span>
+        )}
 
         {hasData && (
           <>
@@ -350,10 +406,21 @@ export default function ReporteMensualTab({ hook }) {
         />
       )}
 
+      {/* Alerta de snapshot desactualizado */}
+      {!loadingReporte && hasData && isSnapshot && isStale && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-3 text-sm text-amber-800">
+          <RefreshCw size={16} className="shrink-0 text-amber-600" />
+          <span>
+            Los datos del periodo cambiaron desde la ultima liquidacion. Haz
+            clic en <strong>Recalcular</strong> para actualizar el snapshot.
+          </span>
+        </div>
+      )}
+
       {/* ══════════ REPORT CONTENT ══════════ */}
       {!loadingReporte && hasData && (
         <>
-          {/* ── KPI Cards (ventas) ── */}
+          {/* ── KPI Cards (ventas) — usa totales del snapshot cuando existe ── */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
             <KpiCard
               title="Periodo"
@@ -363,25 +430,43 @@ export default function ReporteMensualTab({ hook }) {
             />
             <KpiCard
               title="Dias con Datos"
-              value={`${cargas.length}/${daysInMonth}`}
+              value={`${uniqueDays}/${daysInMonth}`}
               icon={CalendarRange}
               type="neutral"
             />
             <KpiCard
               title="Total Ventas"
-              value={formatCurrency(displayTotals.totalVentas)}
+              value={formatCurrency(
+                isSnapshot &&
+                  snapshotTotales?.totalVentas != null &&
+                  filtroVendedorId === "todos"
+                  ? snapshotTotales.totalVentas
+                  : displayTotals.totalVentas,
+              )}
               icon={TrendingUp}
               type="neutral"
             />
             <KpiCard
               title="Comisionable"
-              value={formatCurrency(displayTotals.ventasComisionables)}
+              value={formatCurrency(
+                isSnapshot &&
+                  snapshotTotales?.ventasComisionables != null &&
+                  filtroVendedorId === "todos"
+                  ? snapshotTotales.ventasComisionables
+                  : displayTotals.ventasComisionables,
+              )}
               icon={CheckCircle}
               type="success"
             />
             <KpiCard
               title="Excluido"
-              value={formatCurrency(displayTotals.ventasExcluidas)}
+              value={formatCurrency(
+                isSnapshot &&
+                  snapshotTotales?.ventasExcluidas != null &&
+                  filtroVendedorId === "todos"
+                  ? snapshotTotales.ventasExcluidas
+                  : displayTotals.ventasExcluidas,
+              )}
               icon={XCircle}
               type="danger"
             />

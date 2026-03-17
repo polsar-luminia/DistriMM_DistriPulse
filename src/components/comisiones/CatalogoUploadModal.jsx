@@ -59,26 +59,67 @@ export default function CatalogoUploadModal({ isOpen, onClose, onSuccess }) {
         const data = new Uint8Array(e.target.result);
         const wb = XLSX.read(data, { type: "array" });
         const ws = wb.Sheets[wb.SheetNames[0]];
-        let jsonData = XLSX.utils.sheet_to_json(ws, { range: 1 });
+        // Headers en Row 0 (sin fila decorativa); fallback a Row 1
+        let jsonData = XLSX.utils.sheet_to_json(ws, { range: 0 });
         if (jsonData.length === 0)
-          jsonData = XLSX.utils.sheet_to_json(ws, { range: 0 });
+          jsonData = XLSX.utils.sheet_to_json(ws, { range: 1 });
         if (jsonData.length === 0)
           throw new Error("El archivo parece estar vacio.");
 
+        // Mapeo por nombre de header (tolerante a variantes de casing)
+        const col = (row, ...aliases) => {
+          for (const a of aliases) {
+            if (row[a] !== undefined) return row[a];
+          }
+          // Fallback: buscar con keys trimmed (headers con espacios)
+          for (const key of Object.keys(row)) {
+            const trimmed = key.trim();
+            for (const a of aliases) {
+              if (trimmed === a) return row[key];
+            }
+          }
+          return "";
+        };
+
         const processed = jsonData
-          .map((row) => {
-            const keys = Object.keys(row);
-            const get = (idx) => row[keys[idx]];
-            return {
-              codigo: String(get(1) || "").trim(),
-              nombre: String(get(4) || "").trim(),
-              categoria_codigo: String(get(9) || "").trim(),
-              categoria_nombre: String(get(10) || "").trim(),
-              marca: normalizeBrand(String(get(17) || "").trim()),
-            };
-          })
+          .map((row) => ({
+            codigo: String(
+              col(row, "Codigo", "Código", "codigo", "CODIGO"),
+            ).trim(),
+            nombre: String(
+              col(row, "Nombre", "NombreProducto", "nombre", "NOMBRE"),
+            ).trim(),
+            categoria_codigo: String(
+              col(row, "Categoria", "CodCategoria", "categoria", "CATEGORIA"),
+            ).trim(),
+            categoria_nombre: String(
+              col(
+                row,
+                "NombreCategoria",
+                "Nombre Categoria",
+                "nombre_categoria",
+              ),
+            ).trim(),
+            marca: normalizeBrand(
+              String(
+                col(
+                  row,
+                  "NombreMarca",
+                  "Nombre Marca",
+                  "nombre_marca",
+                  "Marca",
+                  "marca",
+                  "MARCA",
+                ),
+              ).trim(),
+            ),
+          }))
           .filter((r) => r.codigo);
 
+        if (processed.length === 0 && jsonData.length > 0)
+          throw new Error(
+            "No se reconocieron las columnas. Se esperan: Codigo, Nombre, Categoria, Marca.",
+          );
         if (processed.length === 0)
           throw new Error("No se encontraron productos validos.");
         setFullData(processed);
@@ -157,8 +198,8 @@ export default function CatalogoUploadModal({ isOpen, onClose, onSuccess }) {
               <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 text-sm text-emerald-700">
                 <p className="font-bold mb-1">Excel "Saldos de Productos"</p>
                 <p className="text-xs text-emerald-500">
-                  Se extraen: Codigo (col 1), Nombre (col 4), Categoria (col
-                  9-10), Marca (col 17). Productos existentes se actualizan.
+                  Se extraen: Codigo, Nombre, Categoria, Marca (por nombre de
+                  columna). Productos existentes se actualizan.
                 </p>
               </div>
 

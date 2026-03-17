@@ -40,10 +40,15 @@ export function useComisionesRecaudos() {
       }
     } catch (err) {
       if (requestId !== fetchRequestIdRef.current) return;
-      if (import.meta.env.DEV) console.error("[useComisionesRecaudos] Error fetching recaudo cargas:", err);
+      if (import.meta.env.DEV)
+        console.error(
+          "[useComisionesRecaudos] Error fetching recaudo cargas:",
+          err,
+        );
       setRecaudoCargas([]);
     } finally {
-      if (requestId === fetchRequestIdRef.current) setLoadingRecaudoCargas(false);
+      if (requestId === fetchRequestIdRef.current)
+        setLoadingRecaudoCargas(false);
     }
   }, []);
 
@@ -61,45 +66,77 @@ export function useComisionesRecaudos() {
       })
       .catch((err) => {
         if (!cancelled) {
-          if (import.meta.env.DEV) console.error("[useComisionesRecaudos] Error fetching recaudo cargas:", err);
+          if (import.meta.env.DEV)
+            console.error(
+              "[useComisionesRecaudos] Error fetching recaudo cargas:",
+              err,
+            );
           setRecaudoCargas([]);
         }
       })
-      .finally(() => { if (!cancelled) setLoadingRecaudoCargas(false); });
-    return () => { cancelled = true; };
+      .finally(() => {
+        if (!cancelled) setLoadingRecaudoCargas(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Fetch recaudos when selection changes
   useEffect(() => {
-    if (!selectedRecaudoCargaId) { setRecaudos([]); return; }
+    if (!selectedRecaudoCargaId) {
+      setRecaudos([]);
+      return;
+    }
     let cancelled = false;
     setLoadingRecaudos(true);
     getRecaudosByCarga(selectedRecaudoCargaId)
-      .then(({ data }) => { if (!cancelled) setRecaudos(data || []); })
+      .then(({ data }) => {
+        if (!cancelled) setRecaudos(data || []);
+      })
       .catch((err) => {
         if (!cancelled) {
-          if (import.meta.env.DEV) console.error(`[useComisionesRecaudos] Error fetching recaudos for ${selectedRecaudoCargaId}:`, err);
+          if (import.meta.env.DEV)
+            console.error(
+              `[useComisionesRecaudos] Error fetching recaudos for ${selectedRecaudoCargaId}:`,
+              err,
+            );
           setRecaudos([]);
         }
       })
-      .finally(() => { if (!cancelled) setLoadingRecaudos(false); });
-    return () => { cancelled = true; };
+      .finally(() => {
+        if (!cancelled) setLoadingRecaudos(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [selectedRecaudoCargaId]);
 
-  const selectRecaudoCarga = useCallback((id) => setSelectedRecaudoCargaId(id), []);
+  const selectRecaudoCarga = useCallback(
+    (id) => setSelectedRecaudoCargaId(id),
+    [],
+  );
 
-  const deleteRecaudoCarga = useCallback(async (id) => {
-    const { success } = await deleteRecaudoCargaSvc(id);
-    if (success) {
-      await fetchRecaudoCargas();
-      // Clear selection if we deleted the active carga
-      // (useEffect on selectedRecaudoCargaId handles clearing recaudos)
-      setSelectedRecaudoCargaId((prev) => (prev === id ? null : prev));
-    }
-    return success;
-  }, [fetchRecaudoCargas]);
+  const deleteRecaudoCarga = useCallback(
+    async (id) => {
+      const { success } = await deleteRecaudoCargaSvc(id);
+      if (success) {
+        // Reset auto-select flag para que fetchRecaudoCargas seleccione el primero
+        if (selectedRecaudoCargaId === id) {
+          setSelectedRecaudoCargaId(null);
+          autoSelectedRef.current = false;
+        }
+        await fetchRecaudoCargas();
+      }
+      return success;
+    },
+    [fetchRecaudoCargas, selectedRecaudoCargaId],
+  );
 
-  const refreshRecaudos = useCallback(() => fetchRecaudoCargas(), [fetchRecaudoCargas]);
+  const refreshRecaudos = useCallback(
+    () => fetchRecaudoCargas(),
+    [fetchRecaudoCargas],
+  );
 
   // ── Presupuesto callbacks (lazy — NOT called on mount) ──
   const fetchPresupuestos = useCallback(async (year, month) => {
@@ -112,7 +149,11 @@ export function useComisionesRecaudos() {
       setPresupuestosRecaudo(recRes.data || []);
       setPresupuestosMarca(marcaRes.data || []);
     } catch (err) {
-      if (import.meta.env.DEV) console.error("[useComisionesRecaudos] Error fetching presupuestos:", err);
+      if (import.meta.env.DEV)
+        console.error(
+          "[useComisionesRecaudos] Error fetching presupuestos:",
+          err,
+        );
       setPresupuestosRecaudo([]);
       setPresupuestosMarca([]);
     }
@@ -146,7 +187,8 @@ export function useComisionesRecaudos() {
   return {
     recaudoCargas,
     selectedRecaudoCargaId,
-    selectedRecaudoCarga: recaudoCargas.find((c) => c.id === selectedRecaudoCargaId) || null,
+    selectedRecaudoCarga:
+      recaudoCargas.find((c) => c.id === selectedRecaudoCargaId) || null,
     loadingRecaudoCargas,
     recaudos,
     loadingRecaudos,

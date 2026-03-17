@@ -1,6 +1,10 @@
 import { normalizeBrand } from "./brandNormalization";
 
-export function calcularComisionVentas({ ventas, presupuestosMarca, productBrandMap }) {
+export function calcularComisionVentas({
+  ventas,
+  presupuestosMarca,
+  productBrandMap,
+}) {
   // 1. Agrupar ventas por marca usando productBrandMap
   //    Para cada venta: marca = productBrandMap[venta.producto_codigo] || "SIN MARCA"
   //    Sumar el campo `costo` (Number) de cada venta
@@ -15,11 +19,12 @@ export function calcularComisionVentas({ ventas, presupuestosMarca, productBrand
 
   const detalleMarcas = [];
 
-  // 2. Procesar presupuestos configurados
+  // 2. Procesar presupuestos configurados (normalizar marca para matchear con ventas)
   const marcasConPresupuesto = new Set();
   presupuestosMarca.forEach((p) => {
-    marcasConPresupuesto.add(p.marca);
-    const totalCosto = ventasPorMarca[p.marca] || 0;
+    const marcaNorm = normalizeBrand(p.marca);
+    marcasConPresupuesto.add(marcaNorm);
+    const totalCosto = ventasPorMarca[marcaNorm] || 0;
     const metaVentas = Number(p.meta_ventas || 0);
     const pctComision = Number(p.pct_comision || 0);
     const cumpleMeta = metaVentas > 0 ? totalCosto >= metaVentas : true;
@@ -28,7 +33,7 @@ export function calcularComisionVentas({ ventas, presupuestosMarca, productBrand
     const comision = cumpleMeta ? comisionPct + bonoFijo : 0;
 
     detalleMarcas.push({
-      marca: p.marca,
+      marca: marcaNorm,
       totalCosto,
       metaVentas,
       pctComision,
@@ -63,7 +68,10 @@ export function calcularComisionVentas({ ventas, presupuestosMarca, productBrand
 }
 
 export function calcularComisionRecaudo({ recaudos, presupuestoRecaudo }) {
-  const totalRecaudado = recaudos.reduce((s, r) => s + Number(r.valor_recaudo || 0), 0);
+  const totalRecaudado = recaudos.reduce(
+    (s, r) => s + Number(r.valor_recaudo || 0),
+    0,
+  );
   const totalComisionable = recaudos
     .filter((r) => r.aplica_comision)
     .reduce((s, r) => s + Number(r.valor_recaudo || 0), 0);
@@ -84,7 +92,8 @@ export function calcularComisionRecaudo({ recaudos, presupuestoRecaudo }) {
   }
 
   const metaRecaudo = Number(presupuestoRecaudo.meta_recaudo);
-  const pctCumplimiento = metaRecaudo > 0 ? (totalComisionable / metaRecaudo) * 100 : 0;
+  const pctCumplimiento =
+    metaRecaudo > 0 ? (totalComisionable / metaRecaudo) * 100 : 0;
 
   // Determinar tramo — evaluar de mayor a menor para tomar el más alto alcanzado
   const tramos = [
@@ -124,7 +133,8 @@ export function calcularComisionRecaudo({ recaudos, presupuestoRecaudo }) {
     }
   }
 
-  const comisionRecaudo = pctComision > 0 ? Math.round(totalComisionable * pctComision) : 0;
+  const comisionRecaudo =
+    pctComision > 0 ? Math.round(totalComisionable * pctComision) : 0;
 
   return {
     totalRecaudado,
@@ -151,7 +161,8 @@ export function calcularComisionesCompletas({
   ventas.forEach((v) => {
     if (v.vendedor_codigo) {
       vendedoresSet.add(v.vendedor_codigo);
-      if (v.vendedor_nombre) vendedorNombres[v.vendedor_codigo] = v.vendedor_nombre;
+      if (v.vendedor_nombre)
+        vendedorNombres[v.vendedor_codigo] = v.vendedor_nombre;
     }
   });
   recaudos.forEach((r) => {
@@ -171,7 +182,8 @@ export function calcularComisionesCompletas({
       (p) => p.vendedor_codigo === vendedorCodigo,
     );
     const presupuestoRecaudoVendedor =
-      presupuestosRecaudo.find((p) => p.vendedor_codigo === vendedorCodigo) || null;
+      presupuestosRecaudo.find((p) => p.vendedor_codigo === vendedorCodigo) ||
+      null;
 
     const comisionVentas = calcularComisionVentas({
       ventas: ventasVendedor,
@@ -189,7 +201,8 @@ export function calcularComisionesCompletas({
       vendedor_nombre: vendedorNombres[vendedorCodigo] || "",
       comisionVentas,
       comisionRecaudo,
-      totalComision: comisionVentas.totalComisionVentas + comisionRecaudo.comisionRecaudo,
+      totalComision:
+        comisionVentas.totalComisionVentas + comisionRecaudo.comisionRecaudo,
     });
   });
 

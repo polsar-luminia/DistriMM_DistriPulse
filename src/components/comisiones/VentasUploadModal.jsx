@@ -14,8 +14,11 @@ import { supabase } from "../../lib/supabase";
 import { sileo } from "sileo";
 import { cn } from "@/lib/utils";
 import { formatFullCurrency } from "../../utils/formatters";
+import ConfirmDialog from "../ConfirmDialog";
+import { useConfirm } from "../../hooks/useConfirm";
 
 export default function VentasUploadModal({ isOpen, onClose, onSuccess }) {
+  const [confirmProps, confirm] = useConfirm();
   const [file, setFile] = useState(null);
   const [fechaVentas, setFechaVentas] = useState(
     new Date().toISOString().split("T")[0],
@@ -136,6 +139,31 @@ export default function VentasUploadModal({ isOpen, onClose, onSuccess }) {
       const totalVentas = fullData.reduce((s, r) => s + r.valor_total, 0);
       const totalCosto = fullData.reduce((s, r) => s + r.costo, 0);
 
+      // 0. Verificar duplicados por fecha
+      const { data: existing } = await supabase
+        .from("distrimm_comisiones_cargas")
+        .select("id, nombre_archivo")
+        .eq("fecha_ventas", fechaVentas);
+
+      let pendingDeleteIds = [];
+      if (existing?.length > 0) {
+        const nombres = existing.map((e) => e.nombre_archivo).join(", ");
+        const ok = await confirm({
+          title: "Carga duplicada",
+          message: `Ya existe${existing.length > 1 ? "n" : ""} ${existing.length} carga${existing.length > 1 ? "s" : ""} para esta fecha (${nombres}). ¿Deseas reemplazarla${existing.length > 1 ? "s" : ""}?`,
+          confirmText: "Reemplazar",
+          cancelText: "Cancelar",
+          variant: "warning",
+        });
+        if (!ok) {
+          setStep("preview");
+          setUploading(false);
+          return;
+        }
+        // NO borrar aún — guardar IDs para borrar DESPUÉS del insert exitoso
+        pendingDeleteIds = existing.map((e) => e.id);
+      }
+
       // 1. Create carga record
       const { data: carga, error: cargaErr } = await supabase
         .from("distrimm_comisiones_cargas")
@@ -202,6 +230,25 @@ export default function VentasUploadModal({ isOpen, onClose, onSuccess }) {
         setProgress(25 + Math.round(((i + batch.length) / rows.length) * 70));
       }
 
+      // Insert exitoso — borrar cargas duplicadas anteriores
+      for (const oldId of pendingDeleteIds) {
+        const { error: delErr } = await supabase
+          .from("distrimm_comisiones_cargas")
+          .delete()
+          .eq("id", oldId);
+        if (delErr) {
+          if (import.meta.env.DEV)
+            console.warn(
+              "[VentasUpload] Error borrando carga anterior:",
+              oldId,
+              delErr.message,
+            );
+          sileo.warning(
+            "La carga nueva se guardó, pero no se pudo eliminar una carga anterior. Revisa duplicados.",
+          );
+        }
+      }
+
       setProgress(100);
       setStep("success");
       sileo.success("Ventas cargadas exitosamente");
@@ -227,263 +274,267 @@ export default function VentasUploadModal({ isOpen, onClose, onSuccess }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl my-8 overflow-hidden flex flex-col max-h-[90vh]">
-        <div className="bg-slate-900 p-4 flex justify-between items-center text-white shrink-0">
-          <h3 className="font-bold text-lg flex items-center gap-2">
-            <Upload size={20} className="text-indigo-400" /> Cargar Ventas
-          </h3>
-          <button
-            onClick={handleClose}
-            disabled={step === "uploading"}
-            className="p-1 hover:bg-slate-700 rounded transition-colors"
-          >
-            <X size={20} />
-          </button>
-        </div>
+    <>
+      <ConfirmDialog {...confirmProps} />
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl my-8 overflow-hidden flex flex-col max-h-[90vh]">
+          <div className="bg-slate-900 p-4 flex justify-between items-center text-white shrink-0">
+            <h3 className="font-bold text-lg flex items-center gap-2">
+              <Upload size={20} className="text-indigo-400" /> Cargar Ventas
+            </h3>
+            <button
+              onClick={handleClose}
+              disabled={step === "uploading"}
+              className="p-1 hover:bg-slate-700 rounded transition-colors"
+            >
+              <X size={20} />
+            </button>
+          </div>
 
-        <div className="p-6 overflow-y-auto">
-          {error && (
-            <div className="mb-6 bg-rose-50 text-rose-700 p-4 rounded-lg flex items-start gap-3 border border-rose-200">
-              <AlertCircle size={20} className="mt-0.5 shrink-0" />
-              <div>
-                <p className="font-bold">Error</p>
-                <p className="text-sm">{error}</p>
-              </div>
-            </div>
-          )}
-
-          {step === "select" && (
-            <div className="space-y-6">
-              <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 text-sm text-indigo-700">
-                <p className="font-bold mb-1">
-                  Excel "Ventas de Productos por Factura"
-                </p>
-                <p className="text-xs text-indigo-500">
-                  La fila decorativa (titulo) se omite automaticamente. Se leen
-                  30 columnas por fila.
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-bold text-slate-700">
-                  Fecha de Ventas
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Calendar size={18} className="text-indigo-600" />
-                  </div>
-                  <input
-                    type="date"
-                    value={fechaVentas}
-                    onChange={(e) => setFechaVentas(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-medium"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-bold text-slate-700">
-                  Archivo Excel
-                </label>
-                <div
-                  className={cn(
-                    "border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-all group",
-                    file
-                      ? "border-indigo-500 bg-indigo-50/50"
-                      : "border-slate-300 hover:border-indigo-400 hover:bg-slate-50",
-                  )}
-                >
-                  <input
-                    type="file"
-                    accept=".xlsx,.xls,.csv"
-                    onChange={handleFileChange}
-                    className="hidden"
-                    id="ventas-file"
-                  />
-                  <label
-                    htmlFor="ventas-file"
-                    className="cursor-pointer flex flex-col items-center w-full"
-                  >
-                    {file ? (
-                      <>
-                        <div className="bg-emerald-100 p-3 rounded-full mb-3">
-                          <FileSpreadsheet
-                            size={32}
-                            className="text-emerald-700"
-                          />
-                        </div>
-                        <span className="text-base font-bold text-slate-900 break-all">
-                          {file.name}
-                        </span>
-                        <span className="text-xs text-emerald-700 font-medium mt-1 uppercase tracking-wide">
-                          Archivo Seleccionado
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <div className="bg-slate-100 p-3 rounded-full mb-3 group-hover:bg-indigo-100 transition-colors">
-                          <Upload
-                            size={32}
-                            className="text-slate-400 group-hover:text-indigo-600 transition-colors"
-                          />
-                        </div>
-                        <span className="text-sm font-semibold text-slate-700">
-                          Haz clic para buscar el archivo
-                        </span>
-                        <span className="text-xs text-slate-400 mt-2">
-                          Soporta .xlsx (Excel)
-                        </span>
-                      </>
-                    )}
-                  </label>
-                </div>
-              </div>
-
-              <button
-                onClick={handleAnalyze}
-                disabled={!file}
-                className="w-full py-3 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-indigo-900/20 transition-all"
-              >
-                Analizar y Previsualizar <ArrowRight size={18} />
-              </button>
-            </div>
-          )}
-
-          {step === "preview" && (
-            <div className="space-y-6">
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex gap-3">
-                <ShoppingBag className="text-amber-600 shrink-0" size={24} />
+          <div className="p-6 overflow-y-auto">
+            {error && (
+              <div className="mb-6 bg-rose-50 text-rose-700 p-4 rounded-lg flex items-start gap-3 border border-rose-200">
+                <AlertCircle size={20} className="mt-0.5 shrink-0" />
                 <div>
-                  <h4 className="font-bold text-sm uppercase tracking-wide mb-1 text-amber-800">
-                    Ventas Detectadas
-                  </h4>
-                  {(() => {
-                    const countVE = fullData.filter(
-                      (r) => r.tipo !== "DV",
-                    ).length;
-                    const countDV = fullData.filter(
-                      (r) => r.tipo === "DV",
-                    ).length;
-                    return (
-                      <p className="text-sm text-amber-700">
-                        Se encontraron {countVE} ventas y {countDV}{" "}
-                        devoluciones. Fecha: {fechaVentas}
-                      </p>
-                    );
-                  })()}
+                  <p className="font-bold">Error</p>
+                  <p className="text-sm">{error}</p>
                 </div>
               </div>
+            )}
 
-              <div className="bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm">
-                <div className="bg-slate-50 px-4 py-2 border-b border-slate-200 flex justify-between items-center">
-                  <span className="text-xs font-bold text-slate-500 uppercase">
-                    Primeras 5 filas
-                  </span>
-                  <span className="text-xs font-mono text-slate-400">
-                    {fullData.length} registros totales
-                  </span>
+            {step === "select" && (
+              <div className="space-y-6">
+                <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 text-sm text-indigo-700">
+                  <p className="font-bold mb-1">
+                    Excel "Ventas de Productos por Factura"
+                  </p>
+                  <p className="text-xs text-indigo-500">
+                    La fila decorativa (titulo) se omite automaticamente. Se
+                    leen 30 columnas por fila.
+                  </p>
                 </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm text-left">
-                    <thead className="bg-slate-50 text-xs text-slate-500 uppercase font-bold">
-                      <tr>
-                        <th className="px-3 py-2">Vendedor</th>
-                        <th className="px-3 py-2">Producto</th>
-                        <th className="px-3 py-2">Cliente</th>
-                        <th className="px-3 py-2 text-center">Tipo</th>
-                        <th className="px-3 py-2 text-right">Valor Total</th>
-                        <th className="px-3 py-2 text-right">Costo</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {previewData.map((row, i) => (
-                        <tr key={i} className="hover:bg-slate-50">
-                          <td className="px-3 py-2 text-xs">
-                            {row.vendedor_nombre || row.vendedor_codigo}
-                          </td>
-                          <td className="px-3 py-2 text-xs truncate max-w-[150px]">
-                            {row.producto_descripcion || row.producto_codigo}
-                          </td>
-                          <td className="px-3 py-2 text-xs truncate max-w-[150px]">
-                            {row.cliente_nombre}
-                          </td>
-                          <td className="px-3 py-2 text-center">
-                            <span
-                              className={cn(
-                                "text-[10px] font-bold px-2 py-0.5 rounded-full",
-                                row.tipo === "DV"
-                                  ? "bg-rose-100 text-rose-700"
-                                  : "bg-emerald-100 text-emerald-700",
-                              )}
-                            >
-                              {row.tipo === "DV" ? "Dev." : "Venta"}
-                            </span>
-                          </td>
-                          <td className="px-3 py-2 text-xs text-right font-mono">
-                            {formatFullCurrency(row.valor_total)}
-                          </td>
-                          <td className="px-3 py-2 text-xs text-right font-mono">
-                            {formatFullCurrency(row.costo)}
-                          </td>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-bold text-slate-700">
+                    Fecha de Ventas
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Calendar size={18} className="text-indigo-600" />
+                    </div>
+                    <input
+                      type="date"
+                      value={fechaVentas}
+                      onChange={(e) => setFechaVentas(e.target.value)}
+                      className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-medium"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-bold text-slate-700">
+                    Archivo Excel
+                  </label>
+                  <div
+                    className={cn(
+                      "border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-all group",
+                      file
+                        ? "border-indigo-500 bg-indigo-50/50"
+                        : "border-slate-300 hover:border-indigo-400 hover:bg-slate-50",
+                    )}
+                  >
+                    <input
+                      type="file"
+                      accept=".xlsx,.xls,.csv"
+                      onChange={handleFileChange}
+                      className="hidden"
+                      id="ventas-file"
+                    />
+                    <label
+                      htmlFor="ventas-file"
+                      className="cursor-pointer flex flex-col items-center w-full"
+                    >
+                      {file ? (
+                        <>
+                          <div className="bg-emerald-100 p-3 rounded-full mb-3">
+                            <FileSpreadsheet
+                              size={32}
+                              className="text-emerald-700"
+                            />
+                          </div>
+                          <span className="text-base font-bold text-slate-900 break-all">
+                            {file.name}
+                          </span>
+                          <span className="text-xs text-emerald-700 font-medium mt-1 uppercase tracking-wide">
+                            Archivo Seleccionado
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <div className="bg-slate-100 p-3 rounded-full mb-3 group-hover:bg-indigo-100 transition-colors">
+                            <Upload
+                              size={32}
+                              className="text-slate-400 group-hover:text-indigo-600 transition-colors"
+                            />
+                          </div>
+                          <span className="text-sm font-semibold text-slate-700">
+                            Haz clic para buscar el archivo
+                          </span>
+                          <span className="text-xs text-slate-400 mt-2">
+                            Soporta .xlsx (Excel)
+                          </span>
+                        </>
+                      )}
+                    </label>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleAnalyze}
+                  disabled={!file}
+                  className="w-full py-3 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-indigo-900/20 transition-all"
+                >
+                  Analizar y Previsualizar <ArrowRight size={18} />
+                </button>
+              </div>
+            )}
+
+            {step === "preview" && (
+              <div className="space-y-6">
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex gap-3">
+                  <ShoppingBag className="text-amber-600 shrink-0" size={24} />
+                  <div>
+                    <h4 className="font-bold text-sm uppercase tracking-wide mb-1 text-amber-800">
+                      Ventas Detectadas
+                    </h4>
+                    {(() => {
+                      const countVE = fullData.filter(
+                        (r) => r.tipo !== "DV",
+                      ).length;
+                      const countDV = fullData.filter(
+                        (r) => r.tipo === "DV",
+                      ).length;
+                      return (
+                        <p className="text-sm text-amber-700">
+                          Se encontraron {countVE} ventas y {countDV}{" "}
+                          devoluciones. Fecha: {fechaVentas}
+                        </p>
+                      );
+                    })()}
+                  </div>
+                </div>
+
+                <div className="bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm">
+                  <div className="bg-slate-50 px-4 py-2 border-b border-slate-200 flex justify-between items-center">
+                    <span className="text-xs font-bold text-slate-500 uppercase">
+                      Primeras 5 filas
+                    </span>
+                    <span className="text-xs font-mono text-slate-400">
+                      {fullData.length} registros totales
+                    </span>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left">
+                      <thead className="bg-slate-50 text-xs text-slate-500 uppercase font-bold">
+                        <tr>
+                          <th className="px-3 py-2">Vendedor</th>
+                          <th className="px-3 py-2">Producto</th>
+                          <th className="px-3 py-2">Cliente</th>
+                          <th className="px-3 py-2 text-center">Tipo</th>
+                          <th className="px-3 py-2 text-right">Valor Total</th>
+                          <th className="px-3 py-2 text-right">Costo</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {previewData.map((row, i) => (
+                          <tr key={i} className="hover:bg-slate-50">
+                            <td className="px-3 py-2 text-xs">
+                              {row.vendedor_nombre || row.vendedor_codigo}
+                            </td>
+                            <td className="px-3 py-2 text-xs truncate max-w-[150px]">
+                              {row.producto_descripcion || row.producto_codigo}
+                            </td>
+                            <td className="px-3 py-2 text-xs truncate max-w-[150px]">
+                              {row.cliente_nombre}
+                            </td>
+                            <td className="px-3 py-2 text-center">
+                              <span
+                                className={cn(
+                                  "text-[10px] font-bold px-2 py-0.5 rounded-full",
+                                  row.tipo === "DV"
+                                    ? "bg-rose-100 text-rose-700"
+                                    : "bg-emerald-100 text-emerald-700",
+                                )}
+                              >
+                                {row.tipo === "DV" ? "Dev." : "Venta"}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2 text-xs text-right font-mono">
+                              {formatFullCurrency(row.valor_total)}
+                            </td>
+                            <td className="px-3 py-2 text-xs text-right font-mono">
+                              {formatFullCurrency(row.costo)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setStep("select")}
+                    className="flex-1 px-4 py-3 border border-slate-300 text-slate-700 rounded-lg text-sm font-bold hover:bg-slate-50 transition-colors"
+                  >
+                    Cancelar / Corregir
+                  </button>
+                  <button
+                    onClick={handleUpload}
+                    disabled={uploading}
+                    className="flex-[2] px-4 py-3 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-indigo-900/20 flex items-center justify-center gap-2 transition-all"
+                  >
+                    <CheckCircle size={18} /> Guardar {fullData.length}{" "}
+                    registros
+                  </button>
                 </div>
               </div>
+            )}
 
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setStep("select")}
-                  className="flex-1 px-4 py-3 border border-slate-300 text-slate-700 rounded-lg text-sm font-bold hover:bg-slate-50 transition-colors"
-                >
-                  Cancelar / Corregir
-                </button>
-                <button
-                  onClick={handleUpload}
-                  disabled={uploading}
-                  className="flex-[2] px-4 py-3 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-indigo-900/20 flex items-center justify-center gap-2 transition-all"
-                >
-                  <CheckCircle size={18} /> Guardar {fullData.length} registros
-                </button>
-              </div>
-            </div>
-          )}
-
-          {step === "uploading" && (
-            <div className="flex flex-col items-center justify-center py-12">
-              <Loader2
-                size={48}
-                className="text-emerald-600 animate-spin mb-4"
-              />
-              <h4 className="text-xl font-bold text-slate-900 mb-2">
-                Guardando Ventas...
-              </h4>
-              <p className="text-slate-500 text-sm mb-6">Por favor espera.</p>
-              <div className="w-full max-w-xs bg-slate-100 rounded-full h-3 overflow-hidden">
-                <div
-                  className="bg-emerald-600 h-3 rounded-full transition-all duration-300"
-                  style={{ width: progress + "%" }}
+            {step === "uploading" && (
+              <div className="flex flex-col items-center justify-center py-12">
+                <Loader2
+                  size={48}
+                  className="text-emerald-600 animate-spin mb-4"
                 />
+                <h4 className="text-xl font-bold text-slate-900 mb-2">
+                  Guardando Ventas...
+                </h4>
+                <p className="text-slate-500 text-sm mb-6">Por favor espera.</p>
+                <div className="w-full max-w-xs bg-slate-100 rounded-full h-3 overflow-hidden">
+                  <div
+                    className="bg-emerald-600 h-3 rounded-full transition-all duration-300"
+                    style={{ width: progress + "%" }}
+                  />
+                </div>
+                <p className="text-xs text-slate-400 mt-2 font-mono">
+                  {progress}% completado
+                </p>
               </div>
-              <p className="text-xs text-slate-400 mt-2 font-mono">
-                {progress}% completado
-              </p>
-            </div>
-          )}
+            )}
 
-          {step === "success" && (
-            <div className="flex flex-col items-center justify-center py-12 text-emerald-600">
-              <CheckCircle size={64} className="mb-4" />
-              <h4 className="text-2xl font-bold mb-2">Carga Exitosa!</h4>
-              <p className="text-slate-500">
-                {fullData.length} ventas guardadas correctamente.
-              </p>
-            </div>
-          )}
+            {step === "success" && (
+              <div className="flex flex-col items-center justify-center py-12 text-emerald-600">
+                <CheckCircle size={64} className="mb-4" />
+                <h4 className="text-2xl font-bold mb-2">Carga Exitosa!</h4>
+                <p className="text-slate-500">
+                  {fullData.length} ventas guardadas correctamente.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
