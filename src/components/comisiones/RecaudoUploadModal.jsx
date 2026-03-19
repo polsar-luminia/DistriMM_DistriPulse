@@ -106,11 +106,14 @@ async function batchIN(table, selectCols, field, ids, orderCol) {
 async function enrichFromDB(rows) {
   const nits = [...new Set(rows.map((r) => r.cliente_nit).filter(Boolean))];
   const facturas = [...new Set(rows.map((r) => r.factura).filter(Boolean))];
+  // Buscar también con prefijo FELE- (ventas usan ese formato)
+  const facturasConPrefijo = facturas.map((f) => `FELE-${f}`);
 
   let clientes = [];
   let items = [];
+  let ventasVendedor = [];
   try {
-    [clientes, items] = await Promise.all([
+    [clientes, items, ventasVendedor] = await Promise.all([
       nits.length > 0
         ? batchIN(
             "distrimm_clientes",
@@ -128,6 +131,15 @@ async function enrichFromDB(rows) {
             "id",
           )
         : [],
+      // Buscar vendedor en ventas por factura (FELE-XXXXX)
+      facturasConPrefijo.length > 0
+        ? batchIN(
+            "distrimm_comisiones_ventas",
+            "factura, vendedor_codigo",
+            "factura",
+            facturasConPrefijo,
+          )
+        : [],
     ]);
   } catch (err) {
     if (import.meta.env.DEV)
@@ -143,16 +155,25 @@ async function enrichFromDB(rows) {
     items.map((c) => [String(c.documento_id), c]),
   );
 
+  // Mapeo factura (sin prefijo) → vendedor_codigo de ventas
+  const ventaVendedorMap = {};
+  ventasVendedor.forEach((v) => {
+    const num = String(v.factura || "").replace("FELE-", "");
+    if (num && v.vendedor_codigo) ventaVendedorMap[num] = v.vendedor_codigo;
+  });
+
   return rows.map((row) => {
     const c = clienteMap[row.cliente_nit];
     const f = carteraMap[row.factura];
     // Si no hay match en cartera, dias_mora = -1 (desconocido → no comisionable)
     const diasMora = f ? (f.dias_mora ?? 0) : -1;
+    // Vendedor: ventas (más preciso por factura) → cartera → clientes maestro
+    const vendedorVenta = ventaVendedorMap[row.factura];
     return {
       ...row,
       cliente_nombre: c?.nombre_completo || row.cliente_nit,
-      // Prioridad: vendedor de la factura original (cartera_items) → vendedor actual (maestro clientes) → vacío
-      vendedor_codigo: f?.vendedor_codigo || c?.vendedor_codigo || "",
+      vendedor_codigo:
+        vendedorVenta || f?.vendedor_codigo || c?.vendedor_codigo || "",
       fecha_cxc: f?.fecha_emision || null,
       fecha_vence: f?.fecha_vencimiento || null,
       dias_mora: diasMora,
