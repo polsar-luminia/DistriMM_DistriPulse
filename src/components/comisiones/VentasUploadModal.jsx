@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { getColombiaTodayISO } from "../../utils/formatters";
 import {
   Upload,
   X,
@@ -20,9 +21,7 @@ import { useConfirm } from "../../hooks/useConfirm";
 export default function VentasUploadModal({ isOpen, onClose, onSuccess }) {
   const [confirmProps, confirm] = useConfirm();
   const [file, setFile] = useState(null);
-  const [fechaVentas, setFechaVentas] = useState(
-    new Date().toISOString().split("T")[0],
-  );
+  const [fechaVentas, setFechaVentas] = useState(getColombiaTodayISO);
   const [step, setStep] = useState("select");
   const [previewData, setPreviewData] = useState([]);
   const [fullData, setFullData] = useState([]);

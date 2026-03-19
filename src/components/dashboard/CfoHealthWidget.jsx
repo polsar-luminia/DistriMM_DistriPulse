@@ -33,9 +33,16 @@ export default function CfoHealthWidget({ currentLoadId }) {
       try {
         setLoading(true);
         setError(null);
-        const { data, error: fetchErr } = await getCfoAnalyses(currentLoadId);
+        // Try current load first, then fallback to most recent analysis
+        let { data, error: fetchErr } = await getCfoAnalyses(currentLoadId);
         if (cancelled) return;
         if (fetchErr) throw fetchErr;
+        if (!data || data.length === 0) {
+          // No analysis for current load — show most recent from any load
+          const fallback = await getCfoAnalyses(null);
+          if (cancelled) return;
+          data = fallback.data;
+        }
         if (data && data.length > 0) {
           setAnalysis(data[0].analysis);
         }

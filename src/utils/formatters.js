@@ -45,7 +45,8 @@ export const formatDateShort = (dateString) => {
 };
 
 export const formatPercentage = (value, decimals = 1) => {
-  if (value === undefined || value === null || !Number.isFinite(value)) return "0%";
+  if (value === undefined || value === null || !Number.isFinite(value))
+    return "0%";
   return `${value.toFixed(decimals)}%`;
 };
 
@@ -65,3 +66,9 @@ export const getShortName = (name) => {
   return name.split(" ").slice(0, 2).join(" ");
 };
 
+/** Fecha actual en Colombia (UTC-5) como YYYY-MM-DD. Evita que después de las 7pm Colombia el default sea el día siguiente (UTC). */
+export const getColombiaTodayISO = () => {
+  const now = new Date();
+  const colombiaMs = now.getTime() + (now.getTimezoneOffset() - 300) * 60000;
+  return new Date(colombiaMs).toISOString().split("T")[0];
+};

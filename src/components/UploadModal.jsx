@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { getColombiaTodayISO } from "../utils/formatters";
 import ConfirmDialog from "./ConfirmDialog";
 import { useConfirm } from "../hooks/useConfirm";
 import {
@@ -29,9 +30,7 @@ import {
 export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
   const [confirmProps, confirm] = useConfirm();
   const [file, setFile] = useState(null);
-  const [cutOffDate, setCutOffDate] = useState(
-    new Date().toISOString().split("T")[0],
-  );
+  const [cutOffDate, setCutOffDate] = useState(getColombiaTodayISO);
 
   // States for new flow
   const [step, setStep] = useState("select"); // 'select', 'preview', 'uploading', 'success'

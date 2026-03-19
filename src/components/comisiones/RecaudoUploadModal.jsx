@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { getColombiaTodayISO } from "../../utils/formatters";
 import {
   Upload,
   X,
@@ -170,9 +171,7 @@ function parseExcelDate(raw) {
 export default function RecaudoUploadModal({ isOpen, onClose, onSuccess }) {
   const [confirmProps, confirm] = useConfirm();
   const [file, setFile] = useState(null);
-  const [fechaPeriodo, setFechaPeriodo] = useState(
-    () => new Date().toISOString().split("T")[0],
-  );
+  const [fechaPeriodo, setFechaPeriodo] = useState(getColombiaTodayISO);
   const [step, setStep] = useState("select");
   const [previewData, setPreviewData] = useState([]);
   const [fullData, setFullData] = useState([]);

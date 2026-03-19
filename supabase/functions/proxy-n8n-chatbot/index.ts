@@ -14,15 +14,16 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ error: "No authorization header" }, 401, req);
     }
 
-    const supabaseUser = createClient(
+    // Use service_role to verify the user's JWT (SUPABASE_ANON_KEY is not a built-in secret)
+    const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } },
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
+    const token = authHeader.replace("Bearer ", "");
     const {
       data: { user },
       error: authError,
-    } = await supabaseUser.auth.getUser();
+    } = await supabase.auth.getUser(token);
 
     if (authError || !user) {
       return jsonResponse({ error: "Invalid token" }, 401, req);
@@ -58,12 +59,13 @@ Deno.serve(async (req: Request) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(n8nAuthKey ? { "x-n8n-auth": n8nAuthKey } : {}),
         },
         body: JSON.stringify({
           action: action || "sendMessage",
           sessionId,
           chatInput,
+          // Chat Trigger valida authKey en el body, no en headers
+          ...(n8nAuthKey ? { authKey: n8nAuthKey } : {}),
         }),
         signal: controller.signal,
       });
