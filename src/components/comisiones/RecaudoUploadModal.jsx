@@ -232,6 +232,7 @@ function parseExcelDate(raw) {
 export default function RecaudoUploadModal({ isOpen, onClose, onSuccess }) {
   const [confirmProps, confirm] = useConfirm();
   const [file, setFile] = useState(null);
+  const [fileName, setFileName] = useState("");
   const [fechaPeriodo, setFechaPeriodo] = useState(getColombiaTodayISO);
   const [step, setStep] = useState("select");
   const [previewData, setPreviewData] = useState([]);
@@ -264,6 +265,7 @@ export default function RecaudoUploadModal({ isOpen, onClose, onSuccess }) {
         return;
       }
       setFile(selectedFile);
+      setFileName(selectedFile.name);
       setError(null);
     }
   };
@@ -413,7 +415,7 @@ export default function RecaudoUploadModal({ isOpen, onClose, onSuccess }) {
       const { data: carga, error: cargaErr } = await supabase
         .from("distrimm_comisiones_cargas_recaudo")
         .insert({
-          nombre_archivo: file.name,
+          nombre_archivo: fileName || "Recaudo",
           fecha_periodo: fechaPeriodo,
           total_registros: fullData.length,
           total_recaudado: totalRecaudado,
