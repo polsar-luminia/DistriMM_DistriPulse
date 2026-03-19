@@ -12,7 +12,8 @@ export default async function globalSetup() {
   const url = process.env.VITE_SUPABASE_URL;
   const key = process.env.E2E_SUPABASE_SERVICE_KEY;
   if (!url || !key) {
-    throw new Error("VITE_SUPABASE_URL and E2E_SUPABASE_SERVICE_KEY are required for e2e seed");
+    console.warn("[e2e seed] Missing VITE_SUPABASE_URL or E2E_SUPABASE_SERVICE_KEY — skipping auto-seed. Run seed manually via SQL or pnpm test:e2e:seed.");
+    return;
   }
 
   const supabase = createClient(url, key);
@@ -64,7 +65,7 @@ export default async function globalSetup() {
       fecha_vencimiento: "2025-01-31",
       dias_mora: 30,
       valor_saldo: 1000000,
-      valor_factura: 1000000,
+      valor_inicial: 1000000,
       vendedor_codigo: TEST_VENDEDOR_CODIGO,
     });
   }
