@@ -126,7 +126,15 @@ export function useComisionesCalculo(selectedCargaId, catalogo, exclusiones) {
           ]);
 
         const ventasMes = ventasRes.data || [];
-        const recaudosMes = recaudosRes.data || [];
+        // Deduplicar recaudos: mismo cliente_nit + factura + valor_recaudo entre cargas
+        const _rawRecaudos = recaudosRes.data || [];
+        const _seenR = new Set();
+        const recaudosMes = _rawRecaudos.filter((r) => {
+          const key = `${r.cliente_nit}|${r.factura}|${r.valor_recaudo}`;
+          if (_seenR.has(key)) return false;
+          _seenR.add(key);
+          return true;
+        });
         const presMarca = presMarcaRes.data || [];
         const presRecaudo = presRecaudoRes.data || [];
 

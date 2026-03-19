@@ -134,12 +134,20 @@ export function useComisionesRecaudos() {
     [fetchRecaudoCargas, selectedRecaudoCargaId],
   );
 
-  // Fetch ALL recaudos for a given month (across all cargas)
+  // Fetch ALL recaudos for a given month (across all cargas), deduplicated
   const fetchRecaudosPeriodo = useCallback(async (year, month) => {
     setLoadingRecaudos(true);
     try {
       const { data } = await getRecaudosByPeriodo(year, month);
-      setRecaudos(data || []);
+      // Deduplicar: mismo cliente_nit + factura + valor_recaudo = duplicado entre cargas
+      const seen = new Set();
+      const deduped = (data || []).filter((r) => {
+        const key = `${r.cliente_nit}|${r.factura}|${r.valor_recaudo}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      setRecaudos(deduped);
     } catch (err) {
       if (import.meta.env.DEV)
         console.error("[useComisionesRecaudos] Error fetching periodo:", err);
