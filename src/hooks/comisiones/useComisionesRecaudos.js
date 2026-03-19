@@ -3,6 +3,7 @@ import {
   getRecaudoCargas,
   deleteRecaudoCarga as deleteRecaudoCargaSvc,
   getRecaudosByCarga,
+  getRecaudosByPeriodo,
   getPresupuestosRecaudo,
   upsertPresupuestoRecaudo,
   deletePresupuestoRecaudo as deletePresupuestoRecaudoSvc,
@@ -133,6 +134,21 @@ export function useComisionesRecaudos() {
     [fetchRecaudoCargas, selectedRecaudoCargaId],
   );
 
+  // Fetch ALL recaudos for a given month (across all cargas)
+  const fetchRecaudosPeriodo = useCallback(async (year, month) => {
+    setLoadingRecaudos(true);
+    try {
+      const { data } = await getRecaudosByPeriodo(year, month);
+      setRecaudos(data || []);
+    } catch (err) {
+      if (import.meta.env.DEV)
+        console.error("[useComisionesRecaudos] Error fetching periodo:", err);
+      setRecaudos([]);
+    } finally {
+      setLoadingRecaudos(false);
+    }
+  }, []);
+
   const refreshRecaudos = useCallback(
     () => fetchRecaudoCargas(),
     [fetchRecaudoCargas],
@@ -195,6 +211,7 @@ export function useComisionesRecaudos() {
     selectRecaudoCarga,
     deleteRecaudoCarga,
     refreshRecaudos,
+    fetchRecaudosPeriodo,
     presupuestosRecaudo,
     presupuestosMarca,
     loadingPresupuestos,

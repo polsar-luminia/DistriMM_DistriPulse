@@ -1,10 +1,7 @@
-import React, { useState, useMemo } from "react";
-import ConfirmDialog from "../ConfirmDialog";
-import { useConfirm } from "../../hooks/useConfirm";
+import React, { useState, useMemo, useEffect, useContext } from "react";
 import {
   Wallet,
   Upload,
-  Trash2,
   Calendar,
   Loader2,
   DollarSign,
@@ -14,32 +11,39 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
-import { sileo } from "sileo";
 import { cn } from "@/lib/utils";
-import {
-  formatCurrency,
-  formatFullCurrency,
-  formatDateUTC,
-} from "../../utils/formatters";
+import { formatCurrency, formatFullCurrency } from "../../utils/formatters";
 import { clickableProps } from "@/utils/a11y";
-import { Card, KpiCard, EmptyState } from "./ComisionesShared";
+import { Card, KpiCard, EmptyState, MESES } from "./ComisionesShared";
 import RecaudoUploadModal from "./RecaudoUploadModal";
 import { RECAUDO_THRESHOLDS } from "../../constants/thresholds";
+import { DashboardContext } from "../DashboardManager";
+import { getPeriodoOperativo } from "../../utils/periodoOperativo";
 
 const { DIAS_MORA_LIMITE } = RECAUDO_THRESHOLDS;
 
 export default function RecaudoTab({ hook }) {
   const {
     recaudoCargas,
-    selectedRecaudoCargaId,
     loadingRecaudoCargas,
-    selectRecaudoCarga,
-    deleteRecaudoCarga,
     recaudos,
     loadingRecaudos,
+    fetchRecaudosPeriodo,
   } = hook;
 
-  const [confirmProps, confirm] = useConfirm();
+  // Periodo operativo
+  const dashCtx = useContext(DashboardContext);
+  const periodo = getPeriodoOperativo(
+    dashCtx?.availableLoads?.[0]?.fecha_corte,
+  );
+  const [selectedMonth, setSelectedMonth] = useState(periodo.month);
+  const [selectedYear, setSelectedYear] = useState(periodo.year);
+
+  // Cargar recaudos consolidados del periodo
+  useEffect(() => {
+    fetchRecaudosPeriodo(selectedYear, selectedMonth);
+  }, [fetchRecaudosPeriodo, selectedYear, selectedMonth]);
+
   const [showModal, setShowModal] = useState(false);
   const [expandedVendedor, setExpandedVendedor] = useState(null);
 
@@ -105,24 +109,38 @@ export default function RecaudoTab({ hook }) {
     <>
       {/* Header controls */}
       <div className="flex flex-wrap items-center gap-3 mb-6">
-        {recaudoCargas.length > 0 ? (
-          <div className="flex items-center gap-2 bg-slate-100 rounded-lg px-3 py-2 border border-slate-200">
-            <Calendar size={14} className="text-emerald-600 shrink-0" />
-            <select
-              value={selectedRecaudoCargaId || ""}
-              onChange={(e) => selectRecaudoCarga(e.target.value)}
-              className="bg-transparent border-none text-xs font-bold focus:ring-0 cursor-pointer outline-none text-slate-700 min-w-[160px]"
-            >
-              {recaudoCargas.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {formatDateUTC(c.fecha_periodo)} — {c.nombre_archivo}
-                </option>
-              ))}
-            </select>
-          </div>
-        ) : (
-          <span className="text-xs text-slate-400 font-medium">
-            Sin recaudos cargados
+        {/* Period selector */}
+        <div className="flex items-center gap-2 bg-slate-100 rounded-lg px-3 py-2 border border-slate-200">
+          <Calendar size={14} className="text-emerald-600 shrink-0" />
+          <select
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(Number(e.target.value))}
+            className="bg-transparent border-none text-xs font-bold focus:ring-0 cursor-pointer outline-none text-slate-700"
+          >
+            {MESES.map((m, i) => (
+              <option key={i + 1} value={i + 1}>
+                {m}
+              </option>
+            ))}
+          </select>
+          <select
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(Number(e.target.value))}
+            className="bg-transparent border-none text-xs font-bold focus:ring-0 cursor-pointer outline-none text-slate-700"
+          >
+            {[periodo.year - 1, periodo.year, periodo.year + 1].map((y) => (
+              <option key={y} value={y}>
+                {y}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Cargas count badge */}
+        {recaudoCargas.length > 0 && (
+          <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-full">
+            {recaudoCargas.length} carga{recaudoCargas.length > 1 ? "s" : ""}{" "}
+            subida{recaudoCargas.length > 1 ? "s" : ""}
           </span>
         )}
 
@@ -134,36 +152,13 @@ export default function RecaudoTab({ hook }) {
         >
           <Upload size={14} /> Cargar Recaudos
         </button>
-
-        {selectedRecaudoCargaId && (
-          <button
-            onClick={async () => {
-              const ok = await confirm({
-                title: "Eliminar carga de recaudos",
-                message:
-                  "¿Estás seguro? Se eliminarán todos los recaudos de esta carga. Esta acción no se puede deshacer.",
-                confirmText: "Eliminar",
-                cancelText: "Cancelar",
-                variant: "danger",
-              });
-              if (ok) {
-                const result = await deleteRecaudoCarga(selectedRecaudoCargaId);
-                if (result) sileo.success("Carga eliminada");
-              }
-            }}
-            className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
-            title="Eliminar carga"
-          >
-            <Trash2 size={16} />
-          </button>
-        )}
       </div>
 
-      {!selectedRecaudoCargaId ? (
+      {!loadingRecaudos && recaudos.length === 0 ? (
         <EmptyState
           icon={Wallet}
-          title="No hay recaudos cargados"
-          subtitle="Sube el archivo 'Comisiones x Cartera' para ver el detalle de recaudos comisionables."
+          title={`Sin recaudos en ${MESES[selectedMonth - 1]} ${selectedYear}`}
+          subtitle="Sube el archivo 'Movimiento de Comprobante RC' para ver el detalle de recaudos comisionables."
         />
       ) : (
         <>
@@ -364,9 +359,8 @@ export default function RecaudoTab({ hook }) {
       <RecaudoUploadModal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
-        onSuccess={hook.refreshRecaudos}
+        onSuccess={() => fetchRecaudosPeriodo(selectedYear, selectedMonth)}
       />
-      <ConfirmDialog {...confirmProps} />
     </>
   );
 }
