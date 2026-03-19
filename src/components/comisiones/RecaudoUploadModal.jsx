@@ -244,11 +244,10 @@ export default function RecaudoUploadModal({ isOpen, onClose, onSuccess }) {
           processed = enriched
             .map((row) => ({
               ...row,
-              // Sin match en cartera → no comisionable (política conservadora)
+              // dias_mora negativo = factura vigente (pagada antes de vencer) → comisionable
+              // _sinMatchCartera = desconocido → no comisionable (política conservadora)
               aplica_comision:
-                !row._sinMatchCartera &&
-                row.dias_mora >= 0 &&
-                row.dias_mora <= DIAS_MORA_LIMITE,
+                !row._sinMatchCartera && row.dias_mora <= DIAS_MORA_LIMITE,
               periodo_year: periodoYear,
               periodo_month: periodoMonth,
             }))
@@ -287,7 +286,10 @@ export default function RecaudoUploadModal({ isOpen, onClose, onSuccess }) {
                 vendedor_codigo: String(get(14) || "").trim(),
                 valor_recaudo: num(15),
                 dias_mora: diasMora,
-                aplica_comision: diasMora >= 0 && diasMora <= DIAS_MORA_LIMITE,
+                // dias_mora negativo = factura vigente → comisionable
+                // dias_mora = -1 (parseInt falló) = desconocido → no comisionable
+                aplica_comision:
+                  diasMora !== -1 && diasMora <= DIAS_MORA_LIMITE,
                 periodo_year: periodoYear,
                 periodo_month: periodoMonth,
               };
