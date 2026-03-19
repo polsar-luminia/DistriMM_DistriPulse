@@ -33,9 +33,17 @@ const RC_MARKERS = [
   "Creditos",
 ];
 
+/** Busca un valor en el row intentando key exacto y trimmed (headers con espacios) */
+function col(row, name) {
+  if (row[name] !== undefined) return row[name];
+  // Fallback: buscar key trimmed
+  const key = Object.keys(row).find((k) => k.trim() === name);
+  return key !== undefined ? row[key] : undefined;
+}
+
 function isRCFormat(jsonData) {
   if (!jsonData.length) return false;
-  const headers = Object.keys(jsonData[0]);
+  const headers = Object.keys(jsonData[0]).map((h) => h.trim());
   return RC_MARKERS.filter((m) => headers.includes(m)).length >= 3;
 }
 
@@ -46,18 +54,22 @@ function isRCFormat(jsonData) {
 function transformRC(jsonData) {
   return jsonData
     .filter((row) => {
-      const cuenta = String(row["Mov_Cuenta"] || "").trim();
-      const anulado = String(row["Anulado"] || "").toLowerCase();
+      const cuenta = String(col(row, "Mov_Cuenta") || "").trim();
+      const anulado = String(col(row, "Anulado") || "").toLowerCase();
       return cuenta === CUENTA_CXC && anulado !== "sí" && anulado !== "si";
     })
     .map((row) => ({
-      comprobante: [row["Tipo"], row["Comprobante"], row["Doc_NumDocumento"]]
+      comprobante: [
+        col(row, "Tipo"),
+        col(row, "Comprobante"),
+        col(row, "Doc_NumDocumento"),
+      ]
         .filter(Boolean)
         .join("-"),
-      fecha_abono: parseExcelDate(row["Fecha"]),
-      cliente_nit: String(row["Mov_Tercero"] || "").trim(),
-      factura: String(row["Mov_DocDetalle"] || "").trim(),
-      valor_recaudo: parseFloat(row["Creditos"]) || 0,
+      fecha_abono: parseExcelDate(col(row, "Fecha")),
+      cliente_nit: String(col(row, "Mov_Tercero") || "").trim(),
+      factura: String(col(row, "Mov_DocDetalle") || "").trim(),
+      valor_recaudo: parseFloat(col(row, "Creditos")) || 0,
       cliente_nombre: "",
       vendedor_codigo: "",
       fecha_cxc: null,
