@@ -131,11 +131,11 @@ async function enrichFromDB(rows) {
             "id",
           )
         : [],
-      // Buscar vendedor en ventas por factura (FELE-XXXXX)
+      // Buscar vendedor y fecha en ventas por factura (FELE-XXXXX)
       facturasConPrefijo.length > 0
         ? batchIN(
             "distrimm_comisiones_ventas",
-            "factura, vendedor_codigo",
+            "factura, vendedor_codigo, fecha",
             "factura",
             facturasConPrefijo,
           )
@@ -155,20 +155,45 @@ async function enrichFromDB(rows) {
     items.map((c) => [String(c.documento_id), c]),
   );
 
-  // Mapeo factura (sin prefijo) → vendedor_codigo de ventas
-  const ventaVendedorMap = {};
+  // Mapeo factura (sin prefijo) → { vendedor_codigo, fecha } de ventas
+  const ventaInfoMap = {};
   ventasVendedor.forEach((v) => {
     const num = String(v.factura || "").replace("FELE-", "");
-    if (num && v.vendedor_codigo) ventaVendedorMap[num] = v.vendedor_codigo;
+    if (!num) return;
+    // Guardar el primer match (no sobreescribir si ya existe)
+    if (!ventaInfoMap[num]) {
+      ventaInfoMap[num] = {
+        vendedor_codigo: v.vendedor_codigo || "",
+        fecha: v.fecha || null,
+      };
+    }
   });
 
   return rows.map((row) => {
     const c = clienteMap[row.cliente_nit];
     const f = carteraMap[row.factura];
-    // Si no hay match en cartera, dias_mora = -1 (desconocido → no comisionable)
-    const diasMora = f ? (f.dias_mora ?? 0) : -1;
+    const venta = ventaInfoMap[row.factura];
+
+    let diasMora;
+    let sinMatch = !f;
+
+    if (f) {
+      // Match en cartera → usar dias_mora de la cartera
+      diasMora = f.dias_mora ?? 0;
+    } else if (venta?.fecha && row.fecha_abono) {
+      // Sin match en cartera pero SÍ en ventas → calcular dias desde venta hasta pago
+      const fechaVenta = new Date(venta.fecha + "T12:00:00");
+      const fechaPago = new Date(row.fecha_abono + "T12:00:00");
+      diasMora = Math.round((fechaPago - fechaVenta) / 86400000);
+      sinMatch = false; // Tenemos datos suficientes para determinar
+    } else {
+      // Sin match en ningún lado → desconocido
+      diasMora = -1;
+    }
+
     // Vendedor: ventas (más preciso por factura) → cartera → clientes maestro
-    const vendedorVenta = ventaVendedorMap[row.factura];
+    const vendedorVenta = venta?.vendedor_codigo;
+
     // Si hay match en cartera, usar valor_saldo (base sin IVA) en vez de Creditos (con IVA)
     const valorBase = f ? Number(f.valor_saldo || 0) : 0;
     return {
@@ -177,10 +202,10 @@ async function enrichFromDB(rows) {
       cliente_nombre: c?.nombre_completo || row.cliente_nit,
       vendedor_codigo:
         vendedorVenta || f?.vendedor_codigo || c?.vendedor_codigo || "",
-      fecha_cxc: f?.fecha_emision || null,
+      fecha_cxc: f?.fecha_emision || venta?.fecha || null,
       fecha_vence: f?.fecha_vencimiento || null,
       dias_mora: diasMora,
-      _sinMatchCartera: !f,
+      _sinMatchCartera: sinMatch,
     };
   });
 }
