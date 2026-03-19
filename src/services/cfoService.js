@@ -1,10 +1,13 @@
 import { supabase } from "../lib/supabase";
 
 export const triggerCfoAnalysis = async (payload) => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 90_000);
+
   try {
     const { data: result, error } = await supabase.functions.invoke(
       "proxy-n8n-cfo",
-      { body: payload },
+      { body: payload, signal: controller.signal },
     );
 
     if (error) throw error;
@@ -14,8 +17,16 @@ export const triggerCfoAnalysis = async (payload) => {
 
     return { data: analysisData, error: null };
   } catch (err) {
-    if (import.meta.env.DEV) console.error("[cfoService] Error triggering CFO analysis:", err);
-    return { data: null, error: "No se pudo conectar con el servidor. Verifica tu conexión." };
+    if (import.meta.env.DEV)
+      console.error("[cfoService] Error triggering CFO analysis:", err);
+    const message =
+      err?.name === "AbortError"
+        ? "El análisis tardó demasiado (90s). Intenta de nuevo."
+        : err?.message ||
+          "No se pudo conectar con el servidor. Verifica tu conexión.";
+    return { data: null, error: message };
+  } finally {
+    clearTimeout(timeoutId);
   }
 };
 
@@ -45,7 +56,8 @@ export const getCfoAnalyses = async (cargaId) => {
 
     return { data: normalized, error: null };
   } catch (err) {
-    if (import.meta.env.DEV) console.error("[cfoService] Error fetching CFO analyses:", err);
+    if (import.meta.env.DEV)
+      console.error("[cfoService] Error fetching CFO analyses:", err);
     return { data: null, error: err };
   }
 };
@@ -56,7 +68,8 @@ export const getHistoricoCartera = async () => {
     if (error) throw error;
     return { data: data || [], error: null };
   } catch (err) {
-    if (import.meta.env.DEV) console.error("[cfoService] Error fetching historico:", err);
+    if (import.meta.env.DEV)
+      console.error("[cfoService] Error fetching historico:", err);
     return { data: null, error: err };
   }
 };

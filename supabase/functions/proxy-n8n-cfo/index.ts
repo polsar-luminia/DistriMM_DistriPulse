@@ -49,9 +49,9 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ error: "Missing mes or anio" }, 400, req);
     }
 
-    // --- Proxy to n8n (60s timeout) ---
+    // --- Proxy to n8n (100s timeout — AI Agent workflow takes 40-70s) ---
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 60_000);
+    const timeout = setTimeout(() => controller.abort(), 100_000);
 
     try {
       const n8nResponse = await fetch(n8nWebhookUrl, {
