@@ -87,7 +87,7 @@ Deno.serve(async (req: Request) => {
     console.error("proxy-n8n-cfo error:", err);
     const message =
       err instanceof DOMException && err.name === "AbortError"
-        ? "n8n request timed out (60s)"
+        ? "n8n request timed out (100s)"
         : "Internal error";
     const status = err instanceof DOMException && err.name === "AbortError" ? 504 : 500;
     return jsonResponse({ error: message }, status, req);
