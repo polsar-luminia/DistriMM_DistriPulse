@@ -25,9 +25,6 @@ export default function MarcaComisionesEditor({
               <th className="px-4 py-3 text-right text-xs font-bold text-slate-600 uppercase">
                 % Comision
               </th>
-              <th className="px-4 py-3 text-right text-xs font-bold text-slate-600 uppercase">
-                Bono Fijo $
-              </th>
               <th className="px-4 py-3 w-14"></th>
             </tr>
           </thead>
@@ -35,7 +32,7 @@ export default function MarcaComisionesEditor({
             {marcasRows.length === 0 ? (
               <tr>
                 <td
-                  colSpan={5}
+                  colSpan={4}
                   className="px-4 py-8 text-center text-sm text-slate-400 italic"
                 >
                   Sin marcas configuradas
@@ -100,7 +97,9 @@ export default function MarcaComisionesEditor({
                     <input
                       type="number"
                       className={numInput}
-                      value={row.pct_comision ? row.pct_comision * 100 : ""}
+                      value={
+                        row.pct_comision != null ? row.pct_comision * 100 : ""
+                      }
                       onChange={(e) =>
                         onUpdateRow(
                           row._globalIdx,
@@ -110,16 +109,6 @@ export default function MarcaComisionesEditor({
                       }
                       step="0.1"
                       placeholder="2.0"
-                    />
-                  </td>
-                  <td className="px-4 py-3">
-                    <CurrencyInput
-                      className={numInput}
-                      value={row.bono_fijo ?? 0}
-                      onChange={(e) =>
-                        onUpdateRow(row._globalIdx, "bono_fijo", e.target.value)
-                      }
-                      placeholder="0"
                     />
                   </td>
                   <td className="px-4 py-3">

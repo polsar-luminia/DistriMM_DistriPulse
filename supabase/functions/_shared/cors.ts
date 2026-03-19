@@ -1,18 +1,46 @@
-const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") || "*";
+// Orígenes permitidos (separados por coma en el secret ALLOWED_ORIGINS)
+const ALLOWED_ORIGINS_RAW = Deno.env.get("ALLOWED_ORIGINS") || Deno.env.get("ALLOWED_ORIGIN") || "";
+const ALLOWED_ORIGINS = ALLOWED_ORIGINS_RAW
+  ? ALLOWED_ORIGINS_RAW.split(",").map((o) => o.trim()).filter(Boolean)
+  : [];
 
-export const CORS_HEADERS: Record<string, string> = {
-  "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-
-export function corsResponse(): Response {
-  return new Response(null, { status: 204, headers: CORS_HEADERS });
+/**
+ * Retorna el origin permitido para la respuesta CORS.
+ * Si el origin del request está en la whitelist, lo devuelve.
+ * Si no hay whitelist configurada, devuelve "*" (desarrollo local).
+ */
+function resolveOrigin(requestOrigin?: string | null): string {
+  if (ALLOWED_ORIGINS.length === 0) {
+    console.warn("[cors] ALLOWED_ORIGINS not configured — using wildcard. Set ALLOWED_ORIGIN secret in production.");
+    return "*";
+  }
+  if (requestOrigin && ALLOWED_ORIGINS.includes(requestOrigin)) return requestOrigin;
+  return ALLOWED_ORIGINS[0]; // fallback al primero de la lista
 }
 
-export function jsonResponse(body: Record<string, unknown>, status = 200): Response {
+function buildCorsHeaders(origin: string): Record<string, string> {
+  return {
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    ...(origin !== "*" ? { Vary: "Origin" } : {}),
+  };
+}
+
+export function corsResponse(req?: Request): Response {
+  const origin = resolveOrigin(req?.headers.get("origin"));
+  return new Response(null, { status: 204, headers: buildCorsHeaders(origin) });
+}
+
+export function jsonResponse(body: Record<string, unknown>, status = 200, req?: Request): Response {
+  const origin = resolveOrigin(req?.headers.get("origin"));
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+    headers: { ...buildCorsHeaders(origin), "Content-Type": "application/json" },
   });
 }
+
+// Backward compat: export static headers for functions that don't pass req
+export const CORS_HEADERS: Record<string, string> = buildCorsHeaders(
+  ALLOWED_ORIGINS.length > 0 ? ALLOWED_ORIGINS[0] : "*",
+);

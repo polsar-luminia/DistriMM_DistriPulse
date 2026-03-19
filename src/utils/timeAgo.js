@@ -2,6 +2,7 @@ export const timeAgo = (dateString) => {
   if (!dateString) return "Nunca";
 
   const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "Desconocido";
   const now = new Date();
   const diffInSeconds = Math.floor((now - date) / 1000);
 

@@ -16,7 +16,7 @@
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { CORS_HEADERS, corsResponse, jsonResponse } from "../_shared/cors.ts";
+import { corsResponse, jsonResponse } from "../_shared/cors.ts";
 
 const META_GRAPH_URL = "https://graph.facebook.com/v21.0";
 
@@ -24,14 +24,15 @@ const META_GRAPH_URL = "https://graph.facebook.com/v21.0";
 // Helpers
 // --------------------------------------------------------------------------
 
-/** Crea respuesta de error consistente */
+/** Crea respuesta de error consistente — detalles solo se logean server-side */
 function errorResponse(
   message: string,
   status = 400,
   details?: string,
+  req?: Request,
 ): Response {
   console.error(`[proxy-embedded-signup] ERROR: ${message}`, details ?? "");
-  return jsonResponse({ error: message, details: details ?? null }, status);
+  return jsonResponse({ error: message }, status, req);
 }
 
 /** Llama a Meta Graph API y retorna JSON o lanza error */
@@ -56,17 +57,17 @@ async function metaGraphFetch(
 Deno.serve(async (req: Request) => {
   // CORS preflight
   if (req.method === "OPTIONS") {
-    return corsResponse();
+    return corsResponse(req);
   }
 
   if (req.method !== "POST") {
-    return errorResponse("Método no permitido", 405);
+    return errorResponse("Método no permitido", 405, undefined, req);
   }
 
   // --- 1. Autenticación: extraer usuario del JWT ---
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) {
-    return errorResponse("Token de autenticación requerido", 401);
+    return errorResponse("Token de autenticación requerido", 401, undefined, req);
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -83,7 +84,7 @@ Deno.serve(async (req: Request) => {
   } = await supabaseUser.auth.getUser();
 
   if (authError || !user) {
-    return errorResponse("Usuario no autenticado", 401);
+    return errorResponse("Usuario no autenticado", 401, undefined, req);
   }
 
   // Cliente con service_role para escribir en tablas protegidas
@@ -94,7 +95,7 @@ Deno.serve(async (req: Request) => {
   try {
     body = await req.json();
   } catch {
-    return errorResponse("Body JSON inválido", 400);
+    return errorResponse("Body JSON inválido", 400, undefined, req);
   }
 
   const { code, waba_id, phone_number_id } = body;
@@ -103,6 +104,8 @@ Deno.serve(async (req: Request) => {
     return errorResponse(
       "Campos requeridos: code, waba_id, phone_number_id",
       400,
+      undefined,
+      req,
     );
   }
 
@@ -113,6 +116,8 @@ Deno.serve(async (req: Request) => {
     return errorResponse(
       "Configuración del servidor incompleta (META_APP_ID/META_APP_SECRET)",
       500,
+      undefined,
+      req,
     );
   }
 
@@ -134,6 +139,8 @@ Deno.serve(async (req: Request) => {
       return errorResponse(
         "No se recibió access_token de Meta",
         502,
+        undefined,
+        req,
       );
     }
 
@@ -159,6 +166,8 @@ Deno.serve(async (req: Request) => {
       return errorResponse(
         "No se recibió long-lived token de Meta",
         502,
+        undefined,
+        req,
       );
     }
 
@@ -220,6 +229,7 @@ Deno.serve(async (req: Request) => {
         "Error guardando instancia de WhatsApp",
         500,
         instanceError.message,
+        req,
       );
     }
 
@@ -241,15 +251,20 @@ Deno.serve(async (req: Request) => {
         "[proxy-embedded-signup] Error guardando credenciales:",
         credError.message,
       );
-      // Limpiar instancia huérfana
-      await supabaseAdmin
-        .from("distrimm_whatsapp_instances")
-        .delete()
-        .eq("id", instance.id);
+      // Solo limpiar instancia si fue recién creada (no en reconexión)
+      const isNewInstance =
+        Date.now() - new Date(instance.created_at).getTime() < 10_000;
+      if (isNewInstance) {
+        await supabaseAdmin
+          .from("distrimm_whatsapp_instances")
+          .delete()
+          .eq("id", instance.id);
+      }
       return errorResponse(
         "Error guardando credenciales",
         500,
         credError.message,
+        req,
       );
     }
 
@@ -288,13 +303,14 @@ Deno.serve(async (req: Request) => {
         coexistence: instance.coexistence,
         created_at: instance.created_at,
       },
-    });
+    }, 200, req);
   } catch (err) {
     const message = (err as Error).message || "Error desconocido";
     return errorResponse(
       "Error en el flujo de Embedded Signup",
       502,
       message,
+      req,
     );
   }
 });

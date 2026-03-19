@@ -67,8 +67,6 @@ function parsePresupuestosExcel(workbook, vendorNameToCode, XLSX) {
 
       const pctRaw = parseFloat(cell(br, 2)) || 0;
       const metaMes = parseFloat(cell(br, 5)) || 0;
-      const bonificacion = parseFloat(cell(br, 8)) || 0;
-
       // Normalize commission percentage:
       // - pctRaw > 1 (e.g. 2): percentage form → 2/100 = 0.02
       // - pctRaw >= 0.1 (e.g. 0.5): likely 0.5% not 50% → 0.5/100 = 0.005
@@ -82,14 +80,11 @@ function parsePresupuestosExcel(workbook, vendorNameToCode, XLSX) {
 
       // Skip text values in presupuesto_mes (some special brands have notes)
       const metaVentas = typeof metaMes === "number" ? Math.round(metaMes) : 0;
-      const bonoFijo =
-        typeof bonificacion === "number" ? Math.round(bonificacion) : 0;
 
       marcas.push({
         marca: marcaStr,
         pct_comision: pctComision,
         meta_ventas: metaVentas,
-        bono_fijo: bonoFijo,
       });
     }
 
@@ -215,7 +210,7 @@ export default function PresupuestosUploadModal({
       if (data) {
         const map = {};
         data.forEach((v) => {
-          map[v.nombre.toUpperCase()] = v.codigo;
+          map[(v.nombre || "").toUpperCase()] = v.codigo;
         });
         setVendorNameToCode(map);
       }
@@ -277,6 +272,7 @@ export default function PresupuestosUploadModal({
   };
 
   const handleSave = async () => {
+    if (saving) return;
     setStep("saving");
     setSaving(true);
 
@@ -297,7 +293,6 @@ export default function PresupuestosUploadModal({
           marca: marca.marca,
           pct_comision: marca.pct_comision,
           meta_ventas: marca.meta_ventas,
-          bono_fijo: marca.bono_fijo,
           periodo_year: selectedYear,
           periodo_month: selectedMonth,
           activo: true,
@@ -518,7 +513,6 @@ export default function PresupuestosUploadModal({
                           <th className="px-3 py-2 text-right">
                             Meta Ventas Mes
                           </th>
-                          <th className="px-3 py-2 text-right">Bonificación</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
@@ -536,11 +530,6 @@ export default function PresupuestosUploadModal({
                             <td className="px-3 py-2 text-xs text-right font-mono">
                               {m.meta_ventas > 0
                                 ? formatFullCurrency(m.meta_ventas)
-                                : "-"}
-                            </td>
-                            <td className="px-3 py-2 text-xs text-right font-mono">
-                              {m.bono_fijo > 0
-                                ? formatFullCurrency(m.bono_fijo)
                                 : "-"}
                             </td>
                           </tr>

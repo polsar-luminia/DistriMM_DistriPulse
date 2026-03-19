@@ -20,7 +20,7 @@ export default function CurrencyInput({
     <input
       type={focused ? "number" : "text"}
       className={className}
-      value={focused ? numericValue || "" : formatNumber(numericValue)}
+      value={focused ? numericValue : formatNumber(numericValue)}
       onFocus={() => setFocused(true)}
       onBlur={() => setFocused(false)}
       onChange={onChange}

@@ -20,7 +20,6 @@ function makePresupuestoMarca(marca, meta_ventas, pct_comision, opts = {}) {
     marca,
     meta_ventas,
     pct_comision,
-    bono_fijo: opts.bono_fijo || 0,
     vendedor_codigo: opts.vendedor_codigo || "V1",
   };
 }
@@ -34,11 +33,9 @@ function makeRecaudo(valor_recaudo, aplica_comision, opts = {}) {
 }
 
 describe("calcularComisionVentas", () => {
-  test("aplica comision cuando ventas cumplen la meta (con bono fijo)", () => {
+  test("aplica comision cuando ventas cumplen la meta", () => {
     const ventas = [makeVenta("P1", 200000)];
-    const presupuestosMarca = [
-      makePresupuestoMarca("CONTEGRAL", 150000, 0.02, { bono_fijo: 50000 }),
-    ];
+    const presupuestosMarca = [makePresupuestoMarca("CONTEGRAL", 150000, 0.02)];
     const productBrandMap = { P1: "CONTEGRAL AVES" }; // normaliza a CONTEGRAL
 
     const result = calcularComisionVentas({
@@ -47,10 +44,9 @@ describe("calcularComisionVentas", () => {
       productBrandMap,
     });
 
-    expect(result.totalComisionVentas).toBe(54000); // 200000*0.02 + 50000
+    expect(result.totalComisionVentas).toBe(4000); // 200000*0.02
     expect(result.detalleMarcas[0].cumpleMeta).toBe(true);
-    expect(result.detalleMarcas[0].comision).toBe(54000);
-    expect(result.detalleMarcas[0].comisionPct).toBe(4000);
+    expect(result.detalleMarcas[0].comision).toBe(4000);
   });
 
   test("retorna comision 0 cuando ventas no alcanzan la meta", () => {
@@ -373,7 +369,7 @@ describe("calcularComisionesCompletas", () => {
     expect(result[1].totalComision).toBe(4000);
   });
 
-  test("ventas excluidas (excluded=true) no cuentan para comision", () => {
+  test("exclusiones NO afectan comision de ventas — todas las ventas cuentan", () => {
     const ventas = [
       makeVenta("P1", 200000, { vendedor_codigo: "V1", excluded: false }),
       makeVenta("P1", 300000, { vendedor_codigo: "V1", excluded: true }),
@@ -393,8 +389,8 @@ describe("calcularComisionesCompletas", () => {
       productBrandMap,
     });
 
-    // Solo la venta no excluida (200000) cuenta
-    expect(result[0].comisionVentas.totalComisionVentas).toBe(4000); // 200000*0.02
+    // Ambas ventas cuentan (200000+300000=500000) — exclusiones solo aplican a recaudo
+    expect(result[0].comisionVentas.totalComisionVentas).toBe(10000); // 500000*0.02
   });
 
   test("vendedor que solo tiene recaudos (sin ventas) aparece con comision ventas=0", () => {
@@ -475,6 +471,88 @@ describe("calcularComisionesCompletas", () => {
     expect(v1.comisionVentas.totalComisionVentas).toBe(expectedVentas);
     expect(v1.comisionRecaudo.comisionRecaudo).toBe(expectedRecaudo);
     expect(v1.totalComision).toBe(expectedVentas + expectedRecaudo);
+  });
+});
+
+describe("calcularComisionRecaudo — null/undefined tramo defaults", () => {
+  test("null tramo values default correctly: min→Infinity, max→Infinity, pct→0", () => {
+    // Only tramo1 configured, tramo2-4 are null → should be unreachable (min=Infinity)
+    const recaudos = [makeRecaudo(500000, true)];
+    const presupuestoRecaudo = {
+      meta_recaudo: 1000000,
+      tramo1_max: 70,
+      tramo1_pct: 0.01,
+      tramo2_min: null,
+      tramo2_pct: null,
+      tramo3_min: null,
+      tramo3_pct: null,
+      tramo4_min: null,
+      tramo4_pct: null,
+    };
+
+    const result = calcularComisionRecaudo({ recaudos, presupuestoRecaudo });
+
+    // 50% cumplimiento → should match Tramo 1 (0-70%)
+    expect(result.pctCumplimiento).toBe(50);
+    expect(result.tramoAplicado).toBe("Tramo 1");
+    expect(result.pctComision).toBe(0.01);
+    expect(result.comisionRecaudo).toBe(5000);
+  });
+
+  test("null tramo1_max defaults to Infinity — Tramo 1 catches all unconfigured", () => {
+    const recaudos = [makeRecaudo(500000, true)];
+    const presupuestoRecaudo = {
+      meta_recaudo: 1000000,
+      tramo1_max: null,
+      tramo1_pct: 0.01,
+    };
+
+    const result = calcularComisionRecaudo({ recaudos, presupuestoRecaudo });
+
+    // 50% cumplimiento, tramo1_max=Infinity → Tramo 1 applies
+    expect(result.pctCumplimiento).toBe(50);
+    expect(result.tramoAplicado).toBe("Tramo 1");
+    expect(result.pctComision).toBe(0.01);
+  });
+
+  test("undefined tramo fields behave same as null — fallback to defaults", () => {
+    const recaudos = [makeRecaudo(800000, true)];
+    const presupuestoRecaudo = {
+      meta_recaudo: 1000000,
+      tramo1_max: 70,
+      tramo1_pct: 0.01,
+      tramo2_min: 70,
+      tramo2_pct: 0.02,
+      // tramo3 and tramo4 not present at all (undefined)
+    };
+
+    const result = calcularComisionRecaudo({ recaudos, presupuestoRecaudo });
+
+    // 80% cumplimiento → Tramo 2 (70+) should match
+    expect(result.pctCumplimiento).toBe(80);
+    expect(result.tramoAplicado).toBe("Tramo 2");
+    expect(result.pctComision).toBe(0.02);
+  });
+
+  test("empty string tramo values treated as null — fallback to defaults", () => {
+    const recaudos = [makeRecaudo(500000, true)];
+    const presupuestoRecaudo = {
+      meta_recaudo: 1000000,
+      tramo1_max: 70,
+      tramo1_pct: 0.01,
+      tramo2_min: "",
+      tramo2_pct: "",
+      tramo3_min: "",
+      tramo3_pct: "",
+      tramo4_min: "",
+      tramo4_pct: "",
+    };
+
+    const result = calcularComisionRecaudo({ recaudos, presupuestoRecaudo });
+
+    // 50% → Tramo 1
+    expect(result.tramoAplicado).toBe("Tramo 1");
+    expect(result.pctComision).toBe(0.01);
   });
 });
 

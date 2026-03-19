@@ -181,7 +181,7 @@ export default function RecaudoTiersEditor({
                       className={cn(numInput, "mt-1")}
                       value={
                         f.isPct
-                          ? recaudo[f.field]
+                          ? recaudo[f.field] != null
                             ? recaudo[f.field] * 100
                             : ""
                           : (recaudo[f.field] ?? "")

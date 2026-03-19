@@ -1,4 +1,14 @@
-import { Trash2, Save, Loader2, Target, Tag, User, ChevronDown, ChevronUp, CircleAlert } from "lucide-react";
+import {
+  Trash2,
+  Save,
+  Loader2,
+  Target,
+  Tag,
+  User,
+  ChevronDown,
+  ChevronUp,
+  CircleAlert,
+} from "lucide-react";
 import RecaudoTiersEditor from "./RecaudoTiersEditor";
 import MarcaComisionesEditor from "./MarcaComisionesEditor";
 
@@ -30,7 +40,9 @@ export default function VendorPresupuestoSection({
           <div>
             <h2 className="text-lg font-black text-white">{vendedor.nombre}</h2>
             <p className="text-indigo-200 text-xs font-medium">
-              {vendedor.codigo ? `Codigo: ${vendedor.codigo}` : "Ingresa el codigo de vendedor abajo"}
+              {vendedor.codigo
+                ? `Codigo: ${vendedor.codigo}`
+                : "Ingresa el codigo de vendedor abajo"}
             </p>
           </div>
         </div>
@@ -67,72 +79,78 @@ export default function VendorPresupuestoSection({
       </div>
 
       {!collapsed && (
-      <div className="p-6 space-y-8">
-        {/* Code input for new (unsaved) vendors */}
-        {!vendedor.codigo && (
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-            <label className="block text-sm font-semibold text-amber-800 mb-2">
-              Codigo de Vendedor
-            </label>
-            <input
-              className="border border-amber-300 rounded-lg px-4 py-2.5 text-sm font-bold w-48 focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white"
-              value={vendedor.recaudo?.vendedor_codigo || ""}
-              onChange={(e) => onUpdateRecaudoRow(vendedor.recaudoIdx, "vendedor_codigo", e.target.value)}
-              placeholder="Ej: 14"
-              autoFocus
+        <div className="p-6 space-y-8">
+          {/* Code input for new (unsaved) vendors */}
+          {!vendedor.codigo && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <label className="block text-sm font-semibold text-amber-800 mb-2">
+                Codigo de Vendedor
+              </label>
+              <input
+                className="border border-amber-300 rounded-lg px-4 py-2.5 text-sm font-bold w-48 focus:outline-none focus:ring-2 focus:ring-amber-300 bg-white"
+                value={vendedor.recaudo?.vendedor_codigo || ""}
+                onChange={(e) =>
+                  onUpdateRecaudoRow(
+                    vendedor.recaudoIdx,
+                    "vendedor_codigo",
+                    e.target.value,
+                  )
+                }
+                placeholder="Ej: 14"
+                autoFocus
+              />
+            </div>
+          )}
+
+          {/* Recaudo scale section */}
+          <div>
+            <h3 className="text-sm font-black text-slate-900 flex items-center gap-2 mb-4">
+              <Target size={16} className="text-emerald-600" />
+              Escala de Comision por Recaudo
+            </h3>
+            <RecaudoTiersEditor
+              recaudo={vendedor.recaudo}
+              recaudoIdx={vendedor.recaudoIdx}
+              onUpdateRow={onUpdateRecaudoRow}
+              onAddRecaudo={() => onAddRecaudo(vendedor.codigo)}
+              vendedorCodigo={vendedor.codigo}
+              numInput={numInput}
             />
           </div>
-        )}
 
-        {/* Recaudo scale section */}
-        <div>
-          <h3 className="text-sm font-black text-slate-900 flex items-center gap-2 mb-4">
-            <Target size={16} className="text-emerald-600" />
-            Escala de Comision por Recaudo
-          </h3>
-          <RecaudoTiersEditor
-            recaudo={vendedor.recaudo}
-            recaudoIdx={vendedor.recaudoIdx}
-            onUpdateRow={onUpdateRecaudoRow}
-            onAddRecaudo={() => onAddRecaudo(vendedor.codigo)}
-            vendedorCodigo={vendedor.codigo}
-            numInput={numInput}
-          />
-        </div>
+          {/* Marcas section */}
+          <div>
+            <h3 className="text-sm font-black text-slate-900 flex items-center gap-2 mb-4">
+              <Tag size={16} className="text-indigo-600" />
+              Comisiones por Marca
+            </h3>
+            <MarcaComisionesEditor
+              marcasRows={vendedor.marcas}
+              marcasNormalizadas={marcasNormalizadas}
+              onUpdateRow={onUpdateMarcaRow}
+              onDeleteMarca={onDeleteMarca}
+              onAddMarca={() => onAddMarca(vendedor.codigo)}
+              baseInput={baseInput}
+              numInput={numInput}
+            />
+          </div>
 
-        {/* Marcas section */}
-        <div>
-          <h3 className="text-sm font-black text-slate-900 flex items-center gap-2 mb-4">
-            <Tag size={16} className="text-indigo-600" />
-            Comisiones por Marca
-          </h3>
-          <MarcaComisionesEditor
-            marcasRows={vendedor.marcas}
-            marcasNormalizadas={marcasNormalizadas}
-            onUpdateRow={onUpdateMarcaRow}
-            onDeleteMarca={onDeleteMarca}
-            onAddMarca={() => onAddMarca(vendedor.codigo)}
-            baseInput={baseInput}
-            numInput={numInput}
-          />
+          {/* Guardar button */}
+          <div className="flex justify-end pt-4 border-t border-slate-100">
+            <button
+              onClick={() => onGuardar(vendedor.codigo)}
+              disabled={savingId === `v-${vendedor.codigo}`}
+              className="px-6 py-3 bg-indigo-600 rounded-lg text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors shadow-sm flex items-center gap-2"
+            >
+              {savingId === `v-${vendedor.codigo}` ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Save size={16} />
+              )}
+              Guardar {(vendedor.nombre || "Vendedor").split(" ")[0]}
+            </button>
+          </div>
         </div>
-
-        {/* Guardar button */}
-        <div className="flex justify-end pt-4 border-t border-slate-100">
-          <button
-            onClick={() => onGuardar(vendedor.codigo)}
-            disabled={savingId === `v-${vendedor.codigo}`}
-            className="px-6 py-3 bg-indigo-600 rounded-lg text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors shadow-sm flex items-center gap-2"
-          >
-            {savingId === `v-${vendedor.codigo}` ? (
-              <Loader2 size={16} className="animate-spin" />
-            ) : (
-              <Save size={16} />
-            )}
-            Guardar {vendedor.nombre.split(" ")[0]}
-          </button>
-        </div>
-      </div>
       )}
     </div>
   );

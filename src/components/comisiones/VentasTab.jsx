@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import ConfirmDialog from "../ConfirmDialog";
 import { useConfirm } from "../../hooks/useConfirm";
 import {
@@ -49,6 +49,9 @@ export default function VentasTab({ hook }) {
 
   const [confirmProps, confirm] = useConfirm();
   const [expandedVendedor, setExpandedVendedor] = useState(null);
+  useEffect(() => {
+    setExpandedVendedor(null);
+  }, [selectedCargaId]);
   const [showVentasModal, setShowVentasModal] = useState(false);
   const [showCatalogoModal, setShowCatalogoModal] = useState(false);
 

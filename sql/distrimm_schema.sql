@@ -209,7 +209,7 @@ CREATE TABLE public.distrimm_cfo_analyses (
   carga_id uuid REFERENCES public.historial_cargas(id),
   mes integer,
   anio integer,
-  resultado jsonb NOT NULL DEFAULT '{}'
+  dashboard jsonb NOT NULL DEFAULT '{}'
 );
 
 CREATE INDEX idx_cfo_analyses_carga ON public.distrimm_cfo_analyses(carga_id);

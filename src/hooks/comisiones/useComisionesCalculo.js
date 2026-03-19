@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { calcularComisionesCompletas } from "../../utils/comisionesCalculator";
 import {
   calcularComisiones,
@@ -21,6 +21,7 @@ export function useComisionesCalculo(selectedCargaId, catalogo, exclusiones) {
   const [loadingVentas, setLoadingVentas] = useState(false);
   const [reporteMensual, setReporteMensual] = useState(null);
   const [loadingReporte, setLoadingReporte] = useState(false);
+  const generatingReporteRef = useRef(false);
 
   const fetchComisiones = useCallback(async (cargaId) => {
     if (!cargaId) {
@@ -88,6 +89,8 @@ export function useComisionesCalculo(selectedCargaId, catalogo, exclusiones) {
   // forceRecalc=true bypasses snapshot and saves a new one.
   const generarReporteMensual = useCallback(
     async (year, month, { forceRecalc = false } = {}) => {
+      if (generatingReporteRef.current) return;
+      generatingReporteRef.current = true;
       setLoadingReporte(true);
       setReporteMensual(null);
       const empty = {
@@ -132,8 +135,8 @@ export function useComisionesCalculo(selectedCargaId, catalogo, exclusiones) {
           cargaIds: ids,
           totalVentas: ventasMes.length,
           totalRecaudos: recaudosMes.length,
-          presupuestosMarcaIds: presMarca.map((p) => p.id),
-          presupuestosRecaudoIds: presRecaudo.map((p) => p.id),
+          presupuestosMarca: presMarca,
+          presupuestosRecaudo: presRecaudo,
           exclusiones,
           catalogoCount: (catalogo || []).length,
         });
@@ -233,7 +236,7 @@ export function useComisionesCalculo(selectedCargaId, catalogo, exclusiones) {
         };
 
         // 3. Guardar snapshot con trazabilidad completa
-        await saveSnapshot({
+        const { error: snapErr } = await saveSnapshot({
           year,
           month,
           cargaIds: ids,
@@ -241,10 +244,13 @@ export function useComisionesCalculo(selectedCargaId, catalogo, exclusiones) {
           totalRecaudos: recaudosMes.length,
           liquidacion,
           resumen,
-          presupuestosMarcaIds: presMarca.map((p) => p.id),
-          presupuestosRecaudoIds: presRecaudo.map((p) => p.id),
+          presupuestosMarca: presMarca,
+          presupuestosRecaudo: presRecaudo,
           totalesVentas,
+          exclusiones,
+          catalogoCount: (catalogo || []).length,
         });
+        if (snapErr) throw snapErr;
 
         setReporteMensual({
           cargas: cargasMes,
@@ -267,6 +273,8 @@ export function useComisionesCalculo(selectedCargaId, catalogo, exclusiones) {
             err,
           );
         setReporteMensual(empty);
+      } finally {
+        generatingReporteRef.current = false;
       }
       setLoadingReporte(false);
     },

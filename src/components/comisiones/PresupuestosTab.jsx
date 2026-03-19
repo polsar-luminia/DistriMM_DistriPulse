@@ -50,7 +50,6 @@ const EMPTY_MARCA = (year, month) => ({
   periodo_month: month,
   meta_ventas: 0,
   pct_comision: 0,
-  bono_fijo: 0,
   activo: true,
 });
 
@@ -342,7 +341,6 @@ export default function PresupuestosTab({ hook }) {
         periodo_month: selectedMonth,
         meta_ventas: Number(row.meta_ventas) || 0,
         pct_comision: Number(row.pct_comision) || 0,
-        bono_fijo: Number(row.bono_fijo) || 0,
       };
       const { error } = await savePresupuestoMarca(payload);
       if (error) {

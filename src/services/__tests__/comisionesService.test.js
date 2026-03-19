@@ -289,8 +289,17 @@ describe("buildInputHash", () => {
     cargaIds: ["id-1", "id-2"],
     totalVentas: 100,
     totalRecaudos: 50,
-    presupuestosMarcaIds: ["pm-1"],
-    presupuestosRecaudoIds: ["pr-1"],
+    presupuestosMarca: [
+      {
+        id: "pm-1",
+        meta_ventas: 5000000,
+        pct_comision: 3,
+        updated_at: "2026-01-15T10:00:00Z",
+      },
+    ],
+    presupuestosRecaudo: [
+      { id: "pr-1", meta_recaudo: 8000000, updated_at: "2026-01-15T10:00:00Z" },
+    ],
     exclusiones: [{ id: "e1", tipo: "marca", valor: "CONTEGRAL" }],
     catalogoCount: 4000,
   };
@@ -336,5 +345,35 @@ describe("buildInputHash", () => {
   test("exclusiones vacías produce hash válido", () => {
     const empty = { ...base, exclusiones: [], catalogoCount: 0 };
     expect(buildInputHash(empty)).toBeTruthy();
+  });
+
+  test("editar meta_ventas de presupuesto marca produce hash diferente", () => {
+    const modified = {
+      ...base,
+      presupuestosMarca: [
+        { ...base.presupuestosMarca[0], meta_ventas: 9000000 },
+      ],
+    };
+    expect(buildInputHash(modified)).not.toBe(buildInputHash(base));
+  });
+
+  test("editar meta_recaudo de presupuesto recaudo produce hash diferente", () => {
+    const modified = {
+      ...base,
+      presupuestosRecaudo: [
+        { ...base.presupuestosRecaudo[0], meta_recaudo: 12000000 },
+      ],
+    };
+    expect(buildInputHash(modified)).not.toBe(buildInputHash(base));
+  });
+
+  test("cambio en updated_at de presupuesto produce hash diferente", () => {
+    const modified = {
+      ...base,
+      presupuestosMarca: [
+        { ...base.presupuestosMarca[0], updated_at: "2026-03-01T08:00:00Z" },
+      ],
+    };
+    expect(buildInputHash(modified)).not.toBe(buildInputHash(base));
   });
 });

@@ -20,7 +20,7 @@
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { CORS_HEADERS, corsResponse, jsonResponse } from "../_shared/cors.ts";
+import { corsResponse, jsonResponse } from "../_shared/cors.ts";
 
 const META_GRAPH_URL = "https://graph.facebook.com/v21.0";
 const TOKEN_REFRESH_THRESHOLD_MS = 7 * 24 * 60 * 60 * 1000; // 7 días
@@ -34,9 +34,10 @@ function errorResponse(
   message: string,
   status = 400,
   details?: string,
+  req?: Request,
 ): Response {
   console.error(`[proxy-n8n-whatsapp] ERROR: ${message}`, details ?? "");
-  return jsonResponse({ error: message, details: details ?? null }, status);
+  return jsonResponse({ error: message }, status, req);
 }
 
 interface Credentials {
@@ -91,17 +92,17 @@ async function refreshToken(
 Deno.serve(async (req: Request) => {
   // CORS preflight
   if (req.method === "OPTIONS") {
-    return corsResponse();
+    return corsResponse(req);
   }
 
   if (req.method !== "POST") {
-    return errorResponse("Método no permitido", 405);
+    return errorResponse("Método no permitido", 405, undefined, req);
   }
 
   // --- 1. Autenticación ---
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) {
-    return errorResponse("Token de autenticación requerido", 401);
+    return errorResponse("Token de autenticación requerido", 401, undefined, req);
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -119,7 +120,7 @@ Deno.serve(async (req: Request) => {
   } = await supabaseUser.auth.getUser();
 
   if (authError || !user) {
-    return errorResponse("Usuario no autenticado", 401);
+    return errorResponse("Usuario no autenticado", 401, undefined, req);
   }
 
   const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
@@ -129,7 +130,7 @@ Deno.serve(async (req: Request) => {
   try {
     rawBody = await req.json();
   } catch {
-    return errorResponse("Body JSON inválido", 400);
+    return errorResponse("Body JSON inválido", 400, undefined, req);
   }
 
   // Normalizar: puede ser un objeto individual o un array (lote)
@@ -138,14 +139,18 @@ Deno.serve(async (req: Request) => {
     : [rawBody];
 
   if (items.length === 0) {
-    return errorResponse("Payload vacío", 400);
+    return errorResponse("Payload vacío", 400, undefined, req);
+  }
+
+  if (items.length > 500) {
+    return errorResponse("Máximo 500 destinatarios por lote", 400, undefined, req);
   }
 
   // Extraer instance_id del primer item (todos los items de un lote usan la misma instancia)
   const instanceId = items[0].instance_id as string | undefined;
 
   if (!instanceId) {
-    return errorResponse("instance_id es requerido", 400);
+    return errorResponse("instance_id es requerido", 400, undefined, req);
   }
 
   // --- 3. Verificar que la instancia pertenece al usuario ---
@@ -156,7 +161,7 @@ Deno.serve(async (req: Request) => {
     .single();
 
   if (instanceError || !instance) {
-    return errorResponse("Instancia de WhatsApp no encontrada", 404);
+    return errorResponse("Instancia de WhatsApp no encontrada", 404, undefined, req);
   }
 
   const inst = instance as InstanceInfo;
@@ -165,13 +170,15 @@ Deno.serve(async (req: Request) => {
     console.warn(
       `[proxy-n8n-whatsapp] Intento de acceso no autorizado: user=${user.id} intentó usar instance=${instanceId} de user=${inst.user_id}`,
     );
-    return errorResponse("No autorizado para esta instancia", 403);
+    return errorResponse("No autorizado para esta instancia", 403, undefined, req);
   }
 
   if (inst.status !== "active") {
     return errorResponse(
       `La instancia de WhatsApp está ${inst.status}. Reconecta desde Configuración.`,
       409,
+      undefined,
+      req,
     );
   }
 
@@ -186,6 +193,8 @@ Deno.serve(async (req: Request) => {
     return errorResponse(
       "Credenciales de WhatsApp no encontradas. Reconecta la instancia.",
       404,
+      undefined,
+      req,
     );
   }
 
@@ -205,6 +214,8 @@ Deno.serve(async (req: Request) => {
       return errorResponse(
         "El token de WhatsApp ha expirado. Reconecta la instancia.",
         401,
+        undefined,
+        req,
       );
     }
 
@@ -266,6 +277,8 @@ Deno.serve(async (req: Request) => {
     return errorResponse(
       "Configuración del servidor incompleta (N8N_WHATSAPP_URL)",
       500,
+      undefined,
+      req,
     );
   }
 
@@ -321,6 +334,7 @@ Deno.serve(async (req: Request) => {
           n8n_status: n8nResponse.status,
         },
         502,
+        req,
       );
     }
 
@@ -329,18 +343,21 @@ Deno.serve(async (req: Request) => {
     );
 
     // Retornar respuesta de n8n sin exponer credenciales
-    return jsonResponse({ data: n8nData });
+    return jsonResponse({ data: n8nData }, 200, req);
   } catch (err) {
     if ((err as Error).name === "AbortError") {
       return errorResponse(
         "Timeout: n8n no respondió en 30 segundos",
         504,
+        undefined,
+        req,
       );
     }
     return errorResponse(
       "Error comunicándose con n8n",
       502,
       (err as Error).message,
+      req,
     );
   }
 });

@@ -51,8 +51,9 @@ export const checkDailyLimit = async () => {
     // Fail closed — if we can't verify the limit, block sending for safety
     return {
       allowed: false,
+      sent: 0,
+      limit: DAILY_LIMIT,
       reason: "Error verificando límite diario",
-      count: 0,
       error,
     };
   }
@@ -659,6 +660,14 @@ export async function retryLoteFailed(loteId) {
 
 export async function cancelLote(loteId) {
   try {
+    // Cancel all pending/in-progress detail rows first
+    const { error: detailErr } = await supabase
+      .from("distrimm_recordatorios_detalle")
+      .update({ estado_envio: "cancelado" })
+      .eq("lote_id", loteId)
+      .in("estado_envio", ["pendiente", "en_proceso"]);
+    if (detailErr) throw detailErr;
+
     const { error } = await supabase
       .from("distrimm_recordatorios_lote")
       .update({ estado: "cancelado", updated_at: new Date().toISOString() })

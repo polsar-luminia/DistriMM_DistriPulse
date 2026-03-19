@@ -33,7 +33,7 @@ import { sileo } from "sileo";
  * Safe to call multiple times — only loads once.
  * @returns {Promise<void>}
  */
-function loadFacebookSDK() {
+function loadFacebookSDK(signal) {
   return new Promise((resolve, reject) => {
     if (window.FB) {
       resolve();
@@ -43,16 +43,25 @@ function loadFacebookSDK() {
     // If script is already loading, wait for it
     if (document.getElementById("facebook-jssdk")) {
       const check = setInterval(() => {
+        if (signal?.aborted) {
+          clearInterval(check);
+          return;
+        }
         if (window.FB) {
           clearInterval(check);
           resolve();
         }
       }, 100);
       // Timeout after 15s
-      setTimeout(() => {
+      const timeout = setTimeout(() => {
         clearInterval(check);
         reject(new Error("Facebook SDK timeout"));
       }, 15000);
+      // Clean up on abort
+      signal?.addEventListener("abort", () => {
+        clearInterval(check);
+        clearTimeout(timeout);
+      });
       return;
     }
 
@@ -102,19 +111,19 @@ export default function WhatsAppTab() {
   useEffect(() => {
     if (!isConfigured) return;
 
-    let cancelled = false;
-    loadFacebookSDK()
+    const controller = new AbortController();
+    loadFacebookSDK(controller.signal)
       .then(() => {
-        if (!cancelled) setSdkReady(true);
+        if (!controller.signal.aborted) setSdkReady(true);
       })
       .catch((err) => {
-        if (!cancelled && import.meta.env.DEV) {
+        if (!controller.signal.aborted && import.meta.env.DEV) {
           console.error("[WhatsAppTab] FB SDK load failed:", err);
         }
       });
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [isConfigured]);
 
@@ -285,8 +294,29 @@ export default function WhatsAppTab() {
 
           const code = response.authResponse.code;
 
-          // Get signup data from the message listener
-          const signupData = signupDataRef.current;
+          // Wait for signup data from the FINISH postMessage (may arrive after FB.login callback)
+          const waitForSignupData = () =>
+            new Promise((resolve) => {
+              if (signupDataRef.current?.waba_id) {
+                resolve(signupDataRef.current);
+                return;
+              }
+              const maxWait = 10_000;
+              const interval = 200;
+              let elapsed = 0;
+              const check = setInterval(() => {
+                elapsed += interval;
+                if (signupDataRef.current?.waba_id) {
+                  clearInterval(check);
+                  resolve(signupDataRef.current);
+                } else if (elapsed >= maxWait) {
+                  clearInterval(check);
+                  resolve(null);
+                }
+              }, interval);
+            });
+
+          const signupData = await waitForSignupData();
           if (!signupData?.waba_id || !signupData?.phone_number_id) {
             sileo.error(
               "No se recibio la informacion de WhatsApp Business. Intenta de nuevo.",

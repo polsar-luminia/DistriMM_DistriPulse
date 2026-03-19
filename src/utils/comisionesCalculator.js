@@ -14,7 +14,8 @@ export function calcularComisionVentas({
     const rawMarca = productBrandMap[v.producto_codigo] || "SIN MARCA";
     const marca = normalizeBrand(rawMarca);
     if (!ventasPorMarca[marca]) ventasPorMarca[marca] = 0;
-    ventasPorMarca[marca] += Number(v.costo || 0);
+    const rawCosto = Number(v.costo);
+    ventasPorMarca[marca] += Number.isFinite(rawCosto) ? rawCosto : 0;
   });
 
   const detalleMarcas = [];
@@ -28,18 +29,14 @@ export function calcularComisionVentas({
     const metaVentas = Number(p.meta_ventas || 0);
     const pctComision = Number(p.pct_comision || 0);
     const cumpleMeta = metaVentas > 0 ? totalCosto >= metaVentas : true;
-    const bonoFijo = Number(p.bono_fijo || 0);
-    const comisionPct = cumpleMeta ? totalCosto * pctComision : 0;
-    const comision = cumpleMeta ? comisionPct + bonoFijo : 0;
+    const comision = cumpleMeta ? totalCosto * pctComision : 0;
 
     detalleMarcas.push({
       marca: marcaNorm,
       totalCosto,
       metaVentas,
       pctComision,
-      bonoFijo,
       cumpleMeta,
-      comisionPct: Math.round(comisionPct),
       comision: Math.round(comision),
       tienePresupuesto: true,
     });
@@ -68,13 +65,17 @@ export function calcularComisionVentas({
 }
 
 export function calcularComisionRecaudo({ recaudos, presupuestoRecaudo }) {
+  const toFinite = (v) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  };
   const totalRecaudado = recaudos.reduce(
-    (s, r) => s + Number(r.valor_recaudo || 0),
+    (s, r) => s + toFinite(r.valor_recaudo),
     0,
   );
   const totalComisionable = recaudos
     .filter((r) => r.aplica_comision)
-    .reduce((s, r) => s + Number(r.valor_recaudo || 0), 0);
+    .reduce((s, r) => s + toFinite(r.valor_recaudo), 0);
   const totalExcluido = totalRecaudado - totalComisionable;
 
   // Si no hay presupuesto configurado, no se calcula comisión
@@ -96,27 +97,28 @@ export function calcularComisionRecaudo({ recaudos, presupuestoRecaudo }) {
     metaRecaudo > 0 ? (totalComisionable / metaRecaudo) * 100 : 0;
 
   // Determinar tramo — evaluar de mayor a menor para tomar el más alto alcanzado
+  const toNum = (v, fallback) => (v == null || v === "" ? fallback : Number(v));
   const tramos = [
     {
       nombre: "Tramo 4",
-      min: Number(presupuestoRecaudo.tramo4_min ?? Infinity),
-      pct: Number(presupuestoRecaudo.tramo4_pct ?? 0),
+      min: toNum(presupuestoRecaudo.tramo4_min, Infinity),
+      pct: toNum(presupuestoRecaudo.tramo4_pct, 0),
     },
     {
       nombre: "Tramo 3",
-      min: Number(presupuestoRecaudo.tramo3_min ?? Infinity),
-      pct: Number(presupuestoRecaudo.tramo3_pct ?? 0),
+      min: toNum(presupuestoRecaudo.tramo3_min, Infinity),
+      pct: toNum(presupuestoRecaudo.tramo3_pct, 0),
     },
     {
       nombre: "Tramo 2",
-      min: Number(presupuestoRecaudo.tramo2_min ?? Infinity),
-      pct: Number(presupuestoRecaudo.tramo2_pct ?? 0),
+      min: toNum(presupuestoRecaudo.tramo2_min, Infinity),
+      pct: toNum(presupuestoRecaudo.tramo2_pct, 0),
     },
     {
       nombre: "Tramo 1",
       min: 0,
-      max: Number(presupuestoRecaudo.tramo1_max ?? 0),
-      pct: Number(presupuestoRecaudo.tramo1_pct ?? 0),
+      max: toNum(presupuestoRecaudo.tramo1_max, Infinity),
+      pct: toNum(presupuestoRecaudo.tramo1_pct, 0),
     },
   ];
 
@@ -172,8 +174,9 @@ export function calcularComisionesCompletas({
   // Para cada vendedor, calcular ambas comisiones
   const resultados = [];
   vendedoresSet.forEach((vendedorCodigo) => {
+    // Exclusiones solo aplican a recaudo, no a ventas — todas las ventas cuentan
     const ventasVendedor = ventas.filter(
-      (v) => v.vendedor_codigo === vendedorCodigo && !v.excluded,
+      (v) => v.vendedor_codigo === vendedorCodigo,
     );
     const recaudosVendedor = recaudos.filter(
       (r) => r.vendedor_codigo === vendedorCodigo,

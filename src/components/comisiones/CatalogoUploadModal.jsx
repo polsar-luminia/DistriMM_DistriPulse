@@ -21,6 +21,7 @@ export default function CatalogoUploadModal({ isOpen, onClose, onSuccess }) {
   const [fullData, setFullData] = useState([]);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState(null);
+  const [uploading, setUploading] = useState(false);
 
   const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
@@ -133,6 +134,8 @@ export default function CatalogoUploadModal({ isOpen, onClose, onSuccess }) {
   };
 
   const handleUpload = async () => {
+    if (uploading) return;
+    setUploading(true);
     setStep("uploading");
     setProgress(20);
     try {
@@ -160,6 +163,8 @@ export default function CatalogoUploadModal({ isOpen, onClose, onSuccess }) {
     } catch (err) {
       setError("Error al guardar: " + (err?.message || JSON.stringify(err)));
       setStep("preview");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -320,7 +325,7 @@ export default function CatalogoUploadModal({ isOpen, onClose, onSuccess }) {
                 </button>
                 <button
                   onClick={handleUpload}
-                  disabled={step === "uploading"}
+                  disabled={uploading}
                   className="flex-[2] px-4 py-3 bg-emerald-600 text-white rounded-lg text-sm font-bold hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-emerald-900/20 flex items-center justify-center gap-2"
                 >
                   <CheckCircle size={18} /> Guardar {fullData.length} productos

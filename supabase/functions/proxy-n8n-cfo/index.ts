@@ -1,31 +1,31 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
-import { CORS_HEADERS, corsResponse, jsonResponse } from "../_shared/cors.ts";
+import { corsResponse, jsonResponse } from "../_shared/cors.ts";
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
-    return corsResponse();
+    return corsResponse(req);
   }
 
   try {
     // --- Auth: verify JWT ---
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      return jsonResponse({ error: "No authorization header" }, 401);
+      return jsonResponse({ error: "No authorization header" }, 401, req);
     }
 
-    const supabase = createClient(
+    const supabaseUser = createClient(
       Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } },
     );
-    const token = authHeader.replace("Bearer ", "");
     const {
       data: { user },
       error: authError,
-    } = await supabase.auth.getUser(token);
+    } = await supabaseUser.auth.getUser();
 
     if (authError || !user) {
-      return jsonResponse({ error: "Invalid token" }, 401);
+      return jsonResponse({ error: "Invalid token" }, 401, req);
     }
 
     // --- Read secrets ---
@@ -33,15 +33,20 @@ Deno.serve(async (req: Request) => {
     const n8nAuthKey = Deno.env.get("N8N_AUTH_KEY") || "";
 
     if (!n8nWebhookUrl) {
-      return jsonResponse({ error: "N8N_WEBHOOK_URL not configured" }, 500);
+      return jsonResponse({ error: "N8N_WEBHOOK_URL not configured" }, 500, req);
     }
 
     // --- Parse body ---
-    const body = await req.json();
+    let body;
+    try {
+      body = await req.json();
+    } catch {
+      return jsonResponse({ error: "Body JSON inválido" }, 400, req);
+    }
     const { carga_id, mes, anio } = body;
 
     if (!mes || !anio) {
-      return jsonResponse({ error: "Missing mes or anio" }, 400);
+      return jsonResponse({ error: "Missing mes or anio" }, 400, req);
     }
 
     // --- Proxy to n8n (60s timeout) ---
@@ -65,15 +70,16 @@ Deno.serve(async (req: Request) => {
 
       if (!n8nResponse.ok) {
         const text = await n8nResponse.text();
-        console.error("n8n error:", n8nResponse.status, text);
+        console.error("n8n error:", n8nResponse.status, text.substring(0, 500));
         return jsonResponse(
-          { error: `n8n returned ${n8nResponse.status}`, detail: text.substring(0, 200) },
+          { error: `n8n returned ${n8nResponse.status}` },
           502,
+          req,
         );
       }
 
       const result = await n8nResponse.json();
-      return jsonResponse(result);
+      return jsonResponse(result, 200, req);
     } finally {
       clearTimeout(timeout);
     }
@@ -84,6 +90,6 @@ Deno.serve(async (req: Request) => {
         ? "n8n request timed out (60s)"
         : "Internal error";
     const status = err instanceof DOMException && err.name === "AbortError" ? 504 : 500;
-    return jsonResponse({ error: message }, status);
+    return jsonResponse({ error: message }, status, req);
   }
 });

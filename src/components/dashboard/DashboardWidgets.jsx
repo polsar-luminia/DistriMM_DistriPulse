@@ -23,18 +23,32 @@ const SectionTitle = ({ icon: Icon, iconColor, children }) => (
     <div className={cn("p-1.5 rounded-lg", iconColor)}>
       <Icon size={18} strokeWidth={1.8} />
     </div>
-    <h2 className="text-lg font-bold text-navy-800 tracking-tight">{children}</h2>
+    <h2 className="text-lg font-bold text-navy-800 tracking-tight">
+      {children}
+    </h2>
   </div>
 );
 
-const MetricCard = ({ icon: Icon, label, value, accent, hint, onClick, tooltip }) => (
+const MetricCard = ({
+  icon: Icon,
+  label,
+  value,
+  accent,
+  hint,
+  onClick,
+  tooltip,
+}) => (
   <Card
-    className={cn("relative group", !tooltip && "overflow-hidden", onClick && "cursor-pointer")}
+    className={cn(
+      "relative group",
+      !tooltip && "overflow-hidden",
+      onClick && "cursor-pointer",
+    )}
     onClick={onClick}
   >
     {onClick && (
       <div className="absolute top-2.5 right-2.5 opacity-0 group-hover:opacity-100 transition-opacity">
-        <ChevronRight size={14} className={accent.replace("text-", "text-")} />
+        <ChevronRight size={14} className={accent} />
       </div>
     )}
     <div className="flex items-center gap-2 mb-1.5">
@@ -44,7 +58,10 @@ const MetricCard = ({ icon: Icon, label, value, accent, hint, onClick, tooltip }
       </p>
       {tooltip && (
         <div className="relative group/tip ml-auto shrink-0">
-          <Info size={12} className="text-navy-300 hover:text-navy-500 cursor-help transition-colors" />
+          <Info
+            size={12}
+            className="text-navy-300 hover:text-navy-500 cursor-help transition-colors"
+          />
           <div className="absolute top-full right-0 mt-2 w-56 p-2.5 bg-navy-800 text-white text-[10px] leading-relaxed rounded-lg shadow-lg opacity-0 pointer-events-none group-hover/tip:opacity-100 group-hover/tip:pointer-events-auto transition-opacity duration-200 z-50">
             {tooltip}
             <div className="absolute bottom-full right-2 border-4 border-transparent border-b-navy-800" />
@@ -56,13 +73,17 @@ const MetricCard = ({ icon: Icon, label, value, accent, hint, onClick, tooltip }
       {value}
     </p>
     {hint && (
-      <p className={cn("text-[10px] font-medium mt-1 opacity-80", accent)}>{hint}</p>
+      <p className={cn("text-[10px] font-medium mt-1 opacity-80", accent)}>
+        {hint}
+      </p>
     )}
   </Card>
 );
 
 function ParetoModal({ isOpen, onClose, clients, totalDebt }) {
   if (!isOpen) return null;
+
+  if (!totalDebt || totalDebt <= 0) return null;
 
   const sorted = [...clients].sort((a, b) => b.deuda - a.deuda);
   let accumulated = 0;

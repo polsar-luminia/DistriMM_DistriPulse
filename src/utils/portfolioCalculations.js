@@ -1,11 +1,15 @@
 import { AGING_BUCKETS, THRESHOLDS } from "./constants";
 
-export function preprocessItems(items) {
-  const today = new Date();
+export function preprocessItems(items, referenceDate = null) {
+  // Si se pasa referenceDate (p.ej. fecha_corte de una carga histórica),
+  // se usa como base para calcular días de mora en vez de "hoy".
+  const refDate = referenceDate
+    ? new Date(referenceDate + "T00:00:00")
+    : new Date();
   const tDate = new Date(
-    today.getFullYear(),
-    today.getMonth(),
-    today.getDate(),
+    refDate.getFullYear(),
+    refDate.getMonth(),
+    refDate.getDate(),
   );
 
   return items.map((item) => {

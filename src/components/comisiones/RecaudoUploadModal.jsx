@@ -71,49 +71,63 @@ function transformRC(jsonData) {
  * @param {Array} rows - Filas transformadas de RC
  * @returns {Promise<Array>} Filas con nombre, vendedor, mora
  */
+/**
+ * Ejecuta queries `.in()` en lotes de 200 para evitar límites de Supabase.
+ */
+async function batchIN(table, selectCols, field, ids, orderCol) {
+  const BATCH = 200;
+  const all = [];
+  for (let i = 0; i < ids.length; i += BATCH) {
+    let q = supabase
+      .from(table)
+      .select(selectCols)
+      .in(field, ids.slice(i, i + BATCH));
+    if (orderCol) q = q.order(orderCol, { ascending: true });
+    const { data, error } = await q;
+    if (error) throw error;
+    if (data) all.push(...data);
+  }
+  return all;
+}
+
 async function enrichFromDB(rows) {
   const nits = [...new Set(rows.map((r) => r.cliente_nit).filter(Boolean))];
   const facturas = [...new Set(rows.map((r) => r.factura).filter(Boolean))];
 
-  // Queries en paralelo, con guard contra arrays vacíos
-  const [
-    { data: clientes, error: clientesErr },
-    { data: items, error: itemsErr },
-  ] = await Promise.all([
-    nits.length > 0
-      ? supabase
-          .from("distrimm_clientes")
-          .select("no_identif, nombre_completo, vendedor_codigo")
-          .in("no_identif", nits.slice(0, 1000))
-      : { data: [], error: null },
-    facturas.length > 0
-      ? supabase
-          .from("cartera_items")
-          .select(
-            "id, documento_id, fecha_emision, fecha_vencimiento, dias_mora",
+  let clientes = [];
+  let items = [];
+  try {
+    [clientes, items] = await Promise.all([
+      nits.length > 0
+        ? batchIN(
+            "distrimm_clientes",
+            "no_identif, nombre_completo, vendedor_codigo",
+            "no_identif",
+            nits,
           )
-          .in("documento_id", facturas.slice(0, 1000))
-          .order("id", { ascending: true })
-      : { data: [], error: null },
-  ]);
-
-  if (import.meta.env.DEV) {
-    if (clientesErr)
-      console.warn(
-        "[enrichFromDB] Error cargando clientes:",
-        clientesErr.message,
-      );
-    if (itemsErr)
-      console.warn("[enrichFromDB] Error cargando cartera:", itemsErr.message);
+        : [],
+      facturas.length > 0
+        ? batchIN(
+            "cartera_items",
+            "id, documento_id, fecha_emision, fecha_vencimiento, dias_mora, vendedor_codigo",
+            "documento_id",
+            facturas,
+            "id",
+          )
+        : [],
+    ]);
+  } catch (err) {
+    if (import.meta.env.DEV)
+      console.warn("[enrichFromDB] Error cargando datos:", err.message);
   }
 
   const clienteMap = Object.fromEntries(
-    (clientes || []).map((c) => [String(c.no_identif), c]),
+    clientes.map((c) => [String(c.no_identif), c]),
   );
 
   // Object.fromEntries toma el último duplicado; order ascending → más reciente gana
   const carteraMap = Object.fromEntries(
-    (items || []).map((c) => [String(c.documento_id), c]),
+    items.map((c) => [String(c.documento_id), c]),
   );
 
   return rows.map((row) => {
@@ -124,7 +138,8 @@ async function enrichFromDB(rows) {
     return {
       ...row,
       cliente_nombre: c?.nombre_completo || row.cliente_nit,
-      vendedor_codigo: c?.vendedor_codigo || "",
+      // Prioridad: vendedor de la factura original (cartera_items) → vendedor actual (maestro clientes) → vacío
+      vendedor_codigo: f?.vendedor_codigo || c?.vendedor_codigo || "",
       fecha_cxc: f?.fecha_emision || null,
       fecha_vence: f?.fecha_vencimiento || null,
       dias_mora: diasMora,
@@ -363,7 +378,8 @@ export default function RecaudoUploadModal({ isOpen, onClose, onSuccess }) {
         fecha_cxc: r.fecha_cxc || null,
         fecha_vence: r.fecha_vence || null,
         valor_recaudo: r.valor_recaudo,
-        dias_mora: Math.max(r.dias_mora, 0), // -1 (sin match) → 0 en DB
+        // -1 = sin match en cartera (desconocido), se preserva para trazabilidad
+        dias_mora: r.dias_mora,
         aplica_comision: r.aplica_comision,
         periodo_year: r.periodo_year,
         periodo_month: r.periodo_month,

@@ -317,14 +317,16 @@ export const getRecaudosByCarga = async (cargaId) => {
 
 export const getPresupuestosRecaudo = async (year, month) => {
   try {
-    const { data, error } = await supabase
-      .from("distrimm_comisiones_presupuestos_recaudo")
-      .select("*")
-      .eq("periodo_year", year)
-      .eq("periodo_month", month)
-      .eq("activo", true)
-      .order("vendedor_codigo");
-    if (error) throw error;
+    const data = await fetchAllRows((from, to) =>
+      supabase
+        .from("distrimm_comisiones_presupuestos_recaudo")
+        .select("*")
+        .eq("periodo_year", year)
+        .eq("periodo_month", month)
+        .eq("activo", true)
+        .order("vendedor_codigo")
+        .range(from, to),
+    );
     return { data, error: null };
   } catch (error) {
     if (import.meta.env.DEV)
@@ -381,15 +383,17 @@ export const deletePresupuestoRecaudo = async (id) => {
 
 export const getPresupuestosMarca = async (year, month) => {
   try {
-    const { data, error } = await supabase
-      .from("distrimm_comisiones_presupuestos_marca")
-      .select("*")
-      .eq("periodo_year", year)
-      .eq("periodo_month", month)
-      .eq("activo", true)
-      .order("vendedor_codigo")
-      .order("marca");
-    if (error) throw error;
+    const data = await fetchAllRows((from, to) =>
+      supabase
+        .from("distrimm_comisiones_presupuestos_marca")
+        .select("*")
+        .eq("periodo_year", year)
+        .eq("periodo_month", month)
+        .eq("activo", true)
+        .order("vendedor_codigo")
+        .order("marca")
+        .range(from, to),
+    );
     return { data, error: null };
   } catch (error) {
     if (import.meta.env.DEV)
@@ -586,18 +590,22 @@ export const saveSnapshot = async ({
   totalRecaudos,
   liquidacion,
   resumen,
-  presupuestosMarcaIds,
-  presupuestosRecaudoIds,
+  presupuestosMarca,
+  presupuestosRecaudo,
   totalesVentas,
+  exclusiones,
+  catalogoCount,
 }) => {
-  // Hash simple: fingerprint de inputs para detectar si cambiaron
-  const inputHash = [
-    ...(cargaIds || []).sort(),
-    `v:${totalVentas}`,
-    `r:${totalRecaudos}`,
-    ...(presupuestosMarcaIds || []).sort(),
-    ...(presupuestosRecaudoIds || []).sort(),
-  ].join("|");
+  // Usar buildInputHash para consistencia con useComisionesCalculo
+  const inputHash = buildInputHash({
+    cargaIds,
+    totalVentas,
+    totalRecaudos,
+    presupuestosMarca,
+    presupuestosRecaudo,
+    exclusiones,
+    catalogoCount,
+  });
 
   try {
     const { data, error } = await supabase
@@ -611,8 +619,10 @@ export const saveSnapshot = async ({
           total_recaudos_count: totalRecaudos,
           liquidacion,
           resumen,
-          presupuestos_marca_ids: presupuestosMarcaIds || [],
-          presupuestos_recaudo_ids: presupuestosRecaudoIds || [],
+          presupuestos_marca_ids: (presupuestosMarca || []).map((p) => p.id),
+          presupuestos_recaudo_ids: (presupuestosRecaudo || []).map(
+            (p) => p.id,
+          ),
           input_hash: inputHash,
           totales_ventas: totalesVentas || {},
           updated_at: new Date().toISOString(),
@@ -632,13 +642,15 @@ export const saveSnapshot = async ({
 
 /**
  * Genera el hash de inputs actual para comparar con el snapshot guardado.
+ * Acepta objetos completos de presupuestos para incluir valores clave en el fingerprint,
+ * de modo que editar un presupuesto existente (sin cambiar su ID) invalide el snapshot.
  */
 export function buildInputHash({
   cargaIds,
   totalVentas,
   totalRecaudos,
-  presupuestosMarcaIds,
-  presupuestosRecaudoIds,
+  presupuestosMarca,
+  presupuestosRecaudo,
   exclusiones,
   catalogoCount,
 }) {
@@ -648,12 +660,27 @@ export function buildInputHash({
     .sort()
     .join(",");
 
+  // Fingerprint de presupuestos marca: incluye valores clave para detectar ediciones
+  const presMarcaFp = (presupuestosMarca || [])
+    .map(
+      (p) =>
+        `${p.id}:${p.meta_ventas || 0}:${p.pct_comision || 0}:${p.updated_at || ""}`,
+    )
+    .sort()
+    .join(",");
+
+  // Fingerprint de presupuestos recaudo: incluye valores clave
+  const presRecaudoFp = (presupuestosRecaudo || [])
+    .map((p) => `${p.id}:${p.meta_recaudo || 0}:${p.updated_at || ""}`)
+    .sort()
+    .join(",");
+
   return [
     ...(cargaIds || []).sort(),
     `v:${totalVentas}`,
     `r:${totalRecaudos}`,
-    ...(presupuestosMarcaIds || []).sort(),
-    ...(presupuestosRecaudoIds || []).sort(),
+    `pm:${presMarcaFp}`,
+    `pr:${presRecaudoFp}`,
     `excl:${exclFingerprint}`,
     `cat:${catalogoCount || 0}`,
   ].join("|");

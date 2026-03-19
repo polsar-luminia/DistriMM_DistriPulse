@@ -146,10 +146,13 @@ export function useLotes() {
         };
       }
 
-      // Pre-flight checks
+      // Solo recomendación si está fuera de horario — no bloquea el envío
       const hourCheck = checkSendingHours();
-      if (!hourCheck.allowed) {
-        return { success: false, loteId: null, error: hourCheck.reason };
+      if (!hourCheck.allowed && import.meta.env.DEV) {
+        console.warn(
+          "[useLotes] Envío de lote fuera de horario recomendado:",
+          hourCheck.reason,
+        );
       }
 
       const dailyCheck = await checkDailyLimit();

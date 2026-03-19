@@ -435,11 +435,16 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
       const newNitsToRollback = processedNits.filter(
         (nit) => !preExistingNits.has(nit),
       );
-      if (newNitsToRollback.length > 0) {
-        if (import.meta.env.DEV)
+      const updatedExistingNits = processedNits.filter((nit) =>
+        preExistingNits.has(nit),
+      );
+      if (newNitsToRollback.length > 0 || updatedExistingNits.length > 0) {
+        if (import.meta.env.DEV) {
           console.warn(
-            `Rolling back ${newNitsToRollback.length} client records`,
+            `Rolling back ${newNitsToRollback.length} new client records. ${updatedExistingNits.length} existing records may have been partially updated.`,
+            updatedExistingNits,
           );
+        }
         // Delete in batches to avoid query size limits
         for (let i = 0; i < newNitsToRollback.length; i += 100) {
           const nitBatch = newNitsToRollback.slice(i, i + 100);
@@ -450,7 +455,7 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
         }
         sileo.error({
           title: "Error en carga",
-          description: "Todos los datos parciales fueron eliminados",
+          description: `Se eliminaron ${newNitsToRollback.length} registros nuevos.${updatedExistingNits.length > 0 ? ` ${updatedExistingNits.length} registros existentes pudieron haber sido actualizados parcialmente.` : ""}`,
         });
       }
 

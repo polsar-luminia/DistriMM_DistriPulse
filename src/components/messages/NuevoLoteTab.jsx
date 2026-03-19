@@ -51,13 +51,21 @@ export default function NuevoLoteTab({ currentLoadId, messaging }) {
     const filters = {
       cargaId: currentLoadId,
       tipoFiltro,
-      diasMoraMin: Number(diasMoraMin) || 1,
-      diasVencerMax: Number(diasVencerMax) || 30,
+      diasMoraMin: diasMoraMin !== "" ? Number(diasMoraMin) : 1,
+      diasVencerMax: diasVencerMax !== "" ? Number(diasVencerMax) : 30,
       montoMin: montoMin ? Number(montoMin) : 0,
       montoMax: montoMax ? Number(montoMax) : 999999999,
     };
 
-    await messaging.fetchSegmentedClients(filters);
+    const { data, error } = await messaging.fetchSegmentedClients(filters);
+    if (error) {
+      sileo.error({
+        title: "Error al buscar clientes",
+        description: error.message || String(error),
+      });
+    } else if (!data || data.length === 0) {
+      sileo.info("No se encontraron clientes con los filtros seleccionados.");
+    }
     setSelectedNits(new Set());
   };
 
@@ -709,6 +717,22 @@ export default function NuevoLoteTab({ currentLoadId, messaging }) {
               </p>
             )}
           </div>
+
+          {/* Recomendación de horario */}
+          {(() => {
+            const h = messaging.checkSendingHours();
+            return !h.allowed ? (
+              <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-700">
+                <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+                <span>
+                  <strong>Fuera de horario recomendado</strong> ({h.hour}:00h).
+                  Se recomienda enviar entre 7am y 9pm hora Colombia. El envío
+                  no está bloqueado, pero los mensajes podrían tener menor
+                  efectividad.
+                </span>
+              </div>
+            ) : null;
+          })()}
 
           {/* Action buttons */}
           <div className="flex justify-between pt-2">

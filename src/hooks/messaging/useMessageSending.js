@@ -39,10 +39,22 @@ export function useMessageSending({ markRemindersAsSent } = {}) {
   const isSendingRef = useRef(false);
 
   const sendMessage = useCallback(
-    async ({ phone, message, clientName, tipo, nit, plantillaId, invoiceIds }) => {
+    async ({
+      phone,
+      message,
+      clientName,
+      tipo,
+      nit,
+      plantillaId,
+      invoiceIds,
+    }) => {
+      // Solo recomendación si está fuera de horario — no bloquea el envío
       const hourCheck = checkSendingHours();
-      if (!hourCheck.allowed) {
-        return { success: false, error: hourCheck.reason };
+      if (!hourCheck.allowed && import.meta.env.DEV) {
+        console.warn(
+          "[useMessageSending] Envío fuera de horario recomendado:",
+          hourCheck.reason,
+        );
       }
 
       // Log first, but don't let logging failures block the actual send
@@ -60,7 +72,8 @@ export function useMessageSending({ markRemindersAsSent } = {}) {
         });
         logEntry = res.data;
       } catch (logErr) {
-        if (import.meta.env.DEV) console.error("[useMessageSending] logMessage failed:", logErr);
+        if (import.meta.env.DEV)
+          console.error("[useMessageSending] logMessage failed:", logErr);
       }
 
       const { success, error } = await sendWhatsAppMessage({
@@ -75,14 +88,23 @@ export function useMessageSending({ markRemindersAsSent } = {}) {
           await updateLogStatus(
             logEntry.id,
             success ? "enviado" : "fallido",
-            error ? (error.message || String(error)) : null,
+            error ? error.message || String(error) : null,
           );
         } catch (updateErr) {
-          if (import.meta.env.DEV) console.error("[useMessageSending] updateLogStatus failed:", updateErr);
+          if (import.meta.env.DEV)
+            console.error(
+              "[useMessageSending] updateLogStatus failed:",
+              updateErr,
+            );
         }
       }
 
-      if (success && tipo === "recordatorio" && invoiceIds?.length > 0 && markRemindersAsSent) {
+      if (
+        success &&
+        tipo === "recordatorio" &&
+        invoiceIds?.length > 0 &&
+        markRemindersAsSent
+      ) {
         await markRemindersAsSent(invoiceIds);
       }
 
@@ -97,14 +119,13 @@ export function useMessageSending({ markRemindersAsSent } = {}) {
       if (isSendingRef.current) return;
       isSendingRef.current = true;
 
+      // Solo recomendación si está fuera de horario — no bloquea el envío
       const hourCheck = checkSendingHours();
-      if (!hourCheck.allowed) {
-        setSendingState((prev) => ({
-          ...prev,
-          errorDetails: [hourCheck.reason],
-        }));
-        isSendingRef.current = false;
-        return;
+      if (!hourCheck.allowed && import.meta.env.DEV) {
+        console.warn(
+          "[useMessageSending] Envío bulk fuera de horario recomendado:",
+          hourCheck.reason,
+        );
       }
 
       const dailyCheck = await checkDailyLimit();
@@ -137,23 +158,18 @@ export function useMessageSending({ markRemindersAsSent } = {}) {
 
       for (let i = 0; i < capped.length; i++) {
         if (cancelRef.current) {
-          setSendingState((prev) => ({ ...prev, active: false, cancelled: true }));
+          setSendingState((prev) => ({
+            ...prev,
+            active: false,
+            cancelled: true,
+          }));
           isSendingRef.current = false;
           return;
         }
 
+        // Cada 5 mensajes, pausa breve para no saturar
         if (i > 0 && i % 5 === 0) {
-          const recheck = checkSendingHours();
-          if (!recheck.allowed) {
-            setSendingState((prev) => ({
-              ...prev,
-              active: false,
-              cancelled: true,
-              errorDetails: [...prev.errorDetails, recheck.reason],
-            }));
-            isSendingRef.current = false;
-            return;
-          }
+          await new Promise((r) => setTimeout(r, 200));
         }
 
         const recipient = capped[i];
@@ -194,7 +210,11 @@ export function useMessageSending({ markRemindersAsSent } = {}) {
       setSegmentedClients(data || []);
       return { data: data || [], error: null };
     } catch (err) {
-      if (import.meta.env.DEV) console.error("[useMessageSending] Error fetching segmented clients:", err);
+      if (import.meta.env.DEV)
+        console.error(
+          "[useMessageSending] Error fetching segmented clients:",
+          err,
+        );
       setSegmentedClients([]);
       return { data: [], error: err };
     } finally {

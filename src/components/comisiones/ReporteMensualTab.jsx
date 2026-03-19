@@ -16,6 +16,7 @@ import {
   XCircle,
   RefreshCw,
   Lock,
+  Info,
 } from "lucide-react";
 import { sileo } from "sileo";
 import { cn } from "@/lib/utils";
@@ -26,6 +27,7 @@ import {
 } from "../../utils/formatters";
 import { generarReportePDF } from "../../utils/reportePDF";
 import { generarReporteExcelMensual } from "../../utils/reporteExcelMensual";
+import { clickableProps } from "@/utils/a11y";
 import { Card, KpiCard, EmptyState, MESES } from "./ComisionesShared";
 import { DashboardContext } from "../DashboardManager";
 import { getPeriodoOperativo } from "../../utils/periodoOperativo";
@@ -478,6 +480,26 @@ export default function ReporteMensualTab({ hook }) {
             />
           </div>
 
+          {/* Banner informativo: snapshot vs datos vivos */}
+          {isSnapshot && filtroVendedorId === "todos" && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-3 text-sm text-blue-800 mb-6">
+              <Info size={16} className="shrink-0 mt-0.5 text-blue-600" />
+              <span>
+                Los totales de liquidación (Ventas, Comisionable, Excluido)
+                corresponden al <strong>snapshot congelado</strong> del{" "}
+                {snapshotDate
+                  ? new Date(snapshotDate).toLocaleDateString("es-CO", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })
+                  : "momento de la liquidación"}
+                . Los detalles de ventas y recaudos mostrados abajo son los{" "}
+                <strong>datos actuales</strong>, para referencia.
+              </span>
+            </div>
+          )}
+
           {/* ══════════ LIQUIDACIÓN DE COMISIONES ══════════ */}
           {filteredLiquidacion.length > 0 && (
             <div className="mb-8">
@@ -540,13 +562,13 @@ export default function ReporteMensualTab({ hook }) {
                           <React.Fragment key={liq.vendedor_codigo}>
                             <tr
                               className="hover:bg-slate-50 cursor-pointer transition-colors"
-                              onClick={() =>
+                              {...clickableProps(() =>
                                 setExpandedVendedor(
                                   isExpanded
                                     ? null
                                     : `liq-${liq.vendedor_codigo}`,
-                                )
-                              }
+                                ),
+                              )}
                             >
                               <td className="px-4 py-3">
                                 <span className="font-bold text-slate-900">
@@ -620,9 +642,6 @@ export default function ReporteMensualTab({ hook }) {
                                                 <th className="px-3 py-1.5 text-right">
                                                   %
                                                 </th>
-                                                <th className="px-3 py-1.5 text-right">
-                                                  Bono
-                                                </th>
                                                 <th className="px-3 py-1.5 text-right font-bold">
                                                   Comisión
                                                 </th>
@@ -684,13 +703,6 @@ export default function ReporteMensualTab({ hook }) {
                                                         ? `${(dm.pctComision * 100).toFixed(1)}%`
                                                         : "—"}
                                                     </td>
-                                                    <td className="px-3 py-1.5 text-right font-mono">
-                                                      {dm.bonoFijo > 0
-                                                        ? formatFullCurrency(
-                                                            dm.bonoFijo,
-                                                          )
-                                                        : "—"}
-                                                    </td>
                                                     <td className="px-3 py-1.5 text-right font-mono font-bold text-indigo-700">
                                                       {dm.comision > 0
                                                         ? formatFullCurrency(
@@ -703,7 +715,7 @@ export default function ReporteMensualTab({ hook }) {
                                               )}
                                               <tr className="bg-indigo-50/50 font-bold border-t-2 border-indigo-200">
                                                 <td
-                                                  colSpan={6}
+                                                  colSpan={5}
                                                   className="px-3 py-2 text-right text-indigo-700 uppercase text-[10px] tracking-wide"
                                                 >
                                                   Subtotal Ventas
@@ -879,11 +891,11 @@ export default function ReporteMensualTab({ hook }) {
                       <React.Fragment key={v.vendedor_codigo}>
                         <tr
                           className="hover:bg-slate-50 cursor-pointer transition-colors"
-                          onClick={() =>
+                          {...clickableProps(() =>
                             setExpandedVendedor(
                               isExp ? null : `det-${v.vendedor_codigo}`,
-                            )
-                          }
+                            ),
+                          )}
                         >
                           <td className="px-4 py-3">
                             <span className="font-bold text-slate-900">
