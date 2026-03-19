@@ -20,12 +20,13 @@ test.describe("Flow A: Comisiones", () => {
     ).toBeVisible({ timeout: 15_000 });
 
     // Verify tabs are visible — ComisionesPage.jsx uses TabButton components
-    await expect(page.getByText("Ventas")).toBeVisible();
-    await expect(page.getByText("Recaudo")).toBeVisible();
-    await expect(page.getByText("Exclusiones")).toBeVisible();
-    await expect(page.getByText("Catalogo")).toBeVisible();
-    await expect(page.getByText("Reporte Mensual")).toBeVisible();
-    await expect(page.getByText("Presupuestos")).toBeVisible();
+    // Use button role to avoid matching other text on the page (e.g. "Cargar Ventas")
+    await expect(page.getByRole("button", { name: "Ventas" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Recaudo" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Exclusiones" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Catalogo" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Reporte Mensual" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Presupuestos" })).toBeVisible();
   });
 
   test("Step 2: Upload ventas Excel", async ({ page }) => {
@@ -75,7 +76,7 @@ test.describe("Flow A: Comisiones", () => {
     ).toBeVisible({ timeout: 15_000 });
 
     // Click "Recaudo" tab
-    await page.getByText("Recaudo").click();
+    await page.getByRole("button", { name: "Recaudo" }).click();
 
     // Click "Cargar Recaudos" button
     await page.getByRole("button", { name: "Cargar Recaudos" }).click();
@@ -117,7 +118,7 @@ test.describe("Flow A: Comisiones", () => {
     ).toBeVisible({ timeout: 15_000 });
 
     // Click "Presupuestos" tab
-    await page.getByText("Presupuestos").click();
+    await page.getByRole("button", { name: "Presupuestos" }).click();
 
     // Wait for presupuestos to load
     await page.waitForTimeout(2000);
@@ -259,7 +260,7 @@ test.describe("Flow A: Comisiones", () => {
     ).toBeVisible({ timeout: 15_000 });
 
     // Click "Reporte Mensual" tab
-    await page.getByText("Reporte Mensual").click();
+    await page.getByRole("button", { name: "Reporte Mensual" }).click();
     await page.waitForTimeout(1000);
 
     // Select January 2025

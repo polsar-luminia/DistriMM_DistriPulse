@@ -4,13 +4,13 @@ test.describe.serial("Chatbot page", () => {
   test("loads and shows welcome message", async ({ page }) => {
     await page.goto("/chatbot");
 
-    // Header shows "DistriBot CFO" as an <h1>
+    // Header shows "DistriBot CFO" as an <h1> (accessible name includes "AI" badge)
     await expect(
       page.getByRole("heading", { name: /DistriBot CFO/i }),
     ).toBeVisible({ timeout: 15_000 });
 
     // The welcome message contains "Soy DistriBot" (from WELCOME_CONTENT)
-    await expect(page.getByText("DistriBot", { exact: false })).toBeVisible();
+    await expect(page.getByText("Soy DistriBot", { exact: false })).toBeVisible();
 
     // Subtitle text when not loading
     await expect(page.getByText("Asesor experto en cartera")).toBeVisible();

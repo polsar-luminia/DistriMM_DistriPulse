@@ -23,8 +23,9 @@ test.describe.serial("CFO Analysis page", () => {
       page.getByText("Analisis CFO con Inteligencia Artificial"),
     ).toBeVisible({ timeout: 15_000 });
 
+    // Use exact button text to avoid matching the PageHeader "Generar Analisis" button
     await expect(
-      page.getByRole("button", { name: /Generar Analisis/i }),
+      page.getByRole("button", { name: "Generar Analisis CFO" }),
     ).toBeVisible();
 
     // Feature tags should be present
@@ -86,11 +87,11 @@ test.describe.serial("CFO Analysis page", () => {
 
     // Wait for the empty state to finish loading
     await expect(
-      page.getByRole("button", { name: /Generar Analisis/i }),
+      page.getByRole("button", { name: "Generar Analisis CFO" }),
     ).toBeVisible({ timeout: 15_000 });
 
     // Click the "Generar Analisis CFO" button (from CfoEmptyState)
-    await page.getByRole("button", { name: /Generar Analisis/i }).click();
+    await page.getByRole("button", { name: "Generar Analisis CFO" }).click();
 
     // The resumen_ejecutivo text should appear in the analysis results
     await expect(

@@ -7,12 +7,12 @@ test.describe("Directorio de Clientes", () => {
 
     await expect(page.locator("nav")).toBeVisible({ timeout: 15_000 });
 
-    // Heading: "Directorio de Clientes"
+    // Heading: "Directorio de Clientes" (h1 contains a Lucide icon + text)
     await expect(
-      page.getByRole("heading", { name: "Directorio de Clientes" }),
+      page.getByRole("heading", { name: /Directorio de Clientes/i }),
     ).toBeVisible();
 
-    // KPI cards visibles
+    // KPI cards visibles (StatCard titles use CSS uppercase, but DOM text is as written)
     await expect(page.getByText("Total Clientes")).toBeVisible();
     await expect(page.getByText("Personas Juridicas")).toBeVisible();
   });
@@ -23,12 +23,12 @@ test.describe("Directorio de Clientes", () => {
 
     // Esperar que cargue el contenido (spinner desaparece)
     await expect(
-      page.getByRole("heading", { name: "Directorio de Clientes" }),
+      page.getByRole("heading", { name: /Directorio de Clientes/i }),
     ).toBeVisible({ timeout: 15_000 });
 
     // Input de búsqueda con placeholder "Buscar por nombre, NIT, celular, correo..."
     const searchInput = page.getByPlaceholder(
-      "Buscar por nombre, NIT, celular, correo...",
+      /Buscar por nombre, NIT, celular, correo/,
     );
     await expect(searchInput).toBeVisible();
     await searchInput.fill(TEST_CLIENTE_NIT);
@@ -47,11 +47,11 @@ test.describe("Directorio de Clientes", () => {
     await expect(page.locator("nav")).toBeVisible({ timeout: 15_000 });
 
     await expect(
-      page.getByRole("heading", { name: "Directorio de Clientes" }),
+      page.getByRole("heading", { name: /Directorio de Clientes/i }),
     ).toBeVisible({ timeout: 15_000 });
 
     const searchInput = page.getByPlaceholder(
-      "Buscar por nombre, NIT, celular, correo...",
+      /Buscar por nombre, NIT, celular, correo/,
     );
     await searchInput.fill(TEST_CLIENTE_NIT);
     await page.waitForTimeout(500);

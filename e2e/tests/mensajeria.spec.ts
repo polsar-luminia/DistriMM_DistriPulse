@@ -16,10 +16,11 @@ test.describe("Flow B: Mensajeria", () => {
     ).toBeVisible({ timeout: 15_000 });
 
     // Verify tabs from MessagesShared TABS: Nuevo Lote, Historial, Plantillas, WhatsApp
-    await expect(page.getByText("Nuevo Lote")).toBeVisible();
-    await expect(page.getByText("Historial")).toBeVisible();
-    await expect(page.getByText("Plantillas")).toBeVisible();
-    await expect(page.getByText("WhatsApp")).toBeVisible();
+    // Use button role to avoid matching description paragraph that also mentions "WhatsApp"
+    await expect(page.getByRole("button", { name: /Nuevo Lote/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Historial/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Plantillas/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /WhatsApp/i })).toBeVisible();
   });
 
   test("Step 2: Filter morosos", async ({ page }) => {
@@ -183,7 +184,7 @@ test.describe("Flow B: Mensajeria", () => {
     await page.waitForTimeout(5000);
 
     // Navigate to Historial tab to verify lote was created
-    await page.getByText("Historial").click();
+    await page.getByRole("button", { name: /Historial/i }).click();
     await page.waitForTimeout(2000);
 
     // Historial should show at least one lote entry
