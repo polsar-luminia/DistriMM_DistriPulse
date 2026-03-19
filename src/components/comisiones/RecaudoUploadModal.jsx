@@ -169,8 +169,11 @@ async function enrichFromDB(rows) {
     const diasMora = f ? (f.dias_mora ?? 0) : -1;
     // Vendedor: ventas (más preciso por factura) → cartera → clientes maestro
     const vendedorVenta = ventaVendedorMap[row.factura];
+    // Si hay match en cartera, usar valor_saldo (base sin IVA) en vez de Creditos (con IVA)
+    const valorBase = f ? Number(f.valor_saldo || 0) : 0;
     return {
       ...row,
+      valor_recaudo: valorBase > 0 ? valorBase : row.valor_recaudo,
       cliente_nombre: c?.nombre_completo || row.cliente_nit,
       vendedor_codigo:
         vendedorVenta || f?.vendedor_codigo || c?.vendedor_codigo || "",
