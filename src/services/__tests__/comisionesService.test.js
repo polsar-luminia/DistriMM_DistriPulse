@@ -301,7 +301,10 @@ describe("buildInputHash", () => {
       { id: "pr-1", meta_recaudo: 8000000, updated_at: "2026-01-15T10:00:00Z" },
     ],
     exclusiones: [{ id: "e1", tipo: "marca", valor: "CONTEGRAL" }],
-    catalogoCount: 4000,
+    catalogo: [
+      { codigo: "PROD-001", marca: "CONTEGRAL" },
+      { codigo: "PROD-002", marca: "ADAMA" },
+    ],
   };
 
   test("mismo input produce mismo hash (determinista)", () => {
@@ -327,8 +330,22 @@ describe("buildInputHash", () => {
     expect(buildInputHash(modified)).not.toBe(buildInputHash(base));
   });
 
-  test("cambio en catalogoCount produce hash diferente", () => {
-    const modified = { ...base, catalogoCount: 4001 };
+  test("cambio de marca en catalogo produce hash diferente", () => {
+    const modified = {
+      ...base,
+      catalogo: [
+        { codigo: "PROD-001", marca: "OUROFINO" }, // changed brand
+        { codigo: "PROD-002", marca: "ADAMA" },
+      ],
+    };
+    expect(buildInputHash(modified)).not.toBe(buildInputHash(base));
+  });
+
+  test("agregar producto al catalogo produce hash diferente", () => {
+    const modified = {
+      ...base,
+      catalogo: [...base.catalogo, { codigo: "PROD-003", marca: "EDO" }],
+    };
     expect(buildInputHash(modified)).not.toBe(buildInputHash(base));
   });
 
@@ -343,7 +360,7 @@ describe("buildInputHash", () => {
   });
 
   test("exclusiones vacías produce hash válido", () => {
-    const empty = { ...base, exclusiones: [], catalogoCount: 0 };
+    const empty = { ...base, exclusiones: [], catalogo: [] };
     expect(buildInputHash(empty)).toBeTruthy();
   });
 

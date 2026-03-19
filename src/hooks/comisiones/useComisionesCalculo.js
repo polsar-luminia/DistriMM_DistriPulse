@@ -138,7 +138,7 @@ export function useComisionesCalculo(selectedCargaId, catalogo, exclusiones) {
           presupuestosMarca: presMarca,
           presupuestosRecaudo: presRecaudo,
           exclusiones,
-          catalogoCount: (catalogo || []).length,
+          catalogo,
         });
 
         // 1. Check for existing snapshot (unless forced recalc)
@@ -248,7 +248,7 @@ export function useComisionesCalculo(selectedCargaId, catalogo, exclusiones) {
           presupuestosRecaudo: presRecaudo,
           totalesVentas,
           exclusiones,
-          catalogoCount: (catalogo || []).length,
+          catalogo,
         });
         if (snapErr) throw snapErr;
 

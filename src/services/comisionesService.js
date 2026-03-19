@@ -595,6 +595,7 @@ export const saveSnapshot = async ({
   totalesVentas,
   exclusiones,
   catalogoCount,
+  catalogo,
 }) => {
   // Usar buildInputHash para consistencia con useComisionesCalculo
   const inputHash = buildInputHash({
@@ -605,6 +606,7 @@ export const saveSnapshot = async ({
     presupuestosRecaudo,
     exclusiones,
     catalogoCount,
+    catalogo,
   });
 
   try {
@@ -653,6 +655,7 @@ export function buildInputHash({
   presupuestosRecaudo,
   exclusiones,
   catalogoCount,
+  catalogo,
 }) {
   // Fingerprint de exclusiones: ids + tipo + valor para detectar cambios de reglas
   const exclFingerprint = (exclusiones || [])
@@ -682,6 +685,13 @@ export function buildInputHash({
     `pm:${presMarcaFp}`,
     `pr:${presRecaudoFp}`,
     `excl:${exclFingerprint}`,
-    `cat:${catalogoCount || 0}`,
+    `cat:${
+      catalogo?.length
+        ? (catalogo || [])
+            .map((p) => `${p.codigo}:${p.marca || ""}`)
+            .sort()
+            .join(",")
+        : catalogoCount || 0
+    }`,
   ].join("|");
 }
