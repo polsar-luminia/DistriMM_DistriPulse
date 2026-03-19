@@ -10,11 +10,14 @@ export function useComisionesCargas() {
   const [loadingCargas, setLoadingCargas] = useState(true);
 
   const currentCargaRef = useRef(null);
+  const fetchRequestIdRef = useRef(0);
 
   const fetchCargas = useCallback(async () => {
+    const requestId = ++fetchRequestIdRef.current;
     setLoadingCargas(true);
     try {
       const { data } = await getComisionesCargas();
+      if (requestId !== fetchRequestIdRef.current) return;
       setCargas(data || []);
       if (data?.length > 0 && !currentCargaRef.current) {
         const firstId = data[0].id;
@@ -22,11 +25,12 @@ export function useComisionesCargas() {
         currentCargaRef.current = firstId;
       }
     } catch (err) {
+      if (requestId !== fetchRequestIdRef.current) return;
       if (import.meta.env.DEV)
         console.error("[useComisionesCargas] Error fetching cargas:", err);
       setCargas([]);
     }
-    setLoadingCargas(false);
+    if (requestId === fetchRequestIdRef.current) setLoadingCargas(false);
   }, []);
 
   // Initial load

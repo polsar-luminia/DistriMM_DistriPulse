@@ -63,7 +63,7 @@ describe("getComisionesCargas", () => {
   test("retorna cargas ordenadas por fecha", async () => {
     const mockData = [{ id: 1, fecha_ventas: "2025-01-15" }];
     const chain = makeChain({
-      order: () => Promise.resolve({ data: mockData, error: null }),
+      limit: () => Promise.resolve({ data: mockData, error: null }),
     });
     mockFrom.mockReturnValue(chain);
 
@@ -74,7 +74,7 @@ describe("getComisionesCargas", () => {
 
   test("retorna error cuando falla la consulta", async () => {
     const chain = makeChain({
-      order: () =>
+      limit: () =>
         Promise.resolve({ data: null, error: new Error("DB error") }),
     });
     mockFrom.mockReturnValue(chain);
@@ -222,7 +222,7 @@ describe("getExclusiones", () => {
   test("retorna exclusiones activas", async () => {
     const mockData = [{ id: 1, tipo: "marca", valor: "Marca X", activa: true }];
     const chain = makeChain({
-      order: () => Promise.resolve({ data: mockData, error: null }),
+      limit: () => Promise.resolve({ data: mockData, error: null }),
     });
     mockFrom.mockReturnValue(chain);
 

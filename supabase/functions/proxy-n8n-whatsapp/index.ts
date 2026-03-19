@@ -308,7 +308,7 @@ Deno.serve(async (req: Request) => {
       "Content-Type": "application/json",
     };
     if (n8nAuthKey) {
-      n8nHeaders["Authorization"] = `Bearer ${n8nAuthKey}`;
+      n8nHeaders["x-n8n-auth"] = n8nAuthKey;
     }
 
     const n8nResponse = await fetch(n8nUrl, {

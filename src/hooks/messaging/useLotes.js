@@ -197,13 +197,25 @@ export function useLotes() {
         }));
 
         // 3. Mark lote as en_proceso
-        await supabase
-          .from("distrimm_recordatorios_lote")
-          .update({
-            estado: "en_proceso",
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", loteId);
+        try {
+          const { error: updateError } = await supabase
+            .from("distrimm_recordatorios_lote")
+            .update({
+              estado: "en_proceso",
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", loteId);
+          if (updateError)
+            console.error(
+              "[useLotes] Error updating lote to en_proceso:",
+              updateError,
+            );
+        } catch (updateErr) {
+          console.error(
+            "[useLotes] Error updating lote to en_proceso:",
+            updateErr,
+          );
+        }
 
         // 4. Trigger n8n webhook with ALL recipients (pass instance_id)
         const triggerResult = await triggerLoteProcessing(
@@ -214,10 +226,25 @@ export function useLotes() {
 
         if (!triggerResult.success) {
           // Mark lote as failed so the user can see and retry
-          await supabase
-            .from("distrimm_recordatorios_lote")
-            .update({ estado: "fallido", updated_at: new Date().toISOString() })
-            .eq("id", loteId);
+          try {
+            const { error: failError } = await supabase
+              .from("distrimm_recordatorios_lote")
+              .update({
+                estado: "fallido",
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", loteId);
+            if (failError)
+              console.error(
+                "[useLotes] Error updating lote to fallido:",
+                failError,
+              );
+          } catch (failErr) {
+            console.error(
+              "[useLotes] Error updating lote to fallido:",
+              failErr,
+            );
+          }
           throw triggerResult.error || new Error("Error al enviar mensajes");
         }
 

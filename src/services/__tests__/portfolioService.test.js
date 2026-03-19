@@ -59,7 +59,7 @@ describe("getLoads", () => {
   test("retorna lista de cargas ordenadas", async () => {
     const mockData = [{ id: 1, fecha_corte: "2025-01-01" }];
     const chain = makeChain({
-      order: () => Promise.resolve({ data: mockData, error: null }),
+      limit: () => Promise.resolve({ data: mockData, error: null }),
     });
     mockFrom.mockReturnValue(chain);
 
@@ -70,7 +70,7 @@ describe("getLoads", () => {
 
   test("retorna error cuando falla la consulta", async () => {
     const chain = makeChain({
-      order: () =>
+      limit: () =>
         Promise.resolve({ data: null, error: new Error("DB error") }),
     });
     mockFrom.mockReturnValue(chain);

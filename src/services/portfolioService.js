@@ -5,7 +5,8 @@ export const getLoads = async () => {
     const { data, error } = await supabase
       .from("historial_cargas")
       .select("*")
-      .order("fecha_corte", { ascending: false });
+      .order("fecha_corte", { ascending: false })
+      .limit(1000);
 
     if (error) throw error;
     return { data, error: null };

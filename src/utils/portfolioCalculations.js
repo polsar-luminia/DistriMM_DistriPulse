@@ -3,20 +3,31 @@ import { AGING_BUCKETS, THRESHOLDS } from "./constants";
 export function preprocessItems(items, referenceDate = null) {
   // Si se pasa referenceDate (p.ej. fecha_corte de una carga histórica),
   // se usa como base para calcular días de mora en vez de "hoy".
-  const refDate = referenceDate
-    ? new Date(referenceDate + "T00:00:00")
-    : new Date();
+  let refDate;
+  if (referenceDate) {
+    refDate = new Date(referenceDate + "T00:00:00");
+  } else {
+    // Force Colombia timezone (UTC-5) to avoid date drift in other timezones
+    const now = new Date();
+    const colombiaOffset = -5 * 60; // UTC-5 in minutes
+    refDate = new Date(
+      now.getTime() + (now.getTimezoneOffset() + colombiaOffset) * 60000,
+    );
+  }
   const tDate = new Date(
     refDate.getFullYear(),
     refDate.getMonth(),
     refDate.getDate(),
+    12,
+    0,
+    0,
   );
 
   return items.map((item) => {
     let days_until_due = 0;
     if (item.fecha_vencimiento) {
       try {
-        const vDate = new Date(item.fecha_vencimiento + "T00:00:00");
+        const vDate = new Date(item.fecha_vencimiento + "T12:00:00");
         if (isNaN(vDate.getTime())) {
           days_until_due = 0;
         } else {
