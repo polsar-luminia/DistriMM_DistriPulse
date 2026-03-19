@@ -272,9 +272,9 @@ export default function RecaudoUploadModal({ isOpen, onClose, onSuccess }) {
               const keys = Object.keys(row);
               const get = (idx) => row[keys[idx]];
               const num = (idx) => parseFloat(get(idx)) || 0;
-              const int = (idx) => parseInt(get(idx), 10) || 0;
 
-              const diasMora = int(16);
+              const diasMoraRaw = parseInt(get(16), 10);
+              const diasMora = Number.isFinite(diasMoraRaw) ? diasMoraRaw : -1;
               const fechaAbono = parseExcelDate(get(5));
 
               return {
@@ -288,7 +288,7 @@ export default function RecaudoUploadModal({ isOpen, onClose, onSuccess }) {
                 vendedor_codigo: String(get(14) || "").trim(),
                 valor_recaudo: num(15),
                 dias_mora: diasMora,
-                aplica_comision: diasMora <= DIAS_MORA_LIMITE,
+                aplica_comision: diasMora >= 0 && diasMora <= DIAS_MORA_LIMITE,
                 periodo_year: periodoYear,
                 periodo_month: periodoMonth,
               };

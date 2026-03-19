@@ -5,7 +5,8 @@ export const getComisionesCargas = async () => {
     const { data, error } = await supabase
       .from("distrimm_comisiones_cargas")
       .select("*")
-      .order("fecha_ventas", { ascending: false });
+      .order("fecha_ventas", { ascending: false })
+      .limit(1000);
 
     if (error) throw error;
     return { data, error: null };
@@ -132,7 +133,8 @@ export const getExclusiones = async () => {
       .from("distrimm_comisiones_exclusiones")
       .select("*")
       .eq("activa", true)
-      .order("tipo", { ascending: true });
+      .order("tipo", { ascending: true })
+      .limit(1000);
 
     if (error) throw error;
     return { data, error: null };
@@ -247,7 +249,8 @@ export const getRecaudoCargas = async () => {
     const { data, error } = await supabase
       .from("distrimm_comisiones_cargas_recaudo")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(1000);
     if (error) throw error;
     return { data, error: null };
   } catch (error) {
@@ -299,11 +302,14 @@ export const getRecaudosByPeriodo = async (year, month) => {
 
 export const getRecaudosByCarga = async (cargaId) => {
   try {
-    const { data, error } = await supabase
-      .from("distrimm_comisiones_recaudos")
-      .select("*")
-      .eq("carga_id", cargaId);
-    if (error) throw error;
+    const data = await fetchAllRows((from, to) =>
+      supabase
+        .from("distrimm_comisiones_recaudos")
+        .select("*")
+        .eq("carga_id", cargaId)
+        .order("id")
+        .range(from, to),
+    );
     return { data, error: null };
   } catch (error) {
     if (import.meta.env.DEV)
@@ -455,26 +461,28 @@ export const copiarPresupuestosMes = async (
   toMonth,
 ) => {
   try {
-    const [recaudoResult, marcasResult] = await Promise.all([
-      supabase
-        .from("distrimm_comisiones_presupuestos_recaudo")
-        .select("*")
-        .eq("periodo_year", fromYear)
-        .eq("periodo_month", fromMonth)
-        .eq("activo", true),
-      supabase
-        .from("distrimm_comisiones_presupuestos_marca")
-        .select("*")
-        .eq("periodo_year", fromYear)
-        .eq("periodo_month", fromMonth)
-        .eq("activo", true),
+    const [recaudo, marcas] = await Promise.all([
+      fetchAllRows((from, to) =>
+        supabase
+          .from("distrimm_comisiones_presupuestos_recaudo")
+          .select("*")
+          .eq("periodo_year", fromYear)
+          .eq("periodo_month", fromMonth)
+          .eq("activo", true)
+          .order("id")
+          .range(from, to),
+      ),
+      fetchAllRows((from, to) =>
+        supabase
+          .from("distrimm_comisiones_presupuestos_marca")
+          .select("*")
+          .eq("periodo_year", fromYear)
+          .eq("periodo_month", fromMonth)
+          .eq("activo", true)
+          .order("id")
+          .range(from, to),
+      ),
     ]);
-
-    if (recaudoResult.error) throw recaudoResult.error;
-    if (marcasResult.error) throw marcasResult.error;
-
-    const recaudo = recaudoResult.data;
-    const marcas = marcasResult.data;
     let copiedRecaudo = 0;
     let copiedMarcas = 0;
     const errors = [];

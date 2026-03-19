@@ -123,7 +123,8 @@ export function usePortfolioAnalytics() {
       riskLevel: hhiRiskLevel,
     } = calculateHHI(sortedClients, kpis.total);
 
-    setData({
+    setData((prev) => ({
+      ...prev,
       items: processedItems,
       availableLoads: allLoads,
       currentLoadId: loadId,
@@ -170,7 +171,7 @@ export function usePortfolioAnalytics() {
         count: uniqueVendedores.length,
       },
       healthScore: Math.max(0, Math.min(100, 100 - kpis.porcentajeVencida)),
-    });
+    }));
   }, []);
 
   // Fetch Data for specific Load
