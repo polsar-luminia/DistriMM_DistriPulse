@@ -298,7 +298,22 @@ describe("buildInputHash", () => {
       },
     ],
     presupuestosRecaudo: [
-      { id: "pr-1", meta_recaudo: 8000000, updated_at: "2026-01-15T10:00:00Z" },
+      {
+        id: "pr-1",
+        meta_recaudo: 8000000,
+        tramo1_min: 0,
+        tramo1_max: 89.99,
+        tramo1_pct: 0.5,
+        tramo2_min: 90,
+        tramo2_max: 99.99,
+        tramo2_pct: 0.75,
+        tramo3_min: 100,
+        tramo3_max: 109.99,
+        tramo3_pct: 1,
+        tramo4_min: 110,
+        tramo4_pct: 1.25,
+        updated_at: "2026-01-15T10:00:00Z",
+      },
     ],
     exclusiones: [{ id: "e1", tipo: "marca", valor: "CONTEGRAL" }],
     catalogo: [
@@ -379,6 +394,16 @@ describe("buildInputHash", () => {
       ...base,
       presupuestosRecaudo: [
         { ...base.presupuestosRecaudo[0], meta_recaudo: 12000000 },
+      ],
+    };
+    expect(buildInputHash(modified)).not.toBe(buildInputHash(base));
+  });
+
+  test("editar un tramo de recaudo produce hash diferente", () => {
+    const modified = {
+      ...base,
+      presupuestosRecaudo: [
+        { ...base.presupuestosRecaudo[0], tramo3_pct: 1.5 },
       ],
     };
     expect(buildInputHash(modified)).not.toBe(buildInputHash(base));

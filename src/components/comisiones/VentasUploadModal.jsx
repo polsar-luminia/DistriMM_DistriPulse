@@ -17,6 +17,10 @@ import { cn } from "@/lib/utils";
 import { formatFullCurrency } from "../../utils/formatters";
 import ConfirmDialog from "../ConfirmDialog";
 import { useConfirm } from "../../hooks/useConfirm";
+import {
+  parseVentasWorkbookRows,
+  VENTAS_FORMAT_ERROR,
+} from "../../utils/ventasUpload";
 
 export default function VentasUploadModal({ isOpen, onClose, onSuccess }) {
   const [confirmProps, confirm] = useConfirm();
@@ -67,61 +71,22 @@ export default function VentasUploadModal({ isOpen, onClose, onSuccess }) {
         const data = new Uint8Array(e.target.result);
         const wb = XLSX.read(data, { type: "array", cellDates: false });
         const ws = wb.Sheets[wb.SheetNames[0]];
-        // Try range 1 first (skip decorative row), fallback to 0
-        let jsonData = XLSX.utils.sheet_to_json(ws, { range: 1 });
-        if (jsonData.length === 0) {
-          jsonData = XLSX.utils.sheet_to_json(ws, { range: 0 });
-        }
-        if (jsonData.length === 0)
-          throw new Error("El archivo parece estar vacio.");
-
-        const processed = jsonData.map((row) => {
-          const keys = Object.keys(row);
-          const get = (idx) => row[keys[idx]];
-          const num = (idx) => parseFloat(get(idx)) || 0;
-
-          return {
-            vendedor_codigo: String(get(0) || "").trim(),
-            vendedor_nit: String(get(1) || "").trim(),
-            vendedor_nombre: String(get(2) || "").trim(),
-            producto_codigo: String(get(3) || "").trim(),
-            producto_descripcion: String(get(5) || "").trim(),
-            cliente_nit: String(get(6) || "").trim(),
-            cliente_nombre: String(get(7) || "").trim(),
-            municipio: String(get(9) || "").trim(),
-            fecha_raw: get(10),
-            factura: String(get(15) || "").trim(),
-            precio: num(17),
-            descuento: num(18),
-            valor_unidad: num(19),
-            cantidad: num(20),
-            valor_total: num(24),
-            costo: num(27),
-            tipo: String(get(29) || "VE")
-              .trim()
-              .toUpperCase(),
-          };
-        });
-
-        // Invertir valores para devoluciones
-        processed.forEach((item) => {
-          if (item.tipo === "DV") {
-            item.valor_total = -Math.abs(item.valor_total);
-            item.costo = -Math.abs(item.costo);
-          }
-        });
-
-        const filtered = processed.filter(
-          (r) => r.producto_codigo && r.valor_total !== 0,
+        // Try range 1 first (skip decorative row), then range 0 for plain sheets.
+        const rowsWithHeader = XLSX.utils.sheet_to_json(ws, { range: 1 });
+        const rowsWithoutHeader = XLSX.utils.sheet_to_json(ws, { range: 0 });
+        const filtered = parseVentasWorkbookRows(
+          rowsWithHeader,
+          rowsWithoutHeader,
         );
-
-        if (filtered.length === 0)
-          throw new Error("No se encontraron registros validos.");
         setFullData(filtered);
         setPreviewData(filtered.slice(0, 5));
         setStep("preview");
       } catch (err) {
-        setError("Error al leer el archivo: " + err.message);
+        const message =
+          err?.message === VENTAS_FORMAT_ERROR
+            ? VENTAS_FORMAT_ERROR
+            : `Error al leer el archivo: ${err.message}`;
+        setError(message);
       }
     };
     reader.readAsArrayBuffer(file);

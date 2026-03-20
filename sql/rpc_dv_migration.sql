@@ -36,7 +36,9 @@ BEGIN
         ) THEN TRUE
         WHEN EXISTS (
           SELECT 1 FROM exclusiones_activas ea
-          JOIN distrimm_productos_catalogo p ON p.marca = ea.valor AND ea.tipo = 'marca'
+          JOIN distrimm_productos_catalogo p
+            ON normalize_brand(p.marca) = normalize_brand(ea.valor)
+           AND ea.tipo = 'marca'
           WHERE p.codigo = v.producto_codigo
         ) THEN TRUE
         ELSE FALSE

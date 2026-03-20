@@ -13,6 +13,10 @@ import {
   buildInputHash,
 } from "../../services/comisionesService";
 import { buildExclusionLookups, getExclusionInfo } from "./utils";
+import {
+  buildReporteMensualState,
+  dedupeRecaudosByCargaId,
+} from "./reportingUtils";
 
 export function useComisionesCalculo(selectedCargaId, catalogo, exclusiones) {
   const [comisiones, setComisiones] = useState([]);
@@ -126,16 +130,7 @@ export function useComisionesCalculo(selectedCargaId, catalogo, exclusiones) {
           ]);
 
         const ventasMes = ventasRes.data || [];
-        // Deduplicar recaudos: mismo cliente_nit + factura + valor_recaudo entre cargas
-        // CRÍTICO #2: incluir carga_id en la clave para permitir pagos duplicados en cargas diferentes
-        const _rawRecaudos = recaudosRes.data || [];
-        const _seenR = new Set();
-        const recaudosMes = _rawRecaudos.filter((r) => {
-          const key = `${r.carga_id}|${r.cliente_nit}|${r.factura}|${r.valor_recaudo}`;
-          if (_seenR.has(key)) return false;
-          _seenR.add(key);
-          return true;
-        });
+        const recaudosMes = dedupeRecaudosByCargaId(recaudosRes.data);
         const presMarca = presMarcaRes.data || [];
         const presRecaudo = presRecaudoRes.data || [];
 
@@ -172,21 +167,22 @@ export function useComisionesCalculo(selectedCargaId, catalogo, exclusiones) {
               return { ...v, excluded: info.excluded, reason: info.reason };
             });
 
-            setReporteMensual({
-              cargas: cargasMes,
-              ventas: classifiedVentas,
-              recaudos: recaudosMes,
-              presupuestosMarca: presMarca,
-              presupuestosRecaudo: presRecaudo,
-              // Liquidación y totales congelados del snapshot
-              liquidacion: snap.liquidacion,
-              snapshotTotales: snap.totales_ventas,
-              year,
-              month,
-              isSnapshot: true,
-              isStale,
-              snapshotDate: snap.updated_at,
-            });
+            setReporteMensual(
+              buildReporteMensualState({
+                cargas: cargasMes,
+                ventas: classifiedVentas,
+                recaudos: recaudosMes,
+                presupuestosMarca: presMarca,
+                presupuestosRecaudo: presRecaudo,
+                liquidacion: snap.liquidacion,
+                snapshotTotales: snap.totales_ventas,
+                year,
+                month,
+                isSnapshot: true,
+                isStale,
+                snapshotDate: snap.updated_at,
+              }),
+            );
             setLoadingReporte(false);
             return;
           }
@@ -259,22 +255,30 @@ export function useComisionesCalculo(selectedCargaId, catalogo, exclusiones) {
           exclusiones,
           catalogo,
         });
-        if (snapErr) throw snapErr;
 
-        setReporteMensual({
-          cargas: cargasMes,
-          ventas: classifiedVentas,
-          recaudos: recaudosMes,
-          presupuestosMarca: presMarca,
-          presupuestosRecaudo: presRecaudo,
-          liquidacion,
-          snapshotTotales: totalesVentas,
-          year,
-          month,
-          isSnapshot: true,
-          isStale: false,
-          snapshotDate: new Date().toISOString(),
-        });
+        if (snapErr && import.meta.env.DEV) {
+          console.warn(
+            "[useComisionesCalculo] No se pudo guardar snapshot:",
+            snapErr,
+          );
+        }
+
+        setReporteMensual(
+          buildReporteMensualState({
+            cargas: cargasMes,
+            ventas: classifiedVentas,
+            recaudos: recaudosMes,
+            presupuestosMarca: presMarca,
+            presupuestosRecaudo: presRecaudo,
+            liquidacion,
+            snapshotTotales: totalesVentas,
+            year,
+            month,
+            isSnapshot: !snapErr,
+            isStale: false,
+            snapshotDate: !snapErr ? new Date().toISOString() : null,
+          }),
+        );
       } catch (err) {
         if (import.meta.env.DEV)
           console.error(

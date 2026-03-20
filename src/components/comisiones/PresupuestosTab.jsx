@@ -19,6 +19,7 @@ import {
   getPeriodoOperativo,
   getPeriodoAnterior,
 } from "../../utils/periodoOperativo";
+import { validateRecaudoTiers } from "../../utils/recaudoTierValidation";
 import PresupuestosUploadModal from "./PresupuestosUploadModal";
 import VendorPresupuestoSection from "./presupuestos/VendorPresupuestoSection";
 
@@ -286,6 +287,15 @@ export default function PresupuestosTab({ hook }) {
     );
     if (recaudoIdx !== -1) {
       const recaudoRow = editRecaudo[recaudoIdx];
+      const recaudoValidation = validateRecaudoTiers(recaudoRow);
+      if (!recaudoValidation.isValid) {
+        sileo.error(
+          recaudoValidation.issues[0]?.message ||
+            "Corrige la escala de recaudo antes de guardar",
+        );
+        setSavingId(null);
+        return;
+      }
       const payload = {
         vendedor_codigo: recaudoRow.vendedor_codigo,
         periodo_year: selectedYear,
@@ -754,6 +764,7 @@ export default function PresupuestosTab({ hook }) {
               vendedor={vendedor}
               savingId={savingId}
               marcasNormalizadas={marcasNormalizadas}
+              recaudoValidation={validateRecaudoTiers(vendedor.recaudo)}
               onUpdateRecaudoRow={updateRecaudoRow}
               onUpdateMarcaRow={updateMarcaRow}
               onDeleteVendedor={handleDeleteVendedor}

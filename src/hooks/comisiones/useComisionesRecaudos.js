@@ -12,6 +12,7 @@ import {
   deletePresupuestoMarca as deletePresupuestoMarcaSvc,
   copiarPresupuestosMes,
 } from "../../services/comisionesService";
+import { dedupeRecaudosByCargaId } from "./reportingUtils";
 
 export function useComisionesRecaudos() {
   const [recaudoCargas, setRecaudoCargas] = useState([]);
@@ -139,15 +140,7 @@ export function useComisionesRecaudos() {
     setLoadingRecaudos(true);
     try {
       const { data } = await getRecaudosByPeriodo(year, month);
-      // Deduplicar: mismo cliente_nit + factura + valor_recaudo = duplicado entre cargas
-      const seen = new Set();
-      const deduped = (data || []).filter((r) => {
-        const key = `${r.cliente_nit}|${r.factura}|${r.valor_recaudo}`;
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      });
-      setRecaudos(deduped);
+      setRecaudos(dedupeRecaudosByCargaId(data));
     } catch (err) {
       if (import.meta.env.DEV)
         console.error("[useComisionesRecaudos] Error fetching periodo:", err);

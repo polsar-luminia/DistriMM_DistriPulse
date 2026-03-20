@@ -682,7 +682,10 @@ export function buildInputHash({
 
   // Fingerprint de presupuestos recaudo: incluye valores clave
   const presRecaudoFp = (presupuestosRecaudo || [])
-    .map((p) => `${p.id}:${p.meta_recaudo || 0}:${p.updated_at || ""}`)
+    .map(
+      (p) =>
+        `${p.id}:${p.meta_recaudo || 0}:${p.tramo1_min || 0}:${p.tramo1_max || 0}:${p.tramo1_pct || 0}:${p.tramo2_min || 0}:${p.tramo2_max || 0}:${p.tramo2_pct || 0}:${p.tramo3_min || 0}:${p.tramo3_max || 0}:${p.tramo3_pct || 0}:${p.tramo4_min || 0}:${p.tramo4_pct || 0}:${p.updated_at || ""}`,
+    )
     .sort()
     .join(",");
 

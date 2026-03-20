@@ -116,6 +116,7 @@ export default function RecaudoTiersEditor({
   onUpdateRow,
   onAddRecaudo,
   numInput,
+  validation,
 }) {
   if (!recaudo) {
     return (
@@ -133,8 +134,23 @@ export default function RecaudoTiersEditor({
     );
   }
 
+  const fieldErrors = validation?.fieldErrors || {};
+  const issues = validation?.issues || [];
+  const hasIssues = issues.length > 0;
+
   return (
     <>
+      {hasIssues && (
+        <div className="mb-5 rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
+          <p className="font-bold">Corrige la escala antes de guardar</p>
+          <ul className="mt-2 space-y-1 list-disc pl-5">
+            {issues.map((issue) => (
+              <li key={issue.code}>{issue.message}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {/* Prominent meta input */}
       <div className="mb-5">
         <label className="block text-sm font-semibold text-slate-700 mb-1.5">
@@ -178,7 +194,13 @@ export default function RecaudoTiersEditor({
                     </label>
                     <input
                       type="number"
-                      className={cn(numInput, "mt-1")}
+                      className={cn(
+                        numInput,
+                        "mt-1",
+                        (fieldErrors[f.field]?.length || 0) > 0
+                          ? "border-rose-400 focus:ring-rose-300 focus:border-rose-500"
+                          : "",
+                      )}
                       value={
                         f.isPct
                           ? recaudo[f.field] != null
@@ -197,7 +219,13 @@ export default function RecaudoTiersEditor({
                       }
                       step={f.isPct ? "0.1" : undefined}
                       placeholder={f.placeholder}
+                      aria-invalid={(fieldErrors[f.field]?.length || 0) > 0}
                     />
+                    {(fieldErrors[f.field]?.length || 0) > 0 && (
+                      <p className="mt-1 text-[11px] font-medium text-rose-700">
+                        {fieldErrors[f.field][0]}
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>

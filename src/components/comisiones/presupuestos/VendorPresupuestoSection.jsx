@@ -25,10 +25,13 @@ export default function VendorPresupuestoSection({
   onGuardar,
   baseInput,
   numInput,
+  recaudoValidation,
   collapsed,
   onToggleCollapse,
   hasUnsavedChanges,
 }) {
+  const canGuardarRecaudo = !recaudoValidation || recaudoValidation.isValid;
+
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
       {/* Vendor header */}
@@ -115,6 +118,7 @@ export default function VendorPresupuestoSection({
               onAddRecaudo={() => onAddRecaudo(vendedor.codigo)}
               vendedorCodigo={vendedor.codigo}
               numInput={numInput}
+              validation={recaudoValidation}
             />
           </div>
 
@@ -137,18 +141,27 @@ export default function VendorPresupuestoSection({
 
           {/* Guardar button */}
           <div className="flex justify-end pt-4 border-t border-slate-100">
-            <button
-              onClick={() => onGuardar(vendedor.codigo)}
-              disabled={savingId === `v-${vendedor.codigo}`}
-              className="px-6 py-3 bg-indigo-600 rounded-lg text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors shadow-sm flex items-center gap-2"
-            >
-              {savingId === `v-${vendedor.codigo}` ? (
-                <Loader2 size={16} className="animate-spin" />
-              ) : (
-                <Save size={16} />
+            <div className="flex flex-col items-end gap-2">
+              {!canGuardarRecaudo && (
+                <p className="text-xs font-medium text-rose-600">
+                  Corrige la escala de recaudo antes de guardar.
+                </p>
               )}
-              Guardar {(vendedor.nombre || "Vendedor").split(" ")[0]}
-            </button>
+              <button
+                onClick={() => onGuardar(vendedor.codigo)}
+                disabled={
+                  savingId === `v-${vendedor.codigo}` || !canGuardarRecaudo
+                }
+                className="px-6 py-3 bg-indigo-600 rounded-lg text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors shadow-sm flex items-center gap-2"
+              >
+                {savingId === `v-${vendedor.codigo}` ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Save size={16} />
+                )}
+                Guardar {(vendedor.nombre || "Vendedor").split(" ")[0]}
+              </button>
+            </div>
           </div>
         </div>
       )}
