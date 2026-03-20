@@ -125,7 +125,7 @@ async function enrichFromDB(rows) {
       facturas.length > 0
         ? batchIN(
             "cartera_items",
-            "id, documento_id, fecha_emision, fecha_vencimiento, dias_mora, vendedor_codigo",
+            "id, documento_id, tercero_nit, fecha_emision, fecha_vencimiento, dias_mora, vendedor_codigo, valor_saldo",
             "documento_id",
             facturas,
             "id",
@@ -154,6 +154,15 @@ async function enrichFromDB(rows) {
   const carteraMap = Object.fromEntries(
     items.map((c) => [String(c.documento_id), c]),
   );
+
+  // Fallback: vendedor por NIT desde cartera (si una factura del mismo NIT tiene vendedor, usarlo)
+  const nitVendedorCartera = {};
+  items.forEach((c) => {
+    const nit = String(c.tercero_nit || "").trim();
+    if (nit && c.vendedor_codigo && !nitVendedorCartera[nit]) {
+      nitVendedorCartera[nit] = c.vendedor_codigo;
+    }
+  });
 
   // Mapeo factura (sin prefijo) → { vendedor_codigo, fecha } de ventas
   const ventaInfoMap = {};
@@ -191,8 +200,9 @@ async function enrichFromDB(rows) {
       diasMora = -1;
     }
 
-    // Vendedor: ventas (más preciso por factura) → cartera → clientes maestro
+    // Vendedor prioridad: ventas (por factura) → cartera (por factura) → cartera (por NIT) → clientes maestro
     const vendedorVenta = venta?.vendedor_codigo;
+    const vendedorCarteraNit = nitVendedorCartera[row.cliente_nit];
 
     // Si hay match en cartera, usar valor_saldo (base sin IVA) en vez de Creditos (con IVA)
     const valorBase = f ? Number(f.valor_saldo || 0) : 0;
@@ -201,7 +211,11 @@ async function enrichFromDB(rows) {
       valor_recaudo: valorBase > 0 ? valorBase : row.valor_recaudo,
       cliente_nombre: c?.nombre_completo || row.cliente_nit,
       vendedor_codigo:
-        vendedorVenta || f?.vendedor_codigo || c?.vendedor_codigo || "",
+        vendedorVenta ||
+        f?.vendedor_codigo ||
+        vendedorCarteraNit ||
+        c?.vendedor_codigo ||
+        "",
       fecha_cxc: f?.fecha_emision || venta?.fecha || null,
       fecha_vence: f?.fecha_vencimiento || null,
       dias_mora: diasMora,
