@@ -204,11 +204,9 @@ async function enrichFromDB(rows) {
     const vendedorVenta = venta?.vendedor_codigo;
     const vendedorCarteraNit = nitVendedorCartera[row.cliente_nit];
 
-    // Si hay match en cartera, usar valor_saldo (base sin IVA) en vez de Creditos (con IVA)
-    const valorBase = f ? Number(f.valor_saldo || 0) : 0;
+    // Mantener valor_recaudo del RC (lo que realmente se pagó, no el saldo total de la factura)
     return {
       ...row,
-      valor_recaudo: valorBase > 0 ? valorBase : row.valor_recaudo,
       cliente_nombre: c?.nombre_completo || row.cliente_nit,
       vendedor_codigo:
         vendedorVenta ||

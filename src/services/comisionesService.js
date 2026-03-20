@@ -413,10 +413,10 @@ export const getPresupuestosMarca = async (year, month) => {
 
 export const upsertPresupuestoMarca = async (row) => {
   try {
-    const { id, _id, _isNew, ...rest } = row;
-    const payload = id
-      ? { id, ...rest, updated_at: new Date().toISOString() }
-      : { ...rest, updated_at: new Date().toISOString() };
+    const { id, _id, _isNew, _globalIdx, ...rest } = row;
+    // No enviar id para que el upsert use onConflict de la clave natural
+    // Enviar id solo causa conflictos de PK cuando la marca cambió
+    const payload = { ...rest, updated_at: new Date().toISOString() };
     const { data, error } = await supabase
       .from("distrimm_comisiones_presupuestos_marca")
       .upsert(payload, {

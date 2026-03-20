@@ -286,9 +286,8 @@ export default function PresupuestosTab({ hook }) {
     );
     if (recaudoIdx !== -1) {
       const recaudoRow = editRecaudo[recaudoIdx];
-      const { _isNew, ...rest } = recaudoRow;
       const payload = {
-        ...rest,
+        vendedor_codigo: recaudoRow.vendedor_codigo,
         periodo_year: selectedYear,
         periodo_month: selectedMonth,
         meta_recaudo: Number(recaudoRow.meta_recaudo) || 0,
@@ -334,13 +333,14 @@ export default function PresupuestosTab({ hook }) {
       (m) => m.vendedor_codigo === vendedorCodigo,
     )) {
       if (!String(row.marca).trim()) continue;
-      const { _isNew, ...rest } = row;
       const payload = {
-        ...rest,
+        vendedor_codigo: row.vendedor_codigo,
+        marca: row.marca,
         periodo_year: selectedYear,
         periodo_month: selectedMonth,
         meta_ventas: Number(row.meta_ventas) || 0,
         pct_comision: Number(row.pct_comision) || 0,
+        activo: true,
       };
       const { error } = await savePresupuestoMarca(payload);
       if (error) {
