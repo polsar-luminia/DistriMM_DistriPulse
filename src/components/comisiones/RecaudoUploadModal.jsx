@@ -106,8 +106,8 @@ async function batchIN(table, selectCols, field, ids, orderCol) {
 async function enrichFromDB(rows) {
   const nits = [...new Set(rows.map((r) => r.cliente_nit).filter(Boolean))];
   const facturas = [...new Set(rows.map((r) => r.factura).filter(Boolean))];
-  // Buscar también con prefijo FELE- (ventas usan ese formato)
-  const facturasConPrefijo = facturas.map((f) => `FELE-${f}`);
+  // Buscar con todos los prefijos de factura del ERP (FELE- y FCI-)
+  const facturasConPrefijo = facturas.flatMap((f) => [`FELE-${f}`, `FCI-${f}`]);
 
   let clientes = [];
   let items = [];
@@ -167,7 +167,7 @@ async function enrichFromDB(rows) {
   // Mapeo factura (sin prefijo) → { vendedor_codigo, fecha } de ventas
   const ventaInfoMap = {};
   ventasVendedor.forEach((v) => {
-    const num = String(v.factura || "").replace("FELE-", "");
+    const num = String(v.factura || "").replace(/^(FELE|FCI)-/, "");
     if (!num) return;
     // Guardar el primer match (no sobreescribir si ya existe)
     if (!ventaInfoMap[num]) {
