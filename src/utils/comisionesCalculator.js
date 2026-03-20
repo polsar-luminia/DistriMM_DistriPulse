@@ -73,9 +73,11 @@ export function calcularComisionRecaudo({ recaudos, presupuestoRecaudo }) {
     (s, r) => s + toFinite(r.valor_recaudo),
     0,
   );
-  const totalComisionable = recaudos
-    .filter((r) => r.aplica_comision)
-    .reduce((s, r) => s + toFinite(r.valor_recaudo), 0);
+  // Comisionable = recaudos que aplican, menos el costo de productos de marca excluida
+  const totalComisionable = recaudos.reduce((s, r) => {
+    if (!r.aplica_comision) return s;
+    return s + toFinite(r.valor_recaudo) - toFinite(r.valor_excluido_marca);
+  }, 0);
   const totalExcluido = totalRecaudado - totalComisionable;
 
   // Si no hay presupuesto configurado, no se calcula comisión

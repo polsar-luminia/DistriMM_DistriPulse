@@ -43,7 +43,9 @@ export default function ReportCarteraModal({
         ...item,
         _vendedor:
           vendedorNombreMap?.[vendedorCodigo] ||
-          `Vendedor ${item.vendedor_codigo || "Sin Asignar"}`,
+          (vendedorCodigo === "SIN"
+            ? "Vendedor Sin Asignar"
+            : `Vendedor ${vendedorCodigo}`),
         _vendedorCodigo: vendedorCodigo,
         _municipio: cliente.municipio || "Sin Información",
         _barrio: cliente.barrio || "",

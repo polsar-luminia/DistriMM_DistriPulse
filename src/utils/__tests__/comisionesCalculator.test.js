@@ -619,3 +619,81 @@ describe("calcularComisionRecaudo — edge cases", () => {
     expect(result.tramoAplicado).toBeNull();
   });
 });
+
+describe("calcularComisionRecaudo — prorrateo exclusiones marca", () => {
+  test("valor_excluido_marca se resta del comisionable", () => {
+    const recaudos = [
+      {
+        vendedor_codigo: "V1",
+        valor_recaudo: 100000,
+        aplica_comision: true,
+        valor_excluido_marca: 30000,
+      },
+    ];
+    const result = calcularComisionRecaudo({
+      recaudos,
+      presupuestoRecaudo: null,
+    });
+    expect(result.totalRecaudado).toBe(100000);
+    expect(result.totalComisionable).toBe(70000);
+    expect(result.totalExcluido).toBe(30000);
+  });
+
+  test("recaudo excluido por mora no descuenta valor_excluido_marca adicionalmente", () => {
+    const recaudos = [
+      {
+        vendedor_codigo: "V1",
+        valor_recaudo: 100000,
+        aplica_comision: false,
+        valor_excluido_marca: 30000,
+        dias_mora: 80,
+      },
+    ];
+    const result = calcularComisionRecaudo({
+      recaudos,
+      presupuestoRecaudo: null,
+    });
+    // Mora excluye todo el valor, no se descuenta marca aparte
+    expect(result.totalRecaudado).toBe(100000);
+    expect(result.totalComisionable).toBe(0);
+    expect(result.totalExcluido).toBe(100000);
+  });
+
+  test("sin valor_excluido_marca funciona igual que antes", () => {
+    const recaudos = [makeRecaudo(500000, true), makeRecaudo(200000, false)];
+    const result = calcularComisionRecaudo({
+      recaudos,
+      presupuestoRecaudo: null,
+    });
+    expect(result.totalComisionable).toBe(500000);
+    expect(result.totalExcluido).toBe(200000);
+  });
+
+  test("prorrateo afecta comisión calculada", () => {
+    const recaudos = [
+      {
+        vendedor_codigo: "V1",
+        valor_recaudo: 1000000,
+        aplica_comision: true,
+        valor_excluido_marca: 200000,
+      },
+    ];
+    const presupuestoRecaudo = {
+      meta_recaudo: 1000000,
+      tramo1_max: 70,
+      tramo1_pct: 0.01,
+      tramo2_min: 70,
+      tramo2_pct: 0.02,
+      tramo3_min: 90,
+      tramo3_pct: 0.03,
+      tramo4_min: 100,
+      tramo4_pct: 0.04,
+    };
+    const result = calcularComisionRecaudo({ recaudos, presupuestoRecaudo });
+    // comisionable = 800000, cumplimiento = 80% → Tramo 2
+    expect(result.totalComisionable).toBe(800000);
+    expect(result.pctCumplimiento).toBe(80);
+    expect(result.tramoAplicado).toBe("Tramo 2");
+    expect(result.comisionRecaudo).toBe(16000); // 800000 * 0.02
+  });
+});

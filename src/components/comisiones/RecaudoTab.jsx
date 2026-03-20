@@ -10,8 +10,9 @@ import {
   Percent,
   ChevronDown,
   ChevronUp,
+  Clock,
+  Tag,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { formatCurrency, formatFullCurrency } from "../../utils/formatters";
 import { clickableProps } from "@/utils/a11y";
 import { Card, KpiCard, EmptyState, MESES } from "./ComisionesShared";
@@ -47,6 +48,14 @@ export default function RecaudoTab({ hook }) {
   const [showModal, setShowModal] = useState(false);
   const [expandedVendedor, setExpandedVendedor] = useState(null);
 
+  // Derive exclusion reason from persisted data
+  const getMotivo = (r) => {
+    if (!r.aplica_comision && r.dias_mora > DIAS_MORA_LIMITE) return "mora";
+    if ((r.valor_excluido_marca || 0) > 0) return "parcial";
+    if (r.aplica_comision) return "comisionable";
+    return "marca";
+  };
+
   // Aggregate recaudos by vendedor_codigo
   const vendedorStats = useMemo(() => {
     if (!recaudos.length) return [];
@@ -59,14 +68,27 @@ export default function RecaudoTab({ hook }) {
           totalRecaudado: 0,
           totalComisionable: 0,
           totalExcluido: 0,
+          excluidoMora: 0,
+          excluidoMarca: 0,
+          countMora: 0,
+          countMarca: 0,
           items: [],
         };
       }
-      map[cod].totalRecaudado += Number(r.valor_recaudo || 0);
-      if (r.aplica_comision) {
-        map[cod].totalComisionable += Number(r.valor_recaudo || 0);
+      const val = Number(r.valor_recaudo || 0);
+      const exclMarca = Number(r.valor_excluido_marca || 0);
+      map[cod].totalRecaudado += val;
+      if (!r.aplica_comision && r.dias_mora > DIAS_MORA_LIMITE) {
+        // Excluido totalmente por mora
+        map[cod].totalExcluido += val;
+        map[cod].excluidoMora += val;
+        map[cod].countMora += 1;
       } else {
-        map[cod].totalExcluido += Number(r.valor_recaudo || 0);
+        // Comisionable (parcial o total)
+        map[cod].totalComisionable += val - exclMarca;
+        map[cod].excluidoMarca += exclMarca;
+        if (exclMarca > 0) map[cod].countMarca += 1;
+        map[cod].totalExcluido += exclMarca;
       }
       map[cod].items.push(r);
     });
@@ -77,22 +99,36 @@ export default function RecaudoTab({ hook }) {
 
   // KPI totals
   const totals = useMemo(() => {
-    const totalRecaudado = recaudos.reduce(
-      (s, r) => s + Number(r.valor_recaudo || 0),
-      0,
-    );
-    const totalComisionable = recaudos
-      .filter((r) => r.aplica_comision)
-      .reduce((s, r) => s + Number(r.valor_recaudo || 0), 0);
-    const totalExcluido = recaudos
-      .filter((r) => !r.aplica_comision)
-      .reduce((s, r) => s + Number(r.valor_recaudo || 0), 0);
+    let totalRecaudado = 0;
+    let totalComisionable = 0;
+    let totalExcluidoMora = 0;
+    let totalExcluidoMarca = 0;
+    let countMora = 0;
+    let countMarca = 0;
+    recaudos.forEach((r) => {
+      const val = Number(r.valor_recaudo || 0);
+      const exclMarca = Number(r.valor_excluido_marca || 0);
+      totalRecaudado += val;
+      if (!r.aplica_comision && r.dias_mora > DIAS_MORA_LIMITE) {
+        totalExcluidoMora += val;
+        countMora += 1;
+      } else {
+        totalComisionable += val - exclMarca;
+        totalExcluidoMarca += exclMarca;
+        if (exclMarca > 0) countMarca += 1;
+      }
+    });
+    const totalExcluido = totalExcluidoMora + totalExcluidoMarca;
     const pctComisionable =
       totalRecaudado > 0 ? (totalComisionable / totalRecaudado) * 100 : 0;
     return {
       totalRecaudado,
       totalComisionable,
       totalExcluido,
+      totalExcluidoMora,
+      totalExcluidoMarca,
+      countMora,
+      countMarca,
       pctComisionable,
     };
   }, [recaudos]);
@@ -163,7 +199,7 @@ export default function RecaudoTab({ hook }) {
       ) : (
         <>
           {/* KPI Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
             <KpiCard
               title="Total Recaudado"
               value={formatCurrency(totals.totalRecaudado)}
@@ -171,15 +207,23 @@ export default function RecaudoTab({ hook }) {
               type="info"
             />
             <KpiCard
-              title={`Comisionable (≤${DIAS_MORA_LIMITE}d)`}
+              title="Comisionable"
               value={formatCurrency(totals.totalComisionable)}
               icon={CheckCircle}
               type="success"
             />
             <KpiCard
-              title={`Excluido (>${DIAS_MORA_LIMITE}d)`}
-              value={formatCurrency(totals.totalExcluido)}
-              icon={XCircle}
+              title={`Mora >${DIAS_MORA_LIMITE}d`}
+              value={formatCurrency(totals.totalExcluidoMora)}
+              subtitle={`${totals.countMora} recibos`}
+              icon={Clock}
+              type="danger"
+            />
+            <KpiCard
+              title="Marca excluida"
+              value={formatCurrency(totals.totalExcluidoMarca)}
+              subtitle={`${totals.countMarca} recibos`}
+              icon={Tag}
               type="danger"
             />
             <KpiCard
@@ -213,7 +257,8 @@ export default function RecaudoTab({ hook }) {
                       <th className="px-4 py-3">Vendedor</th>
                       <th className="px-4 py-3 text-right">Total Recaudado</th>
                       <th className="px-4 py-3 text-right">Comisionable</th>
-                      <th className="px-4 py-3 text-right">Excluido</th>
+                      <th className="px-4 py-3 text-right">Excl. Mora</th>
+                      <th className="px-4 py-3 text-right">Excl. Marca</th>
                       <th className="px-4 py-3 text-center">Recibos</th>
                       <th className="px-4 py-3 w-8"></th>
                     </tr>
@@ -241,7 +286,24 @@ export default function RecaudoTab({ hook }) {
                               {formatFullCurrency(v.totalComisionable)}
                             </td>
                             <td className="px-4 py-3 text-right font-mono text-rose-500">
-                              {formatFullCurrency(v.totalExcluido)}
+                              {v.excluidoMora > 0
+                                ? formatFullCurrency(v.excluidoMora)
+                                : "—"}
+                              {v.countMora > 0 && (
+                                <span className="block text-[10px] text-rose-400">
+                                  {v.countMora} recibos
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-right font-mono text-amber-600">
+                              {v.excluidoMarca > 0
+                                ? formatFullCurrency(v.excluidoMarca)
+                                : "—"}
+                              {v.countMarca > 0 && (
+                                <span className="block text-[10px] text-amber-500">
+                                  {v.countMarca} recibos
+                                </span>
+                              )}
                             </td>
                             <td className="px-4 py-3 text-center text-xs text-slate-500">
                               {v.items.length}
@@ -263,7 +325,7 @@ export default function RecaudoTab({ hook }) {
 
                           {isExpanded && (
                             <tr>
-                              <td colSpan={6} className="p-0 bg-slate-50">
+                              <td colSpan={8} className="p-0 bg-slate-50">
                                 <div className="overflow-x-auto">
                                   <table className="w-full text-xs text-left">
                                     <thead className="text-slate-400 uppercase font-bold border-b border-slate-200">
@@ -276,11 +338,14 @@ export default function RecaudoTab({ hook }) {
                                         <th className="px-4 py-2 text-right">
                                           Base
                                         </th>
+                                        <th className="px-4 py-2 text-right">
+                                          Comisionable
+                                        </th>
                                         <th className="px-4 py-2 text-center">
                                           Días
                                         </th>
                                         <th className="px-4 py-2 text-center">
-                                          Aplica
+                                          Estado
                                         </th>
                                       </tr>
                                     </thead>
@@ -311,6 +376,38 @@ export default function RecaudoTab({ hook }) {
                                                 item.valor_recaudo,
                                               )}
                                             </td>
+                                            <td className="px-4 py-2 text-right font-mono">
+                                              {(() => {
+                                                const exclM = Number(
+                                                  item.valor_excluido_marca ||
+                                                    0,
+                                                );
+                                                if (
+                                                  !item.aplica_comision &&
+                                                  item.dias_mora >
+                                                    DIAS_MORA_LIMITE
+                                                )
+                                                  return (
+                                                    <span className="text-rose-500">
+                                                      $ 0
+                                                    </span>
+                                                  );
+                                                if (exclM > 0)
+                                                  return (
+                                                    <span className="text-emerald-700 font-bold">
+                                                      {formatFullCurrency(
+                                                        item.valor_recaudo -
+                                                          exclM,
+                                                      )}
+                                                    </span>
+                                                  );
+                                                return (
+                                                  <span className="text-slate-400">
+                                                    —
+                                                  </span>
+                                                );
+                                              })()}
+                                            </td>
                                             <td className="px-4 py-2 text-center">
                                               <span
                                                 className={
@@ -324,18 +421,40 @@ export default function RecaudoTab({ hook }) {
                                               </span>
                                             </td>
                                             <td className="px-4 py-2 text-center">
-                                              <span
-                                                className={cn(
-                                                  "text-[10px] font-bold px-2 py-0.5 rounded-full",
-                                                  item.aplica_comision
-                                                    ? "bg-emerald-100 text-emerald-700"
-                                                    : "bg-rose-100 text-rose-700",
-                                                )}
-                                              >
-                                                {item.aplica_comision
-                                                  ? "Sí"
-                                                  : "No"}
-                                              </span>
+                                              {(() => {
+                                                const motivo = getMotivo(item);
+                                                const exclMarca = Number(
+                                                  item.valor_excluido_marca ||
+                                                    0,
+                                                );
+                                                if (motivo === "mora")
+                                                  return (
+                                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700">
+                                                      Mora &gt;
+                                                      {DIAS_MORA_LIMITE}d
+                                                    </span>
+                                                  );
+                                                if (motivo === "parcial")
+                                                  return (
+                                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                                                      Marca: -
+                                                      {formatFullCurrency(
+                                                        exclMarca,
+                                                      )}
+                                                    </span>
+                                                  );
+                                                if (motivo === "marca")
+                                                  return (
+                                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700">
+                                                      100% marca
+                                                    </span>
+                                                  );
+                                                return (
+                                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
+                                                    Comisionable
+                                                  </span>
+                                                );
+                                              })()}
                                             </td>
                                           </tr>
                                         ))}

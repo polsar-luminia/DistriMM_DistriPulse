@@ -127,10 +127,11 @@ export function useComisionesCalculo(selectedCargaId, catalogo, exclusiones) {
 
         const ventasMes = ventasRes.data || [];
         // Deduplicar recaudos: mismo cliente_nit + factura + valor_recaudo entre cargas
+        // CRÍTICO #2: incluir carga_id en la clave para permitir pagos duplicados en cargas diferentes
         const _rawRecaudos = recaudosRes.data || [];
         const _seenR = new Set();
         const recaudosMes = _rawRecaudos.filter((r) => {
-          const key = `${r.cliente_nit}|${r.factura}|${r.valor_recaudo}`;
+          const key = `${r.carga_id}|${r.cliente_nit}|${r.factura}|${r.valor_recaudo}`;
           if (_seenR.has(key)) return false;
           _seenR.add(key);
           return true;

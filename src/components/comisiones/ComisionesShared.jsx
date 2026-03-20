@@ -28,7 +28,13 @@ export const Card = ({ children, className = "", ...props }) => (
   </div>
 );
 
-export const KpiCard = ({ title, value, icon: Icon, type = "neutral" }) => {
+export const KpiCard = ({
+  title,
+  value,
+  subtitle,
+  icon: Icon,
+  type = "neutral",
+}) => {
   const themes = {
     neutral: {
       icon: "bg-slate-50 text-slate-500 ring-1 ring-slate-200",
@@ -82,6 +88,11 @@ export const KpiCard = ({ title, value, icon: Icon, type = "neutral" }) => {
         >
           {value}
         </h3>
+        {subtitle && (
+          <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+            {subtitle}
+          </p>
+        )}
       </div>
     </Card>
   );
