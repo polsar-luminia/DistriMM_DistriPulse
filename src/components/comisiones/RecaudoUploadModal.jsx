@@ -192,13 +192,16 @@ async function enrichFromDB(rows) {
       : null;
 
     if (f?.fecha_emision && fechaAbono) {
-      // Match en cartera → calcular días desde emisión hasta pago
+      // Match en cartera → calcular días desde emisión hasta pago (mínimo 0)
       const fechaEmision = new Date(f.fecha_emision + "T12:00:00");
-      diasMora = Math.round((fechaAbono - fechaEmision) / 86400000);
+      diasMora = Math.max(
+        0,
+        Math.round((fechaAbono - fechaEmision) / 86400000),
+      );
     } else if (venta?.fecha && fechaAbono) {
-      // Sin match en cartera pero SÍ en ventas → calcular días desde venta hasta pago
+      // Sin match en cartera pero SÍ en ventas → calcular días desde venta hasta pago (mínimo 0)
       const fechaVenta = new Date(venta.fecha + "T12:00:00");
-      diasMora = Math.round((fechaAbono - fechaVenta) / 86400000);
+      diasMora = Math.max(0, Math.round((fechaAbono - fechaVenta) / 86400000));
       sinMatch = false;
     } else if (f) {
       // Match en cartera pero sin fecha_emision → fallback a dias_mora de cartera
