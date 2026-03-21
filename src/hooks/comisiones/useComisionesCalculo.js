@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { calcularComisionesCompletas } from "../../utils/comisionesCalculator";
 import {
-  calcularComisiones,
   getComisionesVentas,
   getCargasByMonth,
   getVentasByCargas,
@@ -19,69 +18,36 @@ import {
 } from "./reportingUtils";
 
 export function useComisionesCalculo(selectedCargaId, catalogo, exclusiones) {
-  const [comisiones, setComisiones] = useState([]);
-  const [loadingComisiones, setLoadingComisiones] = useState(false);
   const [ventasDetail, setVentasDetail] = useState([]);
   const [loadingVentas, setLoadingVentas] = useState(false);
   const [reporteMensual, setReporteMensual] = useState(null);
   const [loadingReporte, setLoadingReporte] = useState(false);
   const generatingReporteRef = useRef(false);
 
-  const fetchComisiones = useCallback(async (cargaId) => {
-    if (!cargaId) {
-      setComisiones([]);
-      return;
-    }
-    setLoadingComisiones(true);
-    try {
-      const { data } = await calcularComisiones(cargaId);
-      setComisiones(data || []);
-    } catch (err) {
-      if (import.meta.env.DEV)
-        console.error(
-          `[useComisionesCalculo] Error calculating comisiones for carga ${cargaId}:`,
-          err,
-        );
-      setComisiones([]);
-    } finally {
-      setLoadingComisiones(false);
-    }
-  }, []);
-
-  // When selectedCargaId changes, fetch comisiones + ventas
+  // When selectedCargaId changes, fetch ventas detail
   useEffect(() => {
     if (!selectedCargaId) {
-      setComisiones([]);
       setVentasDetail([]);
       return;
     }
     let cancelled = false;
-    setLoadingComisiones(true);
     setLoadingVentas(true);
-    Promise.all([
-      calcularComisiones(selectedCargaId),
-      getComisionesVentas(selectedCargaId),
-    ])
-      .then(([comRes, ventasRes]) => {
+    getComisionesVentas(selectedCargaId)
+      .then((ventasRes) => {
         if (cancelled) return;
-        setComisiones(comRes.data || []);
         setVentasDetail(ventasRes.data || []);
       })
       .catch((err) => {
         if (cancelled) return;
         if (import.meta.env.DEV)
           console.error(
-            `[useComisionesCalculo] Error loading data for carga ${selectedCargaId}:`,
+            `[useComisionesCalculo] Error loading ventas for carga ${selectedCargaId}:`,
             err,
           );
-        setComisiones([]);
         setVentasDetail([]);
       })
       .finally(() => {
-        if (!cancelled) {
-          setLoadingComisiones(false);
-          setLoadingVentas(false);
-        }
+        if (!cancelled) setLoadingVentas(false);
       });
 
     return () => {
@@ -294,28 +260,71 @@ export function useComisionesCalculo(selectedCargaId, catalogo, exclusiones) {
     [catalogo, exclusiones],
   );
 
-  // Computed totals
+  // Compute comisiones (resumen por vendedor) from ventasDetail + exclusiones (replaces RPC)
+  const comisiones = useMemo(() => {
+    if (!ventasDetail.length) return [];
+    const lookups = buildExclusionLookups(exclusiones, catalogo);
+    const map = {};
+    ventasDetail.forEach((v) => {
+      const cod = v.vendedor_codigo || "SIN";
+      if (!map[cod]) {
+        map[cod] = {
+          vendedor_codigo: cod,
+          vendedor_nombre: v.vendedor_nombre || "",
+          total_ventas: 0,
+          total_costo: 0,
+          ventas_excluidas: 0,
+          ventas_comisionables: 0,
+          costo_comisionable: 0,
+          margen_comisionable: 0,
+          items_total: 0,
+          items_excluidos: 0,
+          items_comisionables: 0,
+        };
+      }
+      const m = map[cod];
+      const vt = Number(v.valor_total || 0);
+      const co = Number(v.costo || 0);
+      const info = getExclusionInfo(
+        v.producto_codigo,
+        lookups.productExclusionSet,
+        lookups.brandExclusionSet,
+        lookups.productBrandMap,
+      );
+      m.total_ventas += vt;
+      m.total_costo += co;
+      m.items_total += 1;
+      if (info.excluded) {
+        m.ventas_excluidas += vt;
+        m.items_excluidos += 1;
+      } else {
+        m.ventas_comisionables += co;
+        m.costo_comisionable += co;
+        m.margen_comisionable += vt - co;
+        m.items_comisionables += 1;
+      }
+    });
+    return Object.values(map).sort(
+      (a, b) => b.ventas_comisionables - a.ventas_comisionables,
+    );
+  }, [ventasDetail, exclusiones, catalogo]);
+
+  // Computed totals (from JS-calculated comisiones)
   const totals = useMemo(() => {
-    const init = {
+    const t = {
       totalVentas: 0,
       ventasExcluidas: 0,
       ventasComisionables: 0,
       margenComisionable: 0,
       costoComisionable: 0,
     };
-    const t = comisiones.reduce(
-      (acc, v) => ({
-        totalVentas: acc.totalVentas + Number(v.total_ventas || 0),
-        ventasExcluidas: acc.ventasExcluidas + Number(v.ventas_excluidas || 0),
-        ventasComisionables:
-          acc.ventasComisionables + Number(v.ventas_comisionables || 0),
-        margenComisionable:
-          acc.margenComisionable + Number(v.margen_comisionable || 0),
-        costoComisionable:
-          acc.costoComisionable + Number(v.costo_comisionable || 0),
-      }),
-      init,
-    );
+    comisiones.forEach((v) => {
+      t.totalVentas += v.total_ventas;
+      t.ventasExcluidas += v.ventas_excluidas;
+      t.ventasComisionables += v.ventas_comisionables;
+      t.margenComisionable += v.margen_comisionable;
+      t.costoComisionable += v.costo_comisionable;
+    });
     t.margenPct =
       t.ventasComisionables > 0
         ? (t.margenComisionable / t.ventasComisionables) * 100
@@ -325,11 +334,10 @@ export function useComisionesCalculo(selectedCargaId, catalogo, exclusiones) {
 
   return {
     comisiones,
-    loadingComisiones,
+    loadingComisiones: loadingVentas,
     totals,
     ventasDetail,
     loadingVentas,
-    fetchComisiones,
     reporteMensual,
     loadingReporte,
     generarReporteMensual,

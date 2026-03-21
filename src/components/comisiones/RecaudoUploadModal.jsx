@@ -567,7 +567,6 @@ export default function RecaudoUploadModal({ isOpen, onClose, onSuccess }) {
     setUploading(true);
     setStep("uploading");
     setProgress(10);
-    let createdId = null;
 
     try {
       const totalRecaudado = fullData.reduce((s, r) => s + r.valor_recaudo, 0);
@@ -582,7 +581,6 @@ export default function RecaudoUploadModal({ isOpen, onClose, onSuccess }) {
         .select("id, nombre_archivo")
         .eq("fecha_periodo", fechaPeriodo);
 
-      let pendingDeleteIds = [];
       if (existing?.length > 0) {
         const nombres = existing.map((e) => e.nombre_archivo).join(", ");
         const ok = await confirm({
@@ -597,32 +595,9 @@ export default function RecaudoUploadModal({ isOpen, onClose, onSuccess }) {
           setUploading(false);
           return;
         }
-        // NO borrar aún — guardar IDs para borrar DESPUÉS del insert exitoso
-        pendingDeleteIds = existing.map((e) => e.id);
       }
 
-      // 1. Crear registro de carga
-      const { data: carga, error: cargaErr } = await supabase
-        .from("distrimm_comisiones_cargas_recaudo")
-        .insert({
-          nombre_archivo: fileName || "Recaudo",
-          fecha_periodo: fechaPeriodo,
-          total_registros: fullData.length,
-          total_recaudado: totalRecaudado,
-          total_comisionable: totalComisionable,
-          registros_excluidos_mora: excluidos,
-        })
-        .select()
-        .single();
-
-      if (cargaErr) throw cargaErr;
-      createdId = carga.id;
-      setProgress(25);
-
-      // 2. Batch insert recaudos
-      const batchSize = 100;
       const rows = fullData.map((r) => ({
-        carga_id: createdId,
         vendedor_codigo: r.vendedor_codigo || "SIN_VENDEDOR",
         cliente_nit: r.cliente_nit || null,
         cliente_nombre: r.cliente_nombre || null,
@@ -633,40 +608,28 @@ export default function RecaudoUploadModal({ isOpen, onClose, onSuccess }) {
         fecha_vence: r.fecha_vence || null,
         valor_recaudo: r.valor_recaudo,
         valor_excluido_marca: r._valor_excluido_marca || 0,
-        // -1 = sin match en cartera (desconocido), se preserva para trazabilidad
         dias_mora: r.dias_mora,
         aplica_comision: r.aplica_comision,
         periodo_year: r.periodo_year,
         periodo_month: r.periodo_month,
       }));
 
-      for (let i = 0; i < rows.length; i += batchSize) {
-        const batch = rows.slice(i, i + batchSize);
-        const { error: bErr } = await supabase
-          .from("distrimm_comisiones_recaudos")
-          .insert(batch);
-        if (bErr) throw bErr;
-        setProgress(25 + Math.round(((i + batch.length) / rows.length) * 70));
-      }
+      setProgress(30);
 
-      // Insert exitoso — borrar cargas duplicadas anteriores
-      for (const oldId of pendingDeleteIds) {
-        const { error: delErr } = await supabase
-          .from("distrimm_comisiones_cargas_recaudo")
-          .delete()
-          .eq("id", oldId);
-        if (delErr) {
-          if (import.meta.env.DEV)
-            console.warn(
-              "[RecaudoUpload] Error borrando carga anterior:",
-              oldId,
-              delErr.message,
-            );
-          sileo.warning(
-            "Los recaudos se guardaron, pero no se pudo eliminar una carga anterior. Revisa duplicados.",
-          );
-        }
-      }
+      // Atomic RPC: insert carga + recaudos + cleanup duplicados en una transacción
+      const { error: rpcErr } = await supabase.rpc("fn_upload_recaudos", {
+        p_carga: {
+          nombre_archivo: fileName || "Recaudo",
+          fecha_periodo: fechaPeriodo,
+          total_registros: fullData.length,
+          total_recaudado: totalRecaudado,
+          total_comisionable: totalComisionable,
+          registros_excluidos_mora: excluidos,
+        },
+        p_recaudos: rows,
+      });
+
+      if (rpcErr) throw rpcErr;
 
       setProgress(100);
       setStep("success");
@@ -677,12 +640,6 @@ export default function RecaudoUploadModal({ isOpen, onClose, onSuccess }) {
       }, 1500);
     } catch (err) {
       if (import.meta.env.DEV) console.error("Upload recaudos error:", err);
-      if (createdId) {
-        await supabase
-          .from("distrimm_comisiones_cargas_recaudo")
-          .delete()
-          .eq("id", createdId);
-      }
       setError("Error al guardar: " + (err?.message || JSON.stringify(err)));
       setStep("preview");
     } finally {

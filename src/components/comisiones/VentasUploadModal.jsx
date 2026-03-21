@@ -97,7 +97,6 @@ export default function VentasUploadModal({ isOpen, onClose, onSuccess }) {
     setUploading(true);
     setStep("uploading");
     setProgress(10);
-    let createdId = null;
 
     try {
       const totalVentas = fullData.reduce((s, r) => s + r.valor_total, 0);
@@ -109,7 +108,6 @@ export default function VentasUploadModal({ isOpen, onClose, onSuccess }) {
         .select("id, nombre_archivo")
         .eq("fecha_ventas", fechaVentas);
 
-      let pendingDeleteIds = [];
       if (existing?.length > 0) {
         const nombres = existing.map((e) => e.nombre_archivo).join(", ");
         const ok = await confirm({
@@ -124,28 +122,9 @@ export default function VentasUploadModal({ isOpen, onClose, onSuccess }) {
           setUploading(false);
           return;
         }
-        // NO borrar aún — guardar IDs para borrar DESPUÉS del insert exitoso
-        pendingDeleteIds = existing.map((e) => e.id);
       }
 
-      // 1. Create carga record
-      const { data: carga, error: cargaErr } = await supabase
-        .from("distrimm_comisiones_cargas")
-        .insert({
-          nombre_archivo: file.name,
-          fecha_ventas: fechaVentas,
-          total_registros: fullData.length,
-          total_ventas: totalVentas,
-          total_costo: totalCosto,
-        })
-        .select()
-        .single();
-
-      if (cargaErr) throw cargaErr;
-      createdId = carga.id;
-      setProgress(25);
-
-      // 2. Parse fecha for each row
+      // Parse fecha for each row
       const parseDate = (raw) => {
         if (!raw) return fechaVentas;
         if (typeof raw === "number") {
@@ -153,7 +132,6 @@ export default function VentasUploadModal({ isOpen, onClose, onSuccess }) {
           d.setDate(d.getDate() + raw);
           return d.toISOString().split("T")[0];
         }
-        // Try dd/MM/yyyy
         const parts = String(raw).split("/");
         if (parts.length === 3) {
           const [dd, mm, yyyy] = parts;
@@ -162,10 +140,7 @@ export default function VentasUploadModal({ isOpen, onClose, onSuccess }) {
         return fechaVentas;
       };
 
-      // 3. Batch insert ventas
-      const batchSize = 100;
       const rows = fullData.map((r) => ({
-        carga_id: createdId,
         vendedor_codigo: r.vendedor_codigo || null,
         vendedor_nit: r.vendedor_nit || null,
         vendedor_nombre: r.vendedor_nombre || null,
@@ -185,33 +160,21 @@ export default function VentasUploadModal({ isOpen, onClose, onSuccess }) {
         tipo: r.tipo || "VE",
       }));
 
-      for (let i = 0; i < rows.length; i += batchSize) {
-        const batch = rows.slice(i, i + batchSize);
-        const { error: bErr } = await supabase
-          .from("distrimm_comisiones_ventas")
-          .insert(batch);
-        if (bErr) throw bErr;
-        setProgress(25 + Math.round(((i + batch.length) / rows.length) * 70));
-      }
+      setProgress(30);
 
-      // Insert exitoso — borrar cargas duplicadas anteriores
-      for (const oldId of pendingDeleteIds) {
-        const { error: delErr } = await supabase
-          .from("distrimm_comisiones_cargas")
-          .delete()
-          .eq("id", oldId);
-        if (delErr) {
-          if (import.meta.env.DEV)
-            console.warn(
-              "[VentasUpload] Error borrando carga anterior:",
-              oldId,
-              delErr.message,
-            );
-          sileo.warning(
-            "La carga nueva se guardó, pero no se pudo eliminar una carga anterior. Revisa duplicados.",
-          );
-        }
-      }
+      // Atomic RPC: insert carga + ventas + cleanup duplicados en una transacción
+      const { error: rpcErr } = await supabase.rpc("fn_upload_ventas", {
+        p_carga: {
+          nombre_archivo: file.name,
+          fecha_ventas: fechaVentas,
+          total_registros: fullData.length,
+          total_ventas: totalVentas,
+          total_costo: totalCosto,
+        },
+        p_ventas: rows,
+      });
+
+      if (rpcErr) throw rpcErr;
 
       setProgress(100);
       setStep("success");
@@ -222,12 +185,6 @@ export default function VentasUploadModal({ isOpen, onClose, onSuccess }) {
       }, 1500);
     } catch (err) {
       if (import.meta.env.DEV) console.error("Upload ventas error:", err);
-      if (createdId) {
-        await supabase
-          .from("distrimm_comisiones_cargas")
-          .delete()
-          .eq("id", createdId);
-      }
       setError("Error al guardar: " + (err?.message || JSON.stringify(err)));
       setStep("preview");
     } finally {

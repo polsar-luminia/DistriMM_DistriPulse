@@ -419,6 +419,32 @@ export default function ReporteMensualTab({ hook }) {
         </div>
       )}
 
+      {/* Advertencias de datos faltantes */}
+      {!loadingReporte && hasData && (
+        <div className="space-y-2 mb-4">
+          {hook.catalogo?.length === 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-2 text-sm text-amber-800">
+              <Info size={16} className="shrink-0 text-amber-600" />
+              Sin catálogo de productos cargado. Las exclusiones de marca no
+              aplican.
+            </div>
+          )}
+          {hook.exclusiones?.length === 0 && (
+            <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 flex items-center gap-2 text-sm text-slate-600">
+              <Info size={16} className="shrink-0 text-slate-400" />
+              Sin reglas de exclusión configuradas.
+            </div>
+          )}
+          {(reporteMensual?.recaudos?.length || 0) === 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-2 text-sm text-amber-800">
+              <Info size={16} className="shrink-0 text-amber-600" />
+              Sin recaudos cargados para este periodo. La comisión de recaudo
+              será $0.
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ══════════ REPORT CONTENT ══════════ */}
       {!loadingReporte && hasData && (
         <>
