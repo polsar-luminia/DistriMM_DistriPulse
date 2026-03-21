@@ -486,6 +486,7 @@ export default function RecaudoUploadModal({ isOpen, onClose, onSuccess }) {
               // dias_mora negativo = factura vigente (pagada antes de vencer) → comisionable
               // _sinMatchCartera = desconocido → no comisionable (política conservadora)
               // CRÍTICO #4: rechazar dias_mora = -1 (desconocido) junto con _sinMatchCartera
+              // RC: requiere match en cartera porque sin él no sabemos mora real
               aplica_comision:
                 !row._sinMatchCartera &&
                 row.dias_mora >= 0 &&
@@ -508,6 +509,7 @@ export default function RecaudoUploadModal({ isOpen, onClose, onSuccess }) {
             .map((row) => ({
               ...row,
               // CRÍTICO #4: rechazar dias_mora = -1 (desconocido)
+              // CxC: confiamos en mora del ERP; excluimos si 100% costo es de marca excluida
               aplica_comision:
                 row.dias_mora >= 0 &&
                 row.dias_mora <= DIAS_MORA_LIMITE &&

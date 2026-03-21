@@ -696,4 +696,75 @@ describe("calcularComisionRecaudo — prorrateo exclusiones marca", () => {
     expect(result.tramoAplicado).toBe("Tramo 2");
     expect(result.comisionRecaudo).toBe(16000); // 800000 * 0.02
   });
+
+  test("prorrateo de exclusion por marca en recaudos — solo costo excluido resta", () => {
+    // Simula: factura de 1M, 300k del costo es de marca excluida
+    // → comisionable = 1M - 300k = 700k
+    const recaudos = [
+      {
+        valor_recaudo: 1000000,
+        aplica_comision: true,
+        valor_excluido_marca: 300000, // parte del costo que es marca excluida
+        vendedor_codigo: "V1",
+      },
+    ];
+    const presupuestoRecaudo = {
+      meta_recaudo: 1000000,
+      tramo1_max: 100,
+      tramo1_pct: 0.01,
+      vendedor_codigo: "V1",
+    };
+
+    const result = calcularComisionRecaudo({ recaudos, presupuestoRecaudo });
+
+    // totalRecaudado = 1M (bruto)
+    // totalComisionable = 1M - 300k = 700k (neto de exclusion)
+    // totalExcluido = 1M - 700k = 300k (consistente)
+    // pctCumplimiento = 700k / 1M * 100 = 70%
+    // comisionRecaudo = 700k * 0.01 = 7000
+    expect(result.totalRecaudado).toBe(1000000);
+    expect(result.totalComisionable).toBe(700000);
+    expect(result.totalExcluido).toBe(300000);
+    expect(result.pctCumplimiento).toBe(70);
+    expect(result.comisionRecaudo).toBe(7000);
+  });
+
+  test("abono multiplo a factura con exclusion — proteccion contra doble descuento", () => {
+    // Simula: misma factura pagada 2 veces en mismo mes
+    // Primer abono: 500k, 100k excluido
+    // Segundo abono: 300k, solo 50k debe descontarse (no doble-descontar los 100k previos)
+    const recaudos = [
+      {
+        valor_recaudo: 500000,
+        aplica_comision: true,
+        valor_excluido_marca: 100000, // primer abono
+        vendedor_codigo: "V1",
+      },
+      {
+        valor_recaudo: 300000,
+        aplica_comision: true,
+        valor_excluido_marca: 50000, // segundo abono — protegido contra doble descuento
+        vendedor_codigo: "V1",
+      },
+    ];
+    const presupuestoRecaudo = {
+      meta_recaudo: 1000000,
+      tramo1_max: 100,
+      tramo1_pct: 0.01,
+      vendedor_codigo: "V1",
+    };
+
+    const result = calcularComisionRecaudo({ recaudos, presupuestoRecaudo });
+
+    // totalRecaudado = 500k + 300k = 800k
+    // totalComisionable = (500k - 100k) + (300k - 50k) = 400k + 250k = 650k
+    // totalExcluido = 800k - 650k = 150k
+    // pctCumplimiento = 650k / 1M * 100 = 65%
+    // comisionRecaudo = 650k * 0.01 = 6500
+    expect(result.totalRecaudado).toBe(800000);
+    expect(result.totalComisionable).toBe(650000);
+    expect(result.totalExcluido).toBe(150000);
+    expect(result.pctCumplimiento).toBe(65);
+    expect(result.comisionRecaudo).toBe(6500);
+  });
 });

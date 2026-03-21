@@ -1,3 +1,7 @@
+// Tolerance for tier boundary continuity (2%).
+// Handles float rounding when comparing tier_max (from T1) vs tier_min (from T2).
+// Example: T1.max=89.99, T2.min=90 → delta=0.01 < EPSILON → accepted (continuous).
+// If comparing unrounded cumplimiento percentages, consider normalizing first.
 const EPSILON = 0.02;
 
 const TIER_DEFINITIONS = [
