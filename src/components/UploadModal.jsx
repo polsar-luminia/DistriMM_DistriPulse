@@ -356,36 +356,45 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
       for (let i = 0; i < fullData.length; i += batchSize) {
         const batch = fullData.slice(i, i + batchSize);
 
-        const rowsToUpsert = batch.map((item) => ({
-          no_identif: item.no_identif,
-          // nombre_completo es GENERATED ALWAYS — Postgres lo computa desde los 4 campos de nombre
-          tipo_ident: item.tipo_ident,
-          tipo_persona: item.tipo_persona,
-          primer_nombre: item.primer_nombre,
-          segundo_nombre: item.segundo_nombre,
-          primer_apellido: item.primer_apellido,
-          segundo_apellido: item.segundo_apellido,
-          fecha_nacimiento: item.fecha_nacimiento,
-          genero: item.genero,
-          estado_civil: item.estado_civil,
-          direccion: item.direccion,
-          telefono_1: item.telefono_1,
-          telefono_2: item.telefono_2,
-          celular: item.celular,
-          correo_electronico: item.correo_electronico,
-          pagina_web: item.pagina_web,
-          clasificacion_iva: item.clasificacion_iva,
-          profesion: item.profesion,
-          actividad: item.actividad,
-          cupo_venta: item.cupo_venta,
-          cupo_compra: item.cupo_compra,
-          comentario: item.comentario,
-          barrio: item.barrio,
-          municipio: item.municipio,
-          vendedor_codigo: item.vendedor_codigo,
-          cobrador_codigo: item.cobrador_codigo,
-          updated_at: new Date().toISOString(),
-        }));
+        // Solo enviar campos con valor — omitir NULLs para no sobreescribir datos maestros existentes
+        const rowsToUpsert = batch.map((item) => {
+          const row = {
+            no_identif: item.no_identif,
+            updated_at: new Date().toISOString(),
+          };
+          const fields = [
+            "tipo_ident",
+            "tipo_persona",
+            "primer_nombre",
+            "segundo_nombre",
+            "primer_apellido",
+            "segundo_apellido",
+            "fecha_nacimiento",
+            "genero",
+            "estado_civil",
+            "direccion",
+            "telefono_1",
+            "telefono_2",
+            "celular",
+            "correo_electronico",
+            "pagina_web",
+            "clasificacion_iva",
+            "profesion",
+            "actividad",
+            "comentario",
+            "barrio",
+            "municipio",
+            "vendedor_codigo",
+            "cobrador_codigo",
+          ];
+          fields.forEach((f) => {
+            if (item[f] != null && item[f] !== "") row[f] = item[f];
+          });
+          // Numéricos: incluir aunque sean 0
+          if (item.cupo_venta != null) row.cupo_venta = item.cupo_venta;
+          if (item.cupo_compra != null) row.cupo_compra = item.cupo_compra;
+          return row;
+        });
 
         const { error: batchError } = await supabase
           .from("distrimm_clientes")
