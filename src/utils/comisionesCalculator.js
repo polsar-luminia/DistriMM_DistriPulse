@@ -25,7 +25,9 @@ export function calcularComisionVentas({
   presupuestosMarca.forEach((p) => {
     const marcaNorm = normalizeBrand(p.marca);
     marcasConPresupuesto.add(marcaNorm);
-    const totalCosto = ventasPorMarca[marcaNorm] || 0;
+    const rawCosto = ventasPorMarca[marcaNorm] || 0;
+    // Si DV de meses anteriores dejan el costo negativo, tratar como 0 (no penalizar)
+    const totalCosto = Math.max(0, rawCosto);
     const metaVentas = Number(p.meta_ventas || 0);
     const pctComision = Number(p.pct_comision || 0);
     const cumpleMeta = metaVentas > 0 ? totalCosto >= metaVentas : true;
@@ -101,6 +103,11 @@ export function calcularComisionRecaudo({ recaudos, presupuestoRecaudo }) {
   // Determinar tramo — evaluar de mayor a menor para tomar el más alto alcanzado
   const toNum = (v, fallback) => (v == null || v === "" ? fallback : Number(v));
   const tramos = [
+    {
+      nombre: "Tramo 5",
+      min: toNum(presupuestoRecaudo.tramo5_min, Infinity),
+      pct: toNum(presupuestoRecaudo.tramo5_pct, 0),
+    },
     {
       nombre: "Tramo 4",
       min: toNum(presupuestoRecaudo.tramo4_min, Infinity),

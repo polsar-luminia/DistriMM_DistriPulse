@@ -4,7 +4,8 @@ import {
   getComisionesVentas,
   getCargasByMonth,
   getVentasByCargas,
-  getRecaudosByPeriodo,
+  getRecaudosByCarga,
+  getRecaudoCargas,
   getPresupuestosMarca,
   getPresupuestosRecaudo,
   getSnapshot,
@@ -12,10 +13,7 @@ import {
   buildInputHash,
 } from "../../services/comisionesService";
 import { buildExclusionLookups, getExclusionInfo } from "./utils";
-import {
-  buildReporteMensualState,
-  dedupeRecaudosByCargaId,
-} from "./reportingUtils";
+import { buildReporteMensualState } from "./reportingUtils";
 
 export function useComisionesCalculo(selectedCargaId, catalogo, exclusiones) {
   const [ventasDetail, setVentasDetail] = useState([]);
@@ -86,17 +84,32 @@ export function useComisionesCalculo(selectedCargaId, catalogo, exclusiones) {
           return;
         }
 
-        const ids = cargasMes.map((c) => c.id);
+        // Usar solo la última carga del mes (la más reciente reemplaza las anteriores)
+        const ultimaCarga = cargasMes[cargasMes.length - 1];
+        const ids = [ultimaCarga.id];
+        // Buscar última carga de recaudo del periodo
+        const { data: recaudoCargas } = await getRecaudoCargas();
+        const recaudoCargasMes = (recaudoCargas || []).filter((c) => {
+          const d = new Date(c.fecha_periodo);
+          return d.getFullYear() === year && d.getMonth() + 1 === month;
+        });
+        const ultimaCargaRecaudo =
+          recaudoCargasMes.length > 0
+            ? recaudoCargasMes[0] // getRecaudoCargas ordena DESC por created_at
+            : null;
+
         const [ventasRes, recaudosRes, presMarcaRes, presRecaudoRes] =
           await Promise.all([
             getVentasByCargas(ids),
-            getRecaudosByPeriodo(year, month),
+            ultimaCargaRecaudo
+              ? getRecaudosByCarga(ultimaCargaRecaudo.id)
+              : Promise.resolve({ data: [] }),
             getPresupuestosMarca(year, month),
             getPresupuestosRecaudo(year, month),
           ]);
 
         const ventasMes = ventasRes.data || [];
-        const recaudosMes = dedupeRecaudosByCargaId(recaudosRes.data);
+        const recaudosMes = recaudosRes.data || [];
         const presMarca = presMarcaRes.data || [];
         const presRecaudo = presRecaudoRes.data || [];
 
@@ -313,6 +326,7 @@ export function useComisionesCalculo(selectedCargaId, catalogo, exclusiones) {
   const totals = useMemo(() => {
     const t = {
       totalVentas: 0,
+      totalCosto: 0,
       ventasExcluidas: 0,
       ventasComisionables: 0,
       margenComisionable: 0,
@@ -320,6 +334,7 @@ export function useComisionesCalculo(selectedCargaId, catalogo, exclusiones) {
     };
     comisiones.forEach((v) => {
       t.totalVentas += v.total_ventas;
+      t.totalCosto += v.total_costo;
       t.ventasExcluidas += v.ventas_excluidas;
       t.ventasComisionables += v.ventas_comisionables;
       t.margenComisionable += v.margen_comisionable;

@@ -149,7 +149,7 @@ export default function PresupuestosTab({ hook }) {
       );
       if (success && (data.copiedRecaudo > 0 || data.copiedMarcas > 0)) {
         sileo.info(
-          `Presupuestos heredados del mes anterior (${data.copiedRecaudo} recaudo, ${data.copiedMarcas} marcas)`,
+          `Cuotas heredadas del mes anterior (${data.copiedRecaudo} recaudo, ${data.copiedMarcas} marcas)`,
         );
         fetchPresupuestos(selectedYear, selectedMonth);
       }
@@ -329,7 +329,16 @@ export default function PresupuestosTab({ hook }) {
           recaudoRow.tramo4_min !== "" && recaudoRow.tramo4_min != null
             ? Number(recaudoRow.tramo4_min)
             : null,
+        tramo4_max:
+          recaudoRow.tramo4_max !== "" && recaudoRow.tramo4_max != null
+            ? Number(recaudoRow.tramo4_max)
+            : null,
         tramo4_pct: Number(recaudoRow.tramo4_pct) || 0,
+        tramo5_min:
+          recaudoRow.tramo5_min !== "" && recaudoRow.tramo5_min != null
+            ? Number(recaudoRow.tramo5_min)
+            : null,
+        tramo5_pct: Number(recaudoRow.tramo5_pct) || 0,
       };
       const { error } = await savePresupuestoRecaudo(payload);
       if (error) {
@@ -363,9 +372,7 @@ export default function PresupuestosTab({ hook }) {
     if (hasError) {
       sileo.error("Algunos datos no pudieron guardarse");
     } else {
-      sileo.success(
-        `Presupuestos de ${getNombreVendedor(vendedorCodigo)} guardados`,
-      );
+      sileo.success(`Cuotas de ${getNombreVendedor(vendedorCodigo)} guardadas`);
       setDirtyVendors((prev) => {
         const next = new Set(prev);
         next.delete(String(vendedorCodigo));
@@ -380,7 +387,7 @@ export default function PresupuestosTab({ hook }) {
     const nombre = getNombreVendedor(vendedorCodigo);
     const ok = await confirm({
       title: "Eliminar vendedor",
-      message: `¿Eliminar todos los presupuestos de ${nombre}${vendedorCodigo ? ` (${vendedorCodigo})` : ""} para ${MESES[selectedMonth - 1]} ${selectedYear}?`,
+      message: `¿Eliminar todas las cuotas de ${nombre}${vendedorCodigo ? ` (${vendedorCodigo})` : ""} para ${MESES[selectedMonth - 1]} ${selectedYear}?`,
       confirmText: "Eliminar",
       cancelText: "Cancelar",
       variant: "danger",
@@ -404,7 +411,7 @@ export default function PresupuestosTab({ hook }) {
     if (hasError) {
       sileo.error("Algunos registros no pudieron eliminarse");
     } else {
-      sileo.success(`Presupuestos de ${nombre} eliminados`);
+      sileo.success(`Cuotas de ${nombre} eliminadas`);
     }
     fetchPresupuestos(selectedYear, selectedMonth);
   };
@@ -464,7 +471,7 @@ export default function PresupuestosTab({ hook }) {
     setExpandedVendors((prev) => new Set(prev).add(String(codigo)));
     setDirtyVendors((prev) => new Set(prev).add(String(codigo)));
     setSelectedAvailableVendor("");
-    sileo.success("Vendedor agregado. Ya puedes configurar su presupuesto.");
+    sileo.success("Vendedor agregado. Ya puedes configurar su cuota.");
   };
 
   // ── Add new marca row pre-filled with vendor code ──
@@ -510,8 +517,8 @@ export default function PresupuestosTab({ hook }) {
   // ── Copy from month ──
   const handleCopy = async () => {
     const ok = await confirm({
-      title: "Copiar presupuestos",
-      message: `¿Copiar todos los presupuestos de ${MESES[copyFromMonth - 1]} ${copyFromYear} a ${MESES[selectedMonth - 1]} ${selectedYear}? Los registros existentes en el mes destino serán reemplazados.`,
+      title: "Copiar cuotas",
+      message: `¿Copiar todas las cuotas de ${MESES[copyFromMonth - 1]} ${copyFromYear} a ${MESES[selectedMonth - 1]} ${selectedYear}? Los registros existentes en el mes destino serán reemplazados.`,
       confirmText: "Copiar",
       cancelText: "Cancelar",
       variant: "warning",
@@ -526,10 +533,10 @@ export default function PresupuestosTab({ hook }) {
     );
     setCopying(false);
     if (error) {
-      sileo.error("Error al copiar presupuestos");
+      sileo.error("Error al copiar cuotas");
     } else {
       sileo.success(
-        `Presupuestos copiados de ${MESES[copyFromMonth - 1]} ${copyFromYear}`,
+        `Cuotas copiadas de ${MESES[copyFromMonth - 1]} ${copyFromYear}`,
       );
       fetchPresupuestos(selectedYear, selectedMonth);
     }
@@ -699,7 +706,7 @@ export default function PresupuestosTab({ hook }) {
               Vendedores disponibles
             </p>
             <p className="text-xs text-slate-400">
-              Selecciona un vendedor del maestro para asignarle presupuesto en{" "}
+              Selecciona un vendedor del maestro para asignarle cuota en{" "}
               {MESES[selectedMonth - 1]} {selectedYear}.
             </p>
           </div>
@@ -739,8 +746,7 @@ export default function PresupuestosTab({ hook }) {
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 flex items-center justify-between gap-4">
               <div>
                 <h4 className="text-sm font-bold text-amber-800">
-                  No hay presupuestos para {MESES[selectedMonth - 1]}{" "}
-                  {selectedYear}
+                  No hay cuotas para {MESES[selectedMonth - 1]} {selectedYear}
                 </h4>
                 <p className="text-xs text-amber-600 mt-1">
                   Importa desde el Excel de condiciones o carga los datos base

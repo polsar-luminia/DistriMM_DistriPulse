@@ -475,7 +475,7 @@ export default function ReporteMensualTab({ hook }) {
               type="neutral"
             />
             <KpiCard
-              title="Comisionable"
+              title="Con comisión"
               value={formatCurrency(
                 isSnapshot &&
                   snapshotTotales?.ventasComisionables != null &&
@@ -487,7 +487,7 @@ export default function ReporteMensualTab({ hook }) {
               type="success"
             />
             <KpiCard
-              title="Excluido"
+              title="Sin comisión"
               value={formatCurrency(
                 isSnapshot &&
                   snapshotTotales?.ventasExcluidas != null &&
@@ -495,8 +495,9 @@ export default function ReporteMensualTab({ hook }) {
                   ? snapshotTotales.ventasExcluidas
                   : displayTotals.ventasExcluidas,
               )}
+              subtitle="Marcas sin presupuesto"
               icon={XCircle}
-              type="danger"
+              type="neutral"
             />
             <KpiCard
               title="Margen %"
@@ -511,7 +512,7 @@ export default function ReporteMensualTab({ hook }) {
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-3 text-sm text-blue-800 mb-6">
               <Info size={16} className="shrink-0 mt-0.5 text-blue-600" />
               <span>
-                Los totales de liquidación (Ventas, Comisionable, Excluido)
+                Los totales de liquidación (Ventas, Con comisión, Sin comisión)
                 corresponden al <strong>snapshot congelado</strong> del{" "}
                 {snapshotDate
                   ? new Date(snapshotDate).toLocaleDateString("es-CO", {
@@ -888,7 +889,7 @@ export default function ReporteMensualTab({ hook }) {
                 Detalle de Ventas
               </h2>
               <p className="text-xs text-slate-500">
-                Desglose por vendedor con facturas comisionables y excluidas
+                Desglose por vendedor — marcas con y sin presupuesto de comisión
               </p>
             </div>
           </div>
@@ -901,8 +902,8 @@ export default function ReporteMensualTab({ hook }) {
                     <th className="px-4 py-3">Vendedor</th>
                     <th className="px-4 py-3 text-center">Dias</th>
                     <th className="px-4 py-3 text-right">Total Ventas</th>
-                    <th className="px-4 py-3 text-right">Excluidas</th>
-                    <th className="px-4 py-3 text-right">Comisionables</th>
+                    <th className="px-4 py-3 text-right">Sin comisión</th>
+                    <th className="px-4 py-3 text-right">Con comisión</th>
                     <th className="px-4 py-3 text-right">Costo</th>
                     <th className="px-4 py-3 text-right">Margen %</th>
                     <th className="px-4 py-3 text-center">Facturas</th>
@@ -937,7 +938,7 @@ export default function ReporteMensualTab({ hook }) {
                           <td className="px-4 py-3 text-right font-mono text-slate-700">
                             {formatFullCurrency(v.totalVentas)}
                           </td>
-                          <td className="px-4 py-3 text-right font-mono text-rose-500">
+                          <td className="px-4 py-3 text-right font-mono text-slate-400">
                             {formatFullCurrency(v.ventasExcluidas)}
                           </td>
                           <td className="px-4 py-3 text-right font-mono font-bold text-emerald-700">
@@ -983,7 +984,7 @@ export default function ReporteMensualTab({ hook }) {
                     <td className="px-4 py-3 text-right font-mono text-slate-900">
                       {formatFullCurrency(displayTotals.totalVentas)}
                     </td>
-                    <td className="px-4 py-3 text-right font-mono text-rose-600">
+                    <td className="px-4 py-3 text-right font-mono text-slate-500">
                       {formatFullCurrency(displayTotals.ventasExcluidas)}
                     </td>
                     <td className="px-4 py-3 text-right font-mono text-emerald-700">

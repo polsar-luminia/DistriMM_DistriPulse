@@ -101,22 +101,24 @@ export default function VentasTab({ hook }) {
     const resumenRows = comisiones.map((v) => ({
       Vendedor: `${v.vendedor_nombre || "Sin nombre"} (#${v.vendedor_codigo})`,
       "Ventas Totales": Number(v.total_ventas || 0),
-      Excluidas: Number(v.ventas_excluidas || 0),
-      Comisionables: Number(v.ventas_comisionables || 0),
+      "Costo Total": Number(v.total_costo || 0),
+      "Sin Comision": Number(v.ventas_excluidas || 0),
+      "Costo Comisionable": Number(v.ventas_comisionables || 0),
       "Items Total": Number(v.items_total || 0),
-      "Items Excluidos": Number(v.items_excluidos || 0),
+      "Items Sin Comision": Number(v.items_excluidos || 0),
       "Items Comisionables": Number(v.items_comisionables || 0),
     }));
     resumenRows.push({
       Vendedor: "TOTALES",
       "Ventas Totales": totals.totalVentas,
-      Excluidas: totals.ventasExcluidas,
-      Comisionables: totals.ventasComisionables,
+      "Costo Total": totals.totalCosto,
+      "Sin Comision": totals.ventasExcluidas,
+      "Costo Comisionable": totals.ventasComisionables,
       "Items Total": comisiones.reduce(
         (s, v) => s + Number(v.items_total || 0),
         0,
       ),
-      "Items Excluidos": comisiones.reduce(
+      "Items Sin Comision": comisiones.reduce(
         (s, v) => s + Number(v.items_excluidos || 0),
         0,
       ),
@@ -145,8 +147,8 @@ export default function VentasTab({ hook }) {
         "Valor Unidad": Number(item.valor_unidad || 0),
         "Valor Total": Number(item.valor_total || 0),
         Costo: Number(item.costo || 0),
-        Comisionable: info.excluded ? "NO" : "SI",
-        "Motivo Exclusion": info.reason || "",
+        "Con Comision": info.excluded ? "NO" : "SI",
+        Motivo: info.excluded ? info.reason || "Sin presupuesto" : "",
       };
     });
 
@@ -306,7 +308,7 @@ export default function VentasTab({ hook }) {
       ) : (
         <>
           {/* KPI Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
             <KpiCard
               title="Total Ventas"
               value={formatCurrency(totals.totalVentas)}
@@ -314,16 +316,23 @@ export default function VentasTab({ hook }) {
               type="info"
             />
             <KpiCard
-              title="Comisionables"
+              title="Costo Total"
+              value={formatCurrency(totals.totalCosto)}
+              icon={DollarSign}
+              type="neutral"
+            />
+            <KpiCard
+              title="Costo comisionable"
               value={formatCurrency(totals.ventasComisionables)}
               icon={TrendingUp}
               type="success"
             />
             <KpiCard
-              title="Excluidas"
+              title="Sin comisión"
               value={formatCurrency(totals.ventasExcluidas)}
+              subtitle="Marcas sin presupuesto"
               icon={Ban}
-              type="danger"
+              type="neutral"
             />
             <KpiCard
               title={`Devoluciones (${dvTotals.count})`}
@@ -354,9 +363,12 @@ export default function VentasTab({ hook }) {
                   <thead className="bg-slate-50 text-xs text-slate-500 uppercase font-bold border-b border-slate-200">
                     <tr>
                       <th className="px-4 py-3">Vendedor</th>
-                      <th className="px-4 py-3 text-right">Ventas Totales</th>
-                      <th className="px-4 py-3 text-right">Excluidas</th>
-                      <th className="px-4 py-3 text-right">Comisionables</th>
+                      <th className="px-4 py-3 text-right">Ventas</th>
+                      <th className="px-4 py-3 text-right">Costo</th>
+                      <th className="px-4 py-3 text-right">Sin comisión</th>
+                      <th className="px-4 py-3 text-right">
+                        Costo comisionable
+                      </th>
                       <th className="px-4 py-3 text-center">Items</th>
                       <th className="px-4 py-3 w-8"></th>
                     </tr>
@@ -385,7 +397,10 @@ export default function VentasTab({ hook }) {
                             <td className="px-4 py-3 text-right font-mono text-slate-700">
                               {formatFullCurrency(v.total_ventas)}
                             </td>
-                            <td className="px-4 py-3 text-right font-mono text-rose-500">
+                            <td className="px-4 py-3 text-right font-mono text-slate-500">
+                              {formatFullCurrency(v.total_costo)}
+                            </td>
+                            <td className="px-4 py-3 text-right font-mono text-slate-400">
                               {formatFullCurrency(v.ventas_excluidas)}
                             </td>
                             <td className="px-4 py-3 text-right font-mono font-bold text-emerald-700">
@@ -417,7 +432,7 @@ export default function VentasTab({ hook }) {
                           {/* Expanded detail with visual summary */}
                           {isExpanded && (
                             <tr>
-                              <td colSpan={6} className="p-0">
+                              <td colSpan={7} className="p-0">
                                 <VendedorDetail
                                   vendedor={v}
                                   ventas={vendedorVentas}

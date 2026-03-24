@@ -336,8 +336,7 @@ export default function MainLayout({ dashboardContext }) {
         {/* Compact footer */}
         <footer className="py-4 border-t border-slate-100 text-center">
           <p className="text-[11px] text-slate-400">
-            &copy; {new Date().getFullYear()} DistriPulse Analytics Diseñado
-            para DistriMM · Powered by{" "}
+            &copy; {new Date().getFullYear()} DistriMM · Powered by{" "}
             <a
               href="https://hola.luminiatech.digital"
               target="_blank"

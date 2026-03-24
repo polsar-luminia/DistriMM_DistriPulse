@@ -71,11 +71,34 @@ const TRAMO_CONFIGS = [
       {
         label: "Desde % cumplimiento",
         field: "tramo4_min",
-        placeholder: "140",
+        placeholder: "100",
+      },
+      {
+        label: "Hasta % cumplimiento",
+        field: "tramo4_max",
+        placeholder: "139.99",
       },
       {
         label: "% Comision",
         field: "tramo4_pct",
+        placeholder: "1.2",
+        isPct: true,
+      },
+    ],
+  },
+  {
+    key: 5,
+    label: "Tramo 5",
+    color: "violet",
+    fields: [
+      {
+        label: "Desde % cumplimiento",
+        field: "tramo5_min",
+        placeholder: "140",
+      },
+      {
+        label: "% Comision",
+        field: "tramo5_pct",
         placeholder: "1.5",
         isPct: true,
       },
@@ -107,6 +130,12 @@ const COLOR_MAP = {
     border: "border-rose-200",
     title: "text-rose-800",
     label: "text-rose-600",
+  },
+  violet: {
+    bg: "bg-violet-50",
+    border: "border-violet-200",
+    title: "text-violet-800",
+    label: "text-violet-600",
   },
 };
 
@@ -169,8 +198,8 @@ export default function RecaudoTiersEditor({
         </div>
       </div>
 
-      {/* 4-tramo grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      {/* 5-tramo grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
         {TRAMO_CONFIGS.map((tramo) => {
           const colors = COLOR_MAP[tramo.color];
           return (
@@ -204,7 +233,7 @@ export default function RecaudoTiersEditor({
                       value={
                         f.isPct
                           ? recaudo[f.field] != null
-                            ? recaudo[f.field] * 100
+                            ? Math.round(recaudo[f.field] * 1e6) / 1e4
                             : ""
                           : (recaudo[f.field] ?? "")
                       }
@@ -213,7 +242,7 @@ export default function RecaudoTiersEditor({
                           recaudoIdx,
                           f.field,
                           f.isPct
-                            ? Number(e.target.value) / 100
+                            ? Math.round(Number(e.target.value) * 1e4) / 1e6
                             : e.target.value,
                         )
                       }

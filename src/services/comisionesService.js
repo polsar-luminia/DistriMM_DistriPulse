@@ -207,7 +207,8 @@ export const getCargasByMonth = async (year, month) => {
       .select("id, fecha_ventas, nombre_archivo")
       .gte("fecha_ventas", startDate)
       .lt("fecha_ventas", endDate)
-      .order("fecha_ventas", { ascending: true });
+      .order("fecha_ventas", { ascending: true })
+      .order("created_at", { ascending: true });
 
     if (error) throw error;
     return { data, error: null };
@@ -684,7 +685,7 @@ export function buildInputHash({
   const presRecaudoFp = (presupuestosRecaudo || [])
     .map(
       (p) =>
-        `${p.id}:${p.meta_recaudo || 0}:${p.tramo1_min || 0}:${p.tramo1_max || 0}:${p.tramo1_pct || 0}:${p.tramo2_min || 0}:${p.tramo2_max || 0}:${p.tramo2_pct || 0}:${p.tramo3_min || 0}:${p.tramo3_max || 0}:${p.tramo3_pct || 0}:${p.tramo4_min || 0}:${p.tramo4_pct || 0}:${p.updated_at || ""}`,
+        `${p.id}:${p.meta_recaudo || 0}:${p.tramo1_min || 0}:${p.tramo1_max || 0}:${p.tramo1_pct || 0}:${p.tramo2_min || 0}:${p.tramo2_max || 0}:${p.tramo2_pct || 0}:${p.tramo3_min || 0}:${p.tramo3_max || 0}:${p.tramo3_pct || 0}:${p.tramo4_min || 0}:${p.tramo4_max || 0}:${p.tramo4_pct || 0}:${p.tramo5_min || 0}:${p.tramo5_pct || 0}:${p.updated_at || ""}`,
     )
     .sort()
     .join(",");

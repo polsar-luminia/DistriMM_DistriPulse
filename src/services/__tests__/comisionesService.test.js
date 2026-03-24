@@ -274,7 +274,9 @@ describe("getCargasByMonth", () => {
   test("retorna cargas del mes especificado", async () => {
     const mockData = [{ id: "c1", fecha_ventas: "2025-03-10" }];
     const chain = makeChain({
-      order: () => Promise.resolve({ data: mockData, error: null }),
+      order: () => ({
+        order: () => Promise.resolve({ data: mockData, error: null }),
+      }),
     });
     mockFrom.mockReturnValue(chain);
 

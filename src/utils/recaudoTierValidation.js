@@ -33,6 +33,13 @@ const TIER_DEFINITIONS = [
     maxField: "tramo4_max",
     pctField: "tramo4_pct",
   },
+  {
+    key: "tramo5",
+    label: "Tramo 5",
+    minField: "tramo5_min",
+    maxField: null,
+    pctField: "tramo5_pct",
+  },
 ];
 
 function parseNullableNumber(value) {
