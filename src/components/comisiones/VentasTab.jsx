@@ -330,7 +330,7 @@ export default function VentasTab({ hook }) {
             <KpiCard
               title="Sin comisión"
               value={formatCurrency(totals.ventasExcluidas)}
-              subtitle="Marcas sin presupuesto"
+              subtitle="Marcas sin cuota"
               icon={Ban}
               type="neutral"
             />

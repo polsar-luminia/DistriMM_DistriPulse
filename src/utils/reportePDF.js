@@ -90,7 +90,7 @@ export async function generarReportePDF({
   doc.setFont("helvetica", "bold");
   doc.setFontSize(28);
   doc.setTextColor(...INDIGO);
-  doc.text("DistriPulse", cx, 40, { align: "center" });
+  doc.text("DistriMM", cx, 40, { align: "center" });
 
   // Accent line
   doc.setDrawColor(...INDIGO);
@@ -768,7 +768,7 @@ export async function generarReportePDF({
     doc.setFontSize(7);
     doc.setTextColor(...SLATE_400);
     doc.text(
-      `DistriPulse \u00B7 Reporte de Comisiones \u00B7 P\u00E1gina ${i} de ${totalPages}`,
+      `DistriMM \u00B7 Reporte de Comisiones \u00B7 P\u00E1gina ${i} de ${totalPages}`,
       pageW / 2,
       pageH - 8,
       { align: "center" },

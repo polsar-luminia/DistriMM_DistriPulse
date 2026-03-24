@@ -213,7 +213,7 @@ export async function generarCarteraPDF({ items, groupBy, filters }) {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(28);
   doc.setTextColor(...C.accent);
-  doc.text("DistriPulse", cx, 38, { align: "center" });
+  doc.text("DistriMM", cx, 38, { align: "center" });
 
   // Accent line
   doc.setDrawColor(...C.accent);
@@ -664,7 +664,7 @@ export async function generarCarteraPDF({ items, groupBy, filters }) {
     doc.setFontSize(7);
     doc.setTextColor(...C.slate);
     doc.text(
-      `DistriPulse \u00B7 Informe de Cartera \u00B7 P\u00E1gina ${i} de ${totalPages}`,
+      `DistriMM \u00B7 Informe de Cartera \u00B7 P\u00E1gina ${i} de ${totalPages}`,
       pageW / 2,
       pageH - 8,
       { align: "center" },

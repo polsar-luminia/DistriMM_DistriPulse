@@ -495,7 +495,7 @@ export default function ReporteMensualTab({ hook }) {
                   ? snapshotTotales.ventasExcluidas
                   : displayTotals.ventasExcluidas,
               )}
-              subtitle="Marcas sin presupuesto"
+              subtitle="Marcas sin cuota"
               icon={XCircle}
               type="neutral"
             />
