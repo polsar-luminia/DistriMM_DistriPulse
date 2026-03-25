@@ -1,0 +1,173 @@
+## Datos para visualización: Evolución de DistriMM/DistriPulse
+
+### Metadata del Repo
+- **Nombre:** DistriMM DistriPulse
+- **Tipo:** SaaS de analytics para distribuidoras colombianas
+- **Stack:** React 19 + Vite + Supabase + Tailwind CSS 4 + shadcn/ui
+- **Vida del proyecto:** 17 días (8 mar 2026 → 24 mar 2026)
+- **Total commits:** 56
+- **Branches:** 4 (main, feat/shadcn-integration, feat/security-and-cleanup, claude/code-review-security)
+- **Tags/Releases:** 0 (aún no hay releases formales)
+
+### Autores
+| Autor | Commits | Rol |
+|---|---|---|
+| polsar-luminia | 41 (73%) | Humano — features, fixes, arquitectura |
+| Claude | 15 (27%) | IA — code review, bug fixes, tests |
+
+### Crecimiento del código (líneas acumuladas netas)
+| Fecha | Líneas netas añadidas | Acumulado |
+|---|---|---|
+| 2026-03-08 | +63,597 | 63,597 (initial commit + shadcn) |
+| 2026-03-09 | -1,948 | 61,649 (limpieza de comentarios AI) |
+| 2026-03-16 | +11,307 | 72,956 (v1.0 RC + Claude code review masivo) |
+| 2026-03-18 | +2,346 | 75,302 (auditoría + e2e tests) |
+| 2026-03-19 | +157 | 75,459 (módulo recaudo, fixes puntuales) |
+| 2026-03-20 | +3,166 | 78,625 (recaudo + comisiones refactor) |
+| 2026-03-24 | +210 | 78,835 (branding + últimos fixes) |
+
+### Estado actual del código
+| Métrica | Valor |
+|---|---|
+| Archivos en src/ | 148 |
+| Archivos .jsx | 81 |
+| Archivos .js | 64 |
+| Archivos .css | 2 |
+| LOC JSX | 21,051 |
+| LOC JS | 12,111 |
+| LOC CSS | 279 |
+| Total LOC | 33,441 |
+| Deps producción | 26 |
+| Deps desarrollo | 18 |
+
+### Distribución por directorio
+| Directorio | Archivos |
+|---|---|
+| src/components | 62 |
+| src/utils | 24 |
+| src/hooks | 21 |
+| src/pages | 15 |
+| src/services | 12 |
+
+### Top 10 archivos más grandes
+| Archivo | Líneas |
+|---|---|
+| ReporteMensualTab.jsx | 1,010 |
+| RecaudoUploadModal.jsx | 947 |
+| UploadModal.jsx | 885 |
+| reporteCartera.js | 848 |
+| PresupuestosTab.jsx | 817 |
+| reportePDF.js | 784 |
+| comisionesCalculator.test.js | 770 |
+| NuevoLoteTab.jsx | 762 |
+| VendedoresPage.jsx | 723 |
+| comisionesService.js | 709 |
+
+### Tipos de commits (conventional commits)
+| Tipo | Cantidad |
+|---|---|
+| fix | 39 (70%) |
+| feat | 10 (18%) |
+| refactor | 2 |
+| chore | 2 |
+
+### Módulos más mencionados en commits
+| Módulo | Menciones |
+|---|---|
+| recaudo | 14 |
+| comisiones | 5 |
+| e2e | 4 |
+| cfo | 2 |
+| security | 1 |
+| branding | 1 |
+| clientes | 1 |
+
+### Actividad por día de la semana
+| Día | Commits |
+|---|---|
+| Lunes | 19 |
+| Miércoles | 10 |
+| Jueves | 10 |
+| Viernes | 8 |
+| Domingo | 6 |
+| Martes | 3 |
+
+### Todos los commits (cronológico, del más antiguo al más reciente)
+| # | Fecha | Autor | Mensaje | +Lines | -Lines |
+|---|---|---|---|---|---|
+| 1 | 2026-03-08 | polsar-luminia | feat: initial commit — DistriMM SaaS analytics platform | +30,321 | -0 |
+| 2 | 2026-03-08 | polsar-luminia | feat: integrate shadcn/ui foundation — cn(), alias @/, CSS variables, 9 componentes base | +33,010 | -0 |
+| 3 | 2026-03-08 | polsar-luminia | refactor: migrate DashboardShared, ComisionesShared y ConfirmDialog a cn() | +23 | -11 |
+| 4 | 2026-03-08 | polsar-luminia | refactor: migrate all 46 files to cn() + rewrite ConfirmDialog with shadcn Dialog | +284 | -231 |
+| 5 | 2026-03-08 | polsar-luminia | merge: feat/shadcn-integration — shadcn/ui foundation + cn() migration completa | +289 | -88 |
+| 6 | 2026-03-08 | polsar-luminia | fix(security): move chatbot behind Edge Function, migrate xlsx, add upload limits | +289 | -88 |
+| 7 | 2026-03-09 | polsar-luminia | chore: remove AI-generated boilerplate comments across codebase | +66 | -2,014 |
+| 8 | 2026-03-16 | Claude | fix: address bugs, fragile calculations, and missing test coverage | +205 | -22 |
+| 9 | 2026-03-16 | Claude | fix: round 2 code review — critical bugs and data integrity fixes | +41 | -23 |
+| 10 | 2026-03-16 | Claude | fix: infrastructure audit — fail-fast on missing env vars, cleanup on logout | +10 | -17 |
+| 11 | 2026-03-16 | Claude | fix: remove stale env vars, dead code, and security hardening | +8 | -22 |
+| 12 | 2026-03-16 | Claude | fix: pagination, empty array guard, retry rollback, error handling | +19 | -7 |
+| 13 | 2026-03-16 | Claude | fix: stale closure, missing catch, memoization, unmount cleanup | +34 | -17 |
+| 14 | 2026-03-16 | Claude | fix: null safety, NaN display, immutable sort, and date calculation bugs | +7 | -7 |
+| 15 | 2026-03-16 | Claude | fix: persistMessage user feedback, excelETL NaN guard, VendedoresPage loading | +34 | -14 |
+| 16 | 2026-03-16 | Claude | fix: services layer — error types, pagination, batching, return values | +66 | -44 |
+| 17 | 2026-03-16 | Claude | fix: eliminate ESLint warnings — replace useEffect pagination reset with page clamping | +15 | -28 |
+| 18 | 2026-03-16 | Claude | fix: UploadModal — missing nombre_completo in clientes upsert + timeout cleanup | +8 | -0 |
+| 19 | 2026-03-16 | Claude | fix: P0/P1/P2 bugs — sort crash, stale state, template literals, memoization | +45 | -20 |
+| 20 | 2026-03-16 | Claude | fix: useChatSessions race conditions + DashboardShared list key | +14 | -5 |
+| 21 | 2026-03-16 | Claude | fix: templates filter loss, logging blocking sends, setState anti-pattern | +34 | -25 |
+| 22 | 2026-03-16 | Claude | add unit tests for formatters/timeAgo and a11y clickableProps helper | +257 | -0 |
+| 23 | 2026-03-16 | polsar-luminia | feat: DistriPulse v1.0.0 — release candidate | +6,542 | -843 |
+| 24 | 2026-03-16 | polsar-luminia | fix: hardening completo — seguridad, comisiones, integridad de datos | +3,770 | -1,343 |
+| 25 | 2026-03-16 | polsar-luminia | chore: versionar archivos SQL existentes + nuevos schemas de referencia | +2,635 | -0 |
+| 26 | 2026-03-18 | polsar-luminia | fix: auditoría completa — 23 bugs corregidos + eliminar bono_fijo de comisiones | +1,450 | -735 |
+| 27 | 2026-03-18 | polsar-luminia | feat(e2e): agregar tests end-to-end con Playwright | +1,066 | -0 |
+| 28 | 2026-03-18 | polsar-luminia | fix(comisiones): snapshot hash ahora detecta cambios de marca en catálogo | +34 | -7 |
+| 29 | 2026-03-18 | polsar-luminia | fix(cfo): timeout de 60s a 100s en Edge Function + AbortController client-side | +25 | -11 |
+| 30 | 2026-03-18 | polsar-luminia | fix(cfo): corregir mensaje de timeout a 100s (era 60s) | +1 | -1 |
+| 31 | 2026-03-18 | polsar-luminia | feat(e2e): cobertura completa — tests para todas las páginas | +443 | -0 |
+| 32 | 2026-03-18 | polsar-luminia | fix(e2e): seed.ts skip graceful sin service_role + corregir valor_factura → valor_inicial | +3 | -2 |
+| 33 | 2026-03-18 | polsar-luminia | fix: P1 auditoría — paginación, race guards, RLS user-scoped, integridad datos | +159 | -82 |
+| 34 | 2026-03-18 | polsar-luminia | Merge branch 'feat/security-and-cleanup' | +0 | -0 |
+| 35 | 2026-03-18 | polsar-luminia | fix(e2e): corregir selectores para UI real (18/32 pasan) | +29 | -26 |
+| 36 | 2026-03-19 | polsar-luminia | fix: fecha Colombia en modals de carga + CFO widget fallback + KPIs sin truncar | +94 | -43 |
+| 37 | 2026-03-19 | polsar-luminia | fix(recaudo): facturas vigentes (dias_mora negativo) ahora son comisionables | +7 | -5 |
+| 38 | 2026-03-19 | polsar-luminia | fix(recaudo): headers con espacios en Excel RC (Creditos → ' Creditos ') | +20 | -8 |
+| 39 | 2026-03-19 | polsar-luminia | feat(recaudo): vista consolidada por mes en vez de por carga individual | +72 | -61 |
+| 40 | 2026-03-19 | polsar-luminia | fix(recaudo): deduplicar recibos entre cargas (mismo NIT+factura+monto) | +19 | -3 |
+| 41 | 2026-03-19 | polsar-luminia | feat(recaudo): vendedor se asigna por factura de ventas, no solo por NIT | +24 | -3 |
+| 42 | 2026-03-19 | polsar-luminia | fix(recaudo): usar valor_saldo de cartera (base sin IVA) en vez de Creditos | +3 | -0 |
+| 43 | 2026-03-19 | polsar-luminia | feat(recaudo): calcular dias_mora desde ventas cuando no hay match en cartera | +35 | -10 |
+| 44 | 2026-03-19 | polsar-luminia | fix(recaudo): file.name null al guardar — guardar nombre al seleccionar | +3 | -1 |
+| 45 | 2026-03-19 | polsar-luminia | feat(recaudo): fortalecer enrichment con más fuentes de vendedor | +17 | -3 |
+| 46 | 2026-03-20 | polsar-luminia | fix(recaudo): usar Creditos del RC como valor_recaudo, no valor_saldo de cartera | +9 | -11 |
+| 47 | 2026-03-20 | polsar-luminia | fix(recaudo): dias_mora calculados desde emisión, no desde vencimiento | +16 | -8 |
+| 48 | 2026-03-20 | polsar-luminia | fix(recaudo): días negativos ahora se muestran como 0 (desfase de registro ERP) | +7 | -4 |
+| 49 | 2026-03-20 | polsar-luminia | fix(recaudo): buscar facturas FCI- además de FELE- en ventas | +3 | -3 |
+| 50 | 2026-03-20 | polsar-luminia | fix(recaudo): 5 critical bugs en cálculo de comisiones de recaudo | +1,768 | -142 |
+| 51 | 2026-03-20 | polsar-luminia | fix(comisiones): auditoría completa — 9 fixes críticos y medios | +910 | -116 |
+| 52 | 2026-03-20 | polsar-luminia | feat(comisiones): uploads atómicos, audit log, y eliminación dualidad RPC/JS | +295 | -200 |
+| 53 | 2026-03-20 | polsar-luminia | fix(comisiones): implementar mejoras de auditoría post-refactor | +643 | -1 |
+| 54 | 2026-03-24 | polsar-luminia | fix(comisiones): mejoras de UI, 5 tramos, reporte sin duplicados | +205 | -68 |
+| 55 | 2026-03-24 | polsar-luminia | fix(branding): eliminar DistriPulse, renombrar a DistriMM en toda la app | +109 | -45 |
+| 56 | 2026-03-24 | polsar-luminia | fix(clientes): no sobreescribir datos maestros con NULLs al subir cartera | +39 | -30 |
+
+### Hitos clave (storyline para timeline)
+1. 8 mar — Big bang: initial commit con 30,321 líneas + integración shadcn/ui (46 archivos migrados a cn())
+2. 9 mar — Limpieza: eliminación de comentarios boilerplate generados por AI (-2,014 líneas)
+3. 16 mar — Release candidate v1.0.0 con 6,542 líneas + Claude hace code review masivo (15 commits: bugs, seguridad, tests unitarios)
+4. 18 mar — Auditoría de seguridad (23 bugs) + Playwright e2e tests desde cero (1,066 líneas)
+5. 19 mar — Sprint intenso de recaudo: 10 commits en un día, arreglando lógica de comisiones de recaudo paso a paso
+6. 20 mar — Refactor atómico de comisiones: uploads atómicos, audit log, eliminación de dualidad RPC/JS
+7. 24 mar — Rebranding: eliminar "DistriPulse", renombrar todo a "DistriMM"
+
+### Narrativa interesante para la visualización
+- Colaboración humano-IA: 73% humano / 27% Claude. Claude entró el día del RC (16 mar) e hizo 15 commits seguidos de code review, encontrando bugs P0/P1/P2
+- Velocidad: De 0 a ~79K líneas en 17 días
+- Fix-heavy: 70% de los commits son fixes — típico de un proyecto que itera rápido y corrige sobre la marcha
+- Recaudo fue el módulo más problemático: 14 menciones en commits, con correcciones iterativas de lógica contable (días de mora, facturas, deduplicación)
+- El día más productivo fue el 16 de marzo (domingo): 18 commits entre humano y Claude
+- El proyecto empezó como "DistriPulse" y fue renombrado a "DistriMM" al final
+
+### Key dependencies (para visualizar el stack)
+React 19, Vite, Supabase, Tailwind CSS 4, shadcn/ui (Radix UI), Recharts, Framer Motion, React Router 7, jsPDF, XLSX, Lucide icons, date-fns, DOMPurify, React Markdown, Sileo (toasts)
