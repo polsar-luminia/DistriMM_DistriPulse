@@ -30,6 +30,7 @@ import { clickableProps } from "@/utils/a11y";
 import { Card, KpiCard, EmptyState } from "./ComisionesShared";
 import VentasUploadModal from "./VentasUploadModal";
 import CatalogoUploadModal from "./CatalogoUploadModal";
+import IvaUploadModal from "./IvaUploadModal";
 import VendedorDetail from "./VendedorDetail";
 
 export default function VentasTab({ hook }) {
@@ -54,6 +55,7 @@ export default function VentasTab({ hook }) {
   }, [selectedCargaId]);
   const [showVentasModal, setShowVentasModal] = useState(false);
   const [showCatalogoModal, setShowCatalogoModal] = useState(false);
+  const [showIvaModal, setShowIvaModal] = useState(false);
 
   // Build exclusion lookup maps (shared utility)
   const lookups = useMemo(
@@ -103,7 +105,7 @@ export default function VentasTab({ hook }) {
       "Ventas Totales": Number(v.total_ventas || 0),
       "Costo Total": Number(v.total_costo || 0),
       "Sin Comision": Number(v.ventas_excluidas || 0),
-      "Costo Comisionable": Number(v.ventas_comisionables || 0),
+      "Ventas Comisionables": Number(v.ventas_comisionables || 0),
       "Items Total": Number(v.items_total || 0),
       "Items Sin Comision": Number(v.items_excluidos || 0),
       "Items Comisionables": Number(v.items_comisionables || 0),
@@ -113,7 +115,7 @@ export default function VentasTab({ hook }) {
       "Ventas Totales": totals.totalVentas,
       "Costo Total": totals.totalCosto,
       "Sin Comision": totals.ventasExcluidas,
-      "Costo Comisionable": totals.ventasComisionables,
+      "Ventas Comisionables": totals.ventasComisionables,
       "Items Total": comisiones.reduce(
         (s, v) => s + Number(v.items_total || 0),
         0,
@@ -269,6 +271,12 @@ export default function VentasTab({ hook }) {
           <Package size={14} /> Cargar Catalogo
         </button>
         <button
+          onClick={() => setShowIvaModal(true)}
+          className="px-3 py-2 bg-amber-600 rounded-lg text-xs font-bold text-white hover:bg-amber-700 transition-colors shadow-sm flex items-center gap-1.5"
+        >
+          <Package size={14} /> Tasas IVA
+        </button>
+        <button
           onClick={() => setShowVentasModal(true)}
           className="px-3 py-2 bg-indigo-600 rounded-lg text-xs font-bold text-white hover:bg-indigo-700 transition-colors shadow-sm flex items-center gap-1.5"
         >
@@ -308,37 +316,26 @@ export default function VentasTab({ hook }) {
       ) : (
         <>
           {/* KPI Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
             <KpiCard
-              title="Total Ventas"
-              value={formatCurrency(totals.totalVentas)}
+              title="Ventas Brutas"
+              value={formatCurrency(totals.totalVentas + dvTotals.total)}
+              subtitle="Solo VE (sin DV)"
               icon={DollarSign}
               type="info"
-            />
-            <KpiCard
-              title="Costo Total"
-              value={formatCurrency(totals.totalCosto)}
-              icon={DollarSign}
-              type="neutral"
-            />
-            <KpiCard
-              title="Costo comisionable"
-              value={formatCurrency(totals.ventasComisionables)}
-              icon={TrendingUp}
-              type="success"
-            />
-            <KpiCard
-              title="Sin comisión"
-              value={formatCurrency(totals.ventasExcluidas)}
-              subtitle="Marcas sin cuota"
-              icon={Ban}
-              type="neutral"
             />
             <KpiCard
               title={`Devoluciones (${dvTotals.count})`}
               value={formatCurrency(dvTotals.total)}
               icon={Undo2}
               type="danger"
+            />
+            <KpiCard
+              title="Venta Neta"
+              value={formatCurrency(totals.totalVentas)}
+              subtitle="Brutas - Devoluciones"
+              icon={TrendingUp}
+              type="success"
             />
           </div>
 
@@ -363,12 +360,10 @@ export default function VentasTab({ hook }) {
                   <thead className="bg-slate-50 text-xs text-slate-500 uppercase font-bold border-b border-slate-200">
                     <tr>
                       <th className="px-4 py-3">Vendedor</th>
-                      <th className="px-4 py-3 text-right">Ventas</th>
+                      <th className="px-4 py-3 text-right">Venta Bruta</th>
+                      <th className="px-4 py-3 text-right">Devoluciones</th>
+                      <th className="px-4 py-3 text-right">Venta Neta</th>
                       <th className="px-4 py-3 text-right">Costo</th>
-                      <th className="px-4 py-3 text-right">Sin comisión</th>
-                      <th className="px-4 py-3 text-right">
-                        Costo comisionable
-                      </th>
                       <th className="px-4 py-3 text-center">Items</th>
                       <th className="px-4 py-3 w-8"></th>
                     </tr>
@@ -395,23 +390,27 @@ export default function VentasTab({ hook }) {
                               </span>
                             </td>
                             <td className="px-4 py-3 text-right font-mono text-slate-700">
+                              {formatFullCurrency(v.ventas_ve)}
+                            </td>
+                            <td className="px-4 py-3 text-right font-mono text-rose-500">
+                              {v.items_dv > 0
+                                ? `(${v.items_dv}) ${formatFullCurrency(v.ventas_dv)}`
+                                : "—"}
+                            </td>
+                            <td className="px-4 py-3 text-right font-mono font-bold text-emerald-700">
                               {formatFullCurrency(v.total_ventas)}
                             </td>
                             <td className="px-4 py-3 text-right font-mono text-slate-500">
                               {formatFullCurrency(v.total_costo)}
                             </td>
-                            <td className="px-4 py-3 text-right font-mono text-slate-400">
-                              {formatFullCurrency(v.ventas_excluidas)}
-                            </td>
-                            <td className="px-4 py-3 text-right font-mono font-bold text-emerald-700">
-                              {formatFullCurrency(v.ventas_comisionables)}
-                            </td>
                             <td className="px-4 py-3 text-center">
                               <span className="text-xs text-slate-500">
-                                {v.items_comisionables}
-                                <span className="text-slate-300">
-                                  /{v.items_total}
-                                </span>
+                                {v.items_total - v.items_dv}
+                                {v.items_dv > 0 && (
+                                  <span className="text-rose-400">
+                                    -{v.items_dv}
+                                  </span>
+                                )}
                               </span>
                             </td>
                             <td className="px-4 py-3">
@@ -461,6 +460,11 @@ export default function VentasTab({ hook }) {
       <CatalogoUploadModal
         isOpen={showCatalogoModal}
         onClose={() => setShowCatalogoModal(false)}
+        onSuccess={hook.fetchCatalogo}
+      />
+      <IvaUploadModal
+        isOpen={showIvaModal}
+        onClose={() => setShowIvaModal(false)}
         onSuccess={hook.fetchCatalogo}
       />
       <ConfirmDialog {...confirmProps} />

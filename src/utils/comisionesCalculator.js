@@ -7,15 +7,15 @@ export function calcularComisionVentas({
 }) {
   // 1. Agrupar ventas por marca usando productBrandMap
   //    Para cada venta: marca = productBrandMap[venta.producto_codigo] || "SIN MARCA"
-  //    Sumar el campo `costo` (Number) de cada venta
-  //    IMPORTANTE: las DV ya vienen con costo negativo, se suman normalmente
+  //    Sumar el campo `valor_total` (Number) de cada venta
+  //    IMPORTANTE: las DV ya vienen con valor_total negativo, se suman normalmente
   const ventasPorMarca = {};
   ventas.forEach((v) => {
     const rawMarca = productBrandMap[v.producto_codigo] || "SIN MARCA";
     const marca = normalizeBrand(rawMarca);
     if (!ventasPorMarca[marca]) ventasPorMarca[marca] = 0;
-    const rawCosto = Number(v.costo);
-    ventasPorMarca[marca] += Number.isFinite(rawCosto) ? rawCosto : 0;
+    const rawVenta = Number(v.valor_total);
+    ventasPorMarca[marca] += Number.isFinite(rawVenta) ? rawVenta : 0;
   });
 
   const detalleMarcas = [];
@@ -25,17 +25,17 @@ export function calcularComisionVentas({
   presupuestosMarca.forEach((p) => {
     const marcaNorm = normalizeBrand(p.marca);
     marcasConPresupuesto.add(marcaNorm);
-    const rawCosto = ventasPorMarca[marcaNorm] || 0;
-    // Si DV de meses anteriores dejan el costo negativo, tratar como 0 (no penalizar)
-    const totalCosto = Math.max(0, rawCosto);
+    const rawVenta = ventasPorMarca[marcaNorm] || 0;
+    // Si DV de meses anteriores dejan la venta negativa, tratar como 0 (no penalizar)
+    const totalVenta = Math.max(0, rawVenta);
     const metaVentas = Number(p.meta_ventas || 0);
     const pctComision = Number(p.pct_comision || 0);
-    const cumpleMeta = metaVentas > 0 ? totalCosto >= metaVentas : true;
-    const comision = cumpleMeta ? totalCosto * pctComision : 0;
+    const cumpleMeta = metaVentas > 0 ? totalVenta >= metaVentas : true;
+    const comision = cumpleMeta ? totalVenta * pctComision : 0;
 
     detalleMarcas.push({
       marca: marcaNorm,
-      totalCosto,
+      totalVenta,
       metaVentas,
       pctComision,
       cumpleMeta,
@@ -45,11 +45,11 @@ export function calcularComisionVentas({
   });
 
   // 3. Agregar marcas con ventas pero sin presupuesto (informativo, comisión = 0)
-  Object.entries(ventasPorMarca).forEach(([marca, totalCosto]) => {
+  Object.entries(ventasPorMarca).forEach(([marca, totalVenta]) => {
     if (!marcasConPresupuesto.has(marca)) {
       detalleMarcas.push({
         marca,
-        totalCosto,
+        totalVenta,
         metaVentas: 0,
         pctComision: 0,
         cumpleMeta: false,
@@ -75,19 +75,30 @@ export function calcularComisionRecaudo({ recaudos, presupuestoRecaudo }) {
     (s, r) => s + toFinite(r.valor_recaudo),
     0,
   );
-  // Comisionable = recaudos que aplican, menos el costo de productos de marca excluida
+  // Comisionable = recaudos que aplican, menos exclusiones de marca e IVA
   const totalComisionable = recaudos.reduce((s, r) => {
     if (!r.aplica_comision) return s;
-    return s + toFinite(r.valor_recaudo) - toFinite(r.valor_excluido_marca);
+    return (
+      s +
+      toFinite(r.valor_recaudo) -
+      toFinite(r.valor_excluido_marca) -
+      toFinite(r.valor_iva)
+    );
+  }, 0);
+  const totalIva = recaudos.reduce((s, r) => {
+    if (!r.aplica_comision) return s;
+    return s + toFinite(r.valor_iva);
   }, 0);
   const totalExcluido = totalRecaudado - totalComisionable;
 
   // Si no hay presupuesto configurado, no se calcula comisión
-  if (!presupuestoRecaudo || !presupuestoRecaudo.meta_recaudo) {
+  const metaVal = Number(presupuestoRecaudo?.meta_recaudo);
+  if (!presupuestoRecaudo || !metaVal || metaVal <= 0) {
     return {
       totalRecaudado,
       totalComisionable,
       totalExcluido,
+      totalIva,
       metaRecaudo: 0,
       pctCumplimiento: 0,
       tramoAplicado: null,
@@ -96,7 +107,7 @@ export function calcularComisionRecaudo({ recaudos, presupuestoRecaudo }) {
     };
   }
 
-  const metaRecaudo = Number(presupuestoRecaudo.meta_recaudo);
+  const metaRecaudo = metaVal;
   const pctCumplimiento =
     metaRecaudo > 0 ? (totalComisionable / metaRecaudo) * 100 : 0;
 
@@ -151,6 +162,7 @@ export function calcularComisionRecaudo({ recaudos, presupuestoRecaudo }) {
     totalRecaudado,
     totalComisionable,
     totalExcluido,
+    totalIva,
     metaRecaudo,
     pctCumplimiento: Math.round(pctCumplimiento * 100) / 100,
     tramoAplicado,

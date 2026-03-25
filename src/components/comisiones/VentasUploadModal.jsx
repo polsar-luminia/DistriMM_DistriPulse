@@ -78,8 +78,14 @@ export default function VentasUploadModal({ isOpen, onClose, onSuccess }) {
           rowsWithHeader,
           rowsWithoutHeader,
         );
+        const hasDV = filtered.some((r) => r.tipo === "DV");
         setFullData(filtered);
         setPreviewData(filtered.slice(0, 5));
+        if (!hasDV) {
+          setError(
+            "Este archivo no contiene devoluciones (DV). Si el periodo tiene devoluciones, verifica que estes subiendo el archivo correcto.",
+          );
+        }
         setStep("preview");
       } catch (err) {
         const message =

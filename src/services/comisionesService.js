@@ -685,12 +685,15 @@ export function buildInputHash({
   const presRecaudoFp = (presupuestosRecaudo || [])
     .map(
       (p) =>
-        `${p.id}:${p.meta_recaudo || 0}:${p.tramo1_min || 0}:${p.tramo1_max || 0}:${p.tramo1_pct || 0}:${p.tramo2_min || 0}:${p.tramo2_max || 0}:${p.tramo2_pct || 0}:${p.tramo3_min || 0}:${p.tramo3_max || 0}:${p.tramo3_pct || 0}:${p.tramo4_min || 0}:${p.tramo4_max || 0}:${p.tramo4_pct || 0}:${p.tramo5_min || 0}:${p.tramo5_pct || 0}:${p.updated_at || ""}`,
+        `${p.id}:${p.meta_recaudo || 0}:${p.tramo1_min || 0}:${p.tramo1_max || 0}:${p.tramo1_pct || 0}:${p.tramo2_min || 0}:${p.tramo2_max || 0}:${p.tramo2_pct || 0}:${p.tramo3_min || 0}:${p.tramo3_max || 0}:${p.tramo3_pct || 0}:${p.tramo4_min || 0}:${p.tramo4_max || 0}:${p.tramo4_pct || 0}:${p.tramo5_min || 0}:${p.tramo5_max || 0}:${p.tramo5_pct || 0}:${p.updated_at || ""}`,
     )
     .sort()
     .join(",");
 
+  // Bump CALC_VERSION cuando cambie la lógica de cálculo para invalidar snapshots
+  const CALC_VERSION = 3; // v3: descuento IVA en recaudo + comisión ventas sobre valor_total
   return [
+    `calcV:${CALC_VERSION}`,
     ...(cargaIds || []).sort(),
     `v:${totalVentas}`,
     `r:${totalRecaudos}`,
@@ -700,7 +703,7 @@ export function buildInputHash({
     `cat:${
       catalogo?.length
         ? (catalogo || [])
-            .map((p) => `${p.codigo}:${p.marca || ""}`)
+            .map((p) => `${p.codigo}:${p.marca || ""}:${p.pct_iva || 0}`)
             .sort()
             .join(",")
         : catalogoCount || 0

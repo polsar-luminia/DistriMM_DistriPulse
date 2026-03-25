@@ -1,11 +1,6 @@
 import React, { useMemo } from "react";
 import { TrendingUp, Ban } from "lucide-react";
-import { cn } from "@/lib/utils";
-import {
-  formatFullCurrency,
-  formatPercentage,
-  formatDateUTC,
-} from "../../utils/formatters";
+import { formatFullCurrency, formatDateUTC } from "../../utils/formatters";
 
 export default function ReporteVendedorDetail({ vendedor }) {
   const ventas = vendedor.ventas;
@@ -43,7 +38,9 @@ export default function ReporteVendedorDetail({ vendedor }) {
         g.allExcluded = false;
       }
     });
-    return Object.values(map).sort((a, b) => (a.fecha || "").localeCompare(b.fecha || ""));
+    return Object.values(map).sort((a, b) =>
+      (a.fecha || "").localeCompare(b.fecha || ""),
+    );
   }, [ventas]);
 
   const facturasComisionables = facturaGroups.filter((f) => f.hasComisionable);
@@ -54,12 +51,15 @@ export default function ReporteVendedorDetail({ vendedor }) {
       {/* Section: Facturas Comisionables */}
       <div className="px-6 pt-4 pb-2">
         <h4 className="text-xs font-bold text-emerald-700 uppercase tracking-wider flex items-center gap-1.5">
-          <TrendingUp size={14} /> Facturas Comisionables ({facturasComisionables.length})
+          <TrendingUp size={14} /> Facturas Comisionables (
+          {facturasComisionables.length})
         </h4>
       </div>
 
       {facturasComisionables.length === 0 ? (
-        <p className="px-6 pb-4 text-xs text-slate-400">Sin facturas comisionables</p>
+        <p className="px-6 pb-4 text-xs text-slate-400">
+          Sin facturas comisionables
+        </p>
       ) : (
         <div className="px-6 pb-4 max-h-[350px] overflow-y-auto">
           <table className="w-full text-xs">
@@ -70,46 +70,63 @@ export default function ReporteVendedorDetail({ vendedor }) {
                 <th className="px-2 py-1.5 text-left">Cliente</th>
                 <th className="px-2 py-1.5 text-center">Lineas</th>
                 <th className="px-2 py-1.5 text-right">Valor Comisionable</th>
-                <th className="px-2 py-1.5 text-right">Margen %</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
               {facturasComisionables.map((f, idx) => {
-                const margenPct = f.totalComisionable > 0
-                  ? ((f.totalComisionable - f.costoComisionable) / f.totalComisionable) * 100
-                  : 0;
                 const hasExcludedLines = f.totalExcluido > 0;
                 return (
                   <React.Fragment key={`${f.factura}-${idx}`}>
                     <tr className="hover:bg-white">
-                      <td className="px-2 py-1.5 text-slate-600">{formatDateUTC(f.fecha)}</td>
-                      <td className="px-2 py-1.5 font-mono font-bold text-slate-800">{f.factura}</td>
-                      <td className="px-2 py-1.5 text-slate-600 truncate max-w-[160px]">{f.cliente}</td>
+                      <td className="px-2 py-1.5 text-slate-600">
+                        {formatDateUTC(f.fecha)}
+                      </td>
+                      <td className="px-2 py-1.5 font-mono font-bold text-slate-800">
+                        {f.factura}
+                      </td>
+                      <td className="px-2 py-1.5 text-slate-600 truncate max-w-[160px]">
+                        {f.cliente}
+                      </td>
                       <td className="px-2 py-1.5 text-center">
-                        <span className="text-slate-600">{f.lineas.filter((l) => !l.excluded).length}</span>
+                        <span className="text-slate-600">
+                          {f.lineas.filter((l) => !l.excluded).length}
+                        </span>
                         {hasExcludedLines && (
-                          <span className="text-rose-400 ml-0.5">+{f.lineas.filter((l) => l.excluded).length}</span>
+                          <span className="text-rose-400 ml-0.5">
+                            +{f.lineas.filter((l) => l.excluded).length}
+                          </span>
                         )}
                       </td>
-                      <td className="px-2 py-1.5 text-right font-mono font-bold text-emerald-700">{formatFullCurrency(f.totalComisionable)}</td>
-                      <td className="px-2 py-1.5 text-right">
-                        <span className={cn("font-bold", margenPct >= 20 ? "text-emerald-600" : margenPct >= 10 ? "text-amber-600" : "text-rose-600")}>
-                          {formatPercentage(margenPct)}
-                        </span>
+                      <td className="px-2 py-1.5 text-right font-mono font-bold text-emerald-700">
+                        {formatFullCurrency(f.totalComisionable)}
                       </td>
                     </tr>
                     {/* Show excluded lines within mixed factura tachadas */}
-                    {hasExcludedLines && f.lineas.filter((l) => l.excluded).map((line) => (
-                      <tr key={line.id} className="bg-[#fafafa]">
-                        <td className="px-2 py-1 text-slate-300"></td>
-                        <td className="px-2 py-1 text-slate-300 font-mono line-through">{line.producto_codigo}</td>
-                        <td colSpan={2} className="px-2 py-1 text-slate-400 line-through text-[11px] truncate max-w-[200px]">{line.producto_descripcion}</td>
-                        <td className="px-2 py-1 text-right font-mono text-slate-400 line-through">{formatFullCurrency(line.valor_total)}</td>
-                        <td className="px-2 py-1 text-right">
-                          <span className="inline-flex px-1 py-0.5 rounded text-[9px] font-bold bg-rose-100 text-rose-600">{line.reason}</span>
-                        </td>
-                      </tr>
-                    ))}
+                    {hasExcludedLines &&
+                      f.lineas
+                        .filter((l) => l.excluded)
+                        .map((line) => (
+                          <tr key={line.id} className="bg-[#fafafa]">
+                            <td className="px-2 py-1 text-slate-300"></td>
+                            <td className="px-2 py-1 text-slate-300 font-mono line-through">
+                              {line.producto_codigo}
+                            </td>
+                            <td
+                              colSpan={2}
+                              className="px-2 py-1 text-slate-400 line-through text-[11px] truncate max-w-[200px]"
+                            >
+                              {line.producto_descripcion}
+                            </td>
+                            <td className="px-2 py-1 text-right font-mono text-slate-400 line-through">
+                              {formatFullCurrency(line.valor_total)}
+                            </td>
+                            <td className="px-2 py-1 text-right">
+                              <span className="inline-flex px-1 py-0.5 rounded text-[9px] font-bold bg-rose-100 text-rose-600">
+                                {line.reason}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
                   </React.Fragment>
                 );
               })}
@@ -140,15 +157,29 @@ export default function ReporteVendedorDetail({ vendedor }) {
               </thead>
               <tbody className="divide-y divide-slate-200">
                 {facturasExcluidas.map((f, idx) => (
-                  <tr key={`excl-${f.factura}-${idx}`} className="bg-slate-100/50 text-slate-400">
+                  <tr
+                    key={`excl-${f.factura}-${idx}`}
+                    className="bg-slate-100/50 text-slate-400"
+                  >
                     <td className="px-2 py-1.5">{formatDateUTC(f.fecha)}</td>
                     <td className="px-2 py-1.5 font-mono">{f.factura}</td>
-                    <td className="px-2 py-1.5 truncate max-w-[160px]">{f.cliente}</td>
-                    <td className="px-2 py-1.5 text-center">{f.lineas.length}</td>
-                    <td className="px-2 py-1.5 text-right font-mono">{formatFullCurrency(f.totalExcluido)}</td>
+                    <td className="px-2 py-1.5 truncate max-w-[160px]">
+                      {f.cliente}
+                    </td>
+                    <td className="px-2 py-1.5 text-center">
+                      {f.lineas.length}
+                    </td>
+                    <td className="px-2 py-1.5 text-right font-mono">
+                      {formatFullCurrency(f.totalExcluido)}
+                    </td>
                     <td className="px-2 py-1.5">
                       {[...f.motivos].map((m) => (
-                        <span key={m} className="inline-flex px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-100 text-rose-600 mr-1">{m}</span>
+                        <span
+                          key={m}
+                          className="inline-flex px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-100 text-rose-600 mr-1"
+                        >
+                          {m}
+                        </span>
                       ))}
                     </td>
                   </tr>

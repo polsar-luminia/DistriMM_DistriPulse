@@ -26,20 +26,16 @@ export async function generarReporteExcelMensual({
     Vendedor: `${v.vendedor_nombre || "Sin nombre"} (#${v.vendedor_codigo})`,
     "Dias Trabajados": v.diasTrabajados,
     "Total Ventas": v.totalVentas,
-    "Ventas Excluidas": v.ventasExcluidas,
+    "Ventas Sin Comisión": v.ventasExcluidas,
     "Ventas Comisionables": v.ventasComisionables,
-    "Margen $": v.margenComisionable,
-    "Margen %": Number((v.margenPct || 0).toFixed(1)),
     "Facturas Comisionables": v.numFacturas,
   }));
   resumenRows.push({
     Vendedor: "TOTALES",
     "Dias Trabajados": "",
     "Total Ventas": grandTotals.totalVentas,
-    "Ventas Excluidas": grandTotals.ventasExcluidas,
+    "Ventas Sin Comisión": grandTotals.ventasExcluidas,
     "Ventas Comisionables": grandTotals.ventasComisionables,
-    "Margen $": grandTotals.margenComisionable,
-    "Margen %": Number((grandTotals.margenPct || 0).toFixed(1)),
     "Facturas Comisionables": "",
   });
 
@@ -56,8 +52,6 @@ export async function generarReporteExcelMensual({
       Cantidad: Number(v.cantidad || 0),
       "Valor Total": Number(v.valor_total || 0),
       Costo: Number(v.costo || 0),
-      "Margen $": Number(v.margen_valor || 0),
-      "Margen %": Number(v.margen_pct || 0),
     }));
 
   // Sheet 3: Detalle Excluido
@@ -73,8 +67,6 @@ export async function generarReporteExcelMensual({
       Cantidad: Number(v.cantidad || 0),
       "Valor Total": Number(v.valor_total || 0),
       Costo: Number(v.costo || 0),
-      "Margen $": Number(v.margen_valor || 0),
-      "Margen %": Number(v.margen_pct || 0),
       "Motivo Exclusion": v.reason || "",
     }));
 
@@ -100,7 +92,7 @@ export async function generarReporteExcelMensual({
       "Archivo Cargado": diaMap[fecha] || "",
       "Total Ventas": vals.total,
       Comisionables: vals.comisionable,
-      Excluidas: vals.excluido,
+      "Sin Comisión": vals.excluido,
     }));
 
   const XLSX = await import("xlsx-js-style");
@@ -133,8 +125,6 @@ export async function generarReporteExcelMensual({
     { wch: 10 },
     { wch: 14 },
     { wch: 14 },
-    { wch: 14 },
-    { wch: 10 },
   ];
   XLSX.utils.book_append_sheet(wb, ws2, "Detalle Comisionable");
 
@@ -151,11 +141,9 @@ export async function generarReporteExcelMensual({
     { wch: 10 },
     { wch: 14 },
     { wch: 14 },
-    { wch: 14 },
-    { wch: 10 },
     { wch: 22 },
   ];
-  XLSX.utils.book_append_sheet(wb, ws3, "Detalle Excluido");
+  XLSX.utils.book_append_sheet(wb, ws3, "Detalle Sin Comisión");
 
   const ws4 = XLSX.utils.json_to_sheet(diaRows.length > 0 ? diaRows : [{}]);
   ws4["!cols"] = [

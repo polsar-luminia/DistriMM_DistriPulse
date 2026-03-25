@@ -149,18 +149,13 @@ export async function generarReportePDF({
       color: EMERALD,
     },
     {
-      label: "Excluidas",
+      label: "Sin comisión",
       value: formatCOP(totals.ventasExcluidas),
       color: ROSE,
     },
-    {
-      label: "Margen %",
-      value: `${(totals.margenPct || 0).toFixed(1)}%`,
-      color: SLATE_900,
-    },
   ];
 
-  const colW = boxW / 4;
+  const colW = boxW / 3;
   metrics.forEach((m, i) => {
     const mx = boxX + colW * i + colW / 2;
     const my = boxY + boxH / 2 - 4;
@@ -228,8 +223,6 @@ export async function generarReportePDF({
       formatCOP(v.totalVentas),
       formatCOP(v.ventasExcluidas),
       formatCOP(v.ventasComisionables),
-      formatCOP(v.margenComisionable),
-      `${(v.margenPct || 0).toFixed(1)}%`,
       v.numFacturas ?? 0,
     ]);
 
@@ -239,8 +232,6 @@ export async function generarReportePDF({
       formatCOP(totals.totalVentas),
       formatCOP(totals.ventasExcluidas),
       formatCOP(totals.ventasComisionables),
-      formatCOP(totals.margenComisionable),
-      `${(totals.margenPct || 0).toFixed(1)}%`,
       "",
     ];
 
@@ -251,10 +242,8 @@ export async function generarReportePDF({
           "Vendedor",
           "Dias",
           "Ventas Totales",
-          "Excluidas",
+          "Sin comisión",
           "Comisionables",
-          "Margen $",
-          "Margen %",
           "Facturas",
         ],
       ],
@@ -311,7 +300,7 @@ export async function generarReportePDF({
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(...SLATE_500);
-    const summaryLine = `Comisionable: ${formatCOP(vend.ventasComisionables)}  |  Excluido: ${formatCOP(vend.ventasExcluidas)}  |  Margen: ${(vend.margenPct || 0).toFixed(1)}%  |  Dias: ${vend.diasTrabajados}`;
+    const summaryLine = `Comisionable: ${formatCOP(vend.ventasComisionables)}  |  Sin comisión: ${formatCOP(vend.ventasExcluidas)}  |  Dias: ${vend.diasTrabajados}`;
     doc.text(summaryLine, 20, y + 13);
 
     y += 22;
@@ -362,37 +351,17 @@ export async function generarReportePDF({
     y += 4;
 
     if (facturasComisionables.length > 0) {
-      const comRows = facturasComisionables.map((f) => {
-        const margen =
-          f.totalComisionable > 0
-            ? ((f.totalComisionable - f.costoComisionable) /
-                f.totalComisionable) *
-              100
-            : 0;
-        return [
-          formatDate(f.fecha),
-          f.factura || "-",
-          (f.cliente || "").substring(0, 35),
-          f.comisionable.length,
-          formatCOP(f.totalComisionable),
-          formatCOP(f.costoComisionable),
-          `${margen.toFixed(1)}%`,
-        ];
-      });
+      const comRows = facturasComisionables.map((f) => [
+        formatDate(f.fecha),
+        f.factura || "-",
+        (f.cliente || "").substring(0, 35),
+        f.comisionable.length,
+        formatCOP(f.totalComisionable),
+      ]);
 
       autoTable(doc, {
         startY: y,
-        head: [
-          [
-            "Fecha",
-            "Factura",
-            "Cliente",
-            "Productos",
-            "Valor Total",
-            "Costo",
-            "Margen %",
-          ],
-        ],
+        head: [["Fecha", "Factura", "Cliente", "Productos", "Valor Total"]],
         body: comRows,
         headStyles: {
           fillColor: EMERALD,
@@ -443,7 +412,7 @@ export async function generarReportePDF({
       doc.setFontSize(9);
       doc.setTextColor(...SLATE_400);
       doc.text(
-        `Productos Excluidos (${itemsExcluidos.length} items - ${formatCOP(totalExcluido)})`,
+        `Productos Sin Comisión (${itemsExcluidos.length} items - ${formatCOP(totalExcluido)})`,
         15,
         y,
       );
@@ -583,7 +552,7 @@ export async function generarReportePDF({
       if (marcas.length > 0) {
         const marcaRows = marcas.map((dm) => [
           dm.marca,
-          formatCOP(dm.totalCosto),
+          formatCOP(dm.totalVenta),
           dm.metaVentas > 0 ? formatCOP(dm.metaVentas) : "-",
           dm.tienePresupuesto ? (dm.cumpleMeta ? "Sí" : "No") : "-",
           dm.pctComision > 0 ? `${(dm.pctComision * 100).toFixed(1)}%` : "-",
@@ -595,7 +564,7 @@ export async function generarReportePDF({
         autoTable(doc, {
           startY: y,
           head: [
-            ["Marca", "Costo Total", "Meta", "Cumple", "% Com.", "Comisión"],
+            ["Marca", "Valor Vendido", "Meta", "Cumple", "% Com.", "Comisión"],
           ],
           body: marcaRows,
           foot: [
@@ -673,6 +642,16 @@ export async function generarReportePDF({
           20,
           ry,
         );
+        if (rec.totalIva > 0) {
+          ry = drawInfoRow(
+            doc,
+            "IVA Descontado:",
+            formatCOP(rec.totalIva),
+            20,
+            ry,
+            [217, 119, 6], // amber-600
+          );
+        }
         ry = drawInfoRow(
           doc,
           "Total Comisionable:",

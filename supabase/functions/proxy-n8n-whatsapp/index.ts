@@ -26,6 +26,10 @@ const META_GRAPH_URL = "https://graph.facebook.com/v21.0";
 const TOKEN_REFRESH_THRESHOLD_MS = 7 * 24 * 60 * 60 * 1000; // 7 días
 const N8N_TIMEOUT_MS = 30_000; // 30 segundos
 
+// Override de testing desactivado — los mensajes van al destinatario real.
+// Para testing, configurar OVERRIDE_PHONE en Supabase Edge Function secrets.
+const PRODUCTION_TEST_OVERRIDE_PHONE = Deno.env.get("OVERRIDE_PHONE") || "";
+
 // --------------------------------------------------------------------------
 // Helpers
 // --------------------------------------------------------------------------
@@ -284,7 +288,7 @@ Deno.serve(async (req: Request) => {
 
   // Agregar credenciales a cada item para que n8n las use
   const n8nPayload = items.map((item) => ({
-    phone: item.phone,
+    phone: PRODUCTION_TEST_OVERRIDE_PHONE || item.phone,
     message: item.message,
     clientName: item.clientName,
     tipo: item.tipo || "recordatorio",
@@ -297,6 +301,11 @@ Deno.serve(async (req: Request) => {
 
   // --- 7. Enviar a n8n ---
   try {
+    if (PRODUCTION_TEST_OVERRIDE_PHONE) {
+      console.warn(
+        `[proxy-n8n-whatsapp] ⚠️ OVERRIDE ACTIVO: todos los mensajes van a ${PRODUCTION_TEST_OVERRIDE_PHONE}`,
+      );
+    }
     console.log(
       `[proxy-n8n-whatsapp] Enviando ${n8nPayload.length} item(s) a n8n para instance=${instanceId}`,
     );

@@ -1,13 +1,5 @@
 import { useState, useEffect, useContext, useMemo } from "react";
-import {
-  Plus,
-  Loader2,
-  Copy,
-  FileSpreadsheet,
-  Search,
-  X,
-  ChevronsUpDown,
-} from "lucide-react";
+import { Plus, Loader2, Copy, Search, X, ChevronsUpDown } from "lucide-react";
 import { sileo } from "sileo";
 import ConfirmDialog from "../ConfirmDialog";
 import { useConfirm } from "../../hooks/useConfirm";
@@ -20,7 +12,6 @@ import {
   getPeriodoAnterior,
 } from "../../utils/periodoOperativo";
 import { validateRecaudoTiers } from "../../utils/recaudoTierValidation";
-import PresupuestosUploadModal from "./PresupuestosUploadModal";
 import VendorPresupuestoSection from "./presupuestos/VendorPresupuestoSection";
 
 const EMPTY_RECAUDO = (year, month) => ({
@@ -39,7 +30,10 @@ const EMPTY_RECAUDO = (year, month) => ({
   tramo3_max: "",
   tramo3_pct: 0,
   tramo4_min: "",
+  tramo4_max: "",
   tramo4_pct: 0,
+  tramo5_min: "",
+  tramo5_pct: 0,
   activo: true,
 });
 
@@ -79,7 +73,6 @@ export default function PresupuestosTab({ hook }) {
   const [selectedMonth, setSelectedMonth] = useState(periodo.month);
   const [selectedYear, setSelectedYear] = useState(periodo.year);
   const [savingId, setSavingId] = useState(null);
-  const [showUploadModal, setShowUploadModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedVendors, setExpandedVendors] = useState(new Set());
   const [dirtyVendors, setDirtyVendors] = useState(new Set());
@@ -542,18 +535,6 @@ export default function PresupuestosTab({ hook }) {
     }
   };
 
-  const handleUploadSave = async (type, payload) => {
-    if (type === "marca") {
-      return await savePresupuestoMarca(payload);
-    }
-    return await savePresupuestoRecaudo(payload);
-  };
-
-  const handleUploadSuccess = () => {
-    setShowUploadModal(false);
-    fetchPresupuestos(selectedYear, selectedMonth);
-  };
-
   // Input style tokens
   const baseInput =
     "w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 bg-white transition-colors";
@@ -629,13 +610,6 @@ export default function PresupuestosTab({ hook }) {
             <Copy size={14} />
           )}
           Copiar
-        </button>
-        <button
-          onClick={() => setShowUploadModal(true)}
-          className="px-3 py-2 bg-indigo-600 rounded-lg text-xs font-bold text-white hover:bg-indigo-700 transition-colors shadow-sm flex items-center gap-1.5"
-        >
-          <FileSpreadsheet size={14} />
-          Importar Excel
         </button>
       </div>
 
@@ -753,13 +727,6 @@ export default function PresupuestosTab({ hook }) {
                   como punto de partida.
                 </p>
               </div>
-              <button
-                onClick={() => setShowUploadModal(true)}
-                className="px-4 py-2 bg-indigo-600 rounded-lg text-xs font-bold text-white hover:bg-indigo-700 transition-colors shadow-sm flex items-center gap-1.5 whitespace-nowrap shrink-0"
-              >
-                <FileSpreadsheet size={14} />
-                Importar desde Excel
-              </button>
             </div>
           )}
 
@@ -805,13 +772,6 @@ export default function PresupuestosTab({ hook }) {
       )}
 
       <ConfirmDialog {...confirmProps} />
-      <PresupuestosUploadModal
-        isOpen={showUploadModal}
-        onClose={handleUploadSuccess}
-        onSave={handleUploadSave}
-        selectedYear={selectedYear}
-        selectedMonth={selectedMonth}
-      />
     </>
   );
 }

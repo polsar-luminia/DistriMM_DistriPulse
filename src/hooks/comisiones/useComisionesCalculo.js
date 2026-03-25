@@ -81,6 +81,7 @@ export function useComisionesCalculo(selectedCargaId, catalogo, exclusiones) {
         if (cErr || !cargasMes?.length) {
           setReporteMensual(empty);
           setLoadingReporte(false);
+          generatingReporteRef.current = false;
           return;
         }
 
@@ -163,6 +164,7 @@ export function useComisionesCalculo(selectedCargaId, catalogo, exclusiones) {
               }),
             );
             setLoadingReporte(false);
+            generatingReporteRef.current = false;
             return;
           }
         }
@@ -267,8 +269,8 @@ export function useComisionesCalculo(selectedCargaId, catalogo, exclusiones) {
         setReporteMensual(empty);
       } finally {
         generatingReporteRef.current = false;
+        setLoadingReporte(false);
       }
-      setLoadingReporte(false);
     },
     [catalogo, exclusiones],
   );
@@ -293,6 +295,9 @@ export function useComisionesCalculo(selectedCargaId, catalogo, exclusiones) {
           items_total: 0,
           items_excluidos: 0,
           items_comisionables: 0,
+          ventas_ve: 0,
+          ventas_dv: 0,
+          items_dv: 0,
         };
       }
       const m = map[cod];
@@ -307,11 +312,17 @@ export function useComisionesCalculo(selectedCargaId, catalogo, exclusiones) {
       m.total_ventas += vt;
       m.total_costo += co;
       m.items_total += 1;
+      if (v.tipo === "DV") {
+        m.ventas_dv += Math.abs(vt);
+        m.items_dv += 1;
+      } else {
+        m.ventas_ve += vt;
+      }
       if (info.excluded) {
         m.ventas_excluidas += vt;
         m.items_excluidos += 1;
       } else {
-        m.ventas_comisionables += co;
+        m.ventas_comisionables += vt;
         m.costo_comisionable += co;
         m.margen_comisionable += vt - co;
         m.items_comisionables += 1;

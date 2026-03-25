@@ -5,10 +5,10 @@ import {
   calcularComisionesCompletas,
 } from "../comisionesCalculator";
 
-function makeVenta(producto_codigo, costo, opts = {}) {
+function makeVenta(producto_codigo, valor_total, opts = {}) {
   return {
     producto_codigo,
-    costo,
+    valor_total,
     vendedor_codigo: opts.vendedor_codigo || "V1",
     vendedor_nombre: opts.vendedor_nombre || "Vendedor 1",
     excluded: opts.excluded || false,
@@ -65,7 +65,7 @@ describe("calcularComisionVentas", () => {
     expect(result.detalleMarcas[0].comision).toBe(0);
   });
 
-  test("devoluciones (DV) restan del total de costo", () => {
+  test("devoluciones (DV) restan del total de venta", () => {
     const ventas = [
       makeVenta("P1", 300000),
       makeVenta("P1", -50000), // DV con costo negativo
@@ -79,7 +79,7 @@ describe("calcularComisionVentas", () => {
       productBrandMap,
     });
 
-    expect(result.detalleMarcas[0].totalCosto).toBe(250000);
+    expect(result.detalleMarcas[0].totalVenta).toBe(250000);
     expect(result.detalleMarcas[0].cumpleMeta).toBe(true);
     expect(result.detalleMarcas[0].comision).toBe(5000); // 250000*0.02
   });
@@ -164,7 +164,7 @@ describe("calcularComisionVentas", () => {
     });
 
     const contegral = result.detalleMarcas.find((d) => d.marca === "CONTEGRAL");
-    expect(contegral.totalCosto).toBe(250000); // ambos sumados
+    expect(contegral.totalVenta).toBe(250000); // ambos sumados
     expect(contegral.cumpleMeta).toBe(true);
     expect(contegral.comision).toBe(12500); // 250000*0.05
   });
@@ -179,8 +179,25 @@ describe("calcularComisionVentas", () => {
     });
 
     expect(result.totalComisionVentas).toBe(0);
-    expect(result.detalleMarcas[0].totalCosto).toBe(0);
+    expect(result.detalleMarcas[0].totalVenta).toBe(0);
     expect(result.detalleMarcas[0].cumpleMeta).toBe(false);
+  });
+
+  test("DV que superan VE resultan en totalVenta=0 (clamped, no penaliza)", () => {
+    const ventas = [
+      makeVenta("P1", 100000),
+      makeVenta("P1", -200000), // DV mayor que VE
+    ];
+    const presupuestosMarca = [makePresupuestoMarca("CONTEGRAL", 50000, 0.02)];
+    const productBrandMap = { P1: "CONTEGRAL" };
+    const result = calcularComisionVentas({
+      ventas,
+      presupuestosMarca,
+      productBrandMap,
+    });
+    expect(result.detalleMarcas[0].totalVenta).toBe(0); // clamped a 0
+    expect(result.detalleMarcas[0].cumpleMeta).toBe(false); // 0 < 50000
+    expect(result.detalleMarcas[0].comision).toBe(0);
   });
 
   test("meta=0 implica cumpleMeta=true siempre", () => {
@@ -327,6 +344,30 @@ describe("calcularComisionRecaudo", () => {
 
     // 333333 / 1000000 * 100 = 33.3333 → rounded to 33.33
     expect(result.pctCumplimiento).toBe(33.33);
+  });
+
+  test("meta_recaudo negativo retorna comision 0", () => {
+    const recaudos = [makeRecaudo(500000, true)];
+    const presupuestoRecaudo = {
+      meta_recaudo: -5000,
+      tramo1_max: 70,
+      tramo1_pct: 0.01,
+    };
+    const result = calcularComisionRecaudo({ recaudos, presupuestoRecaudo });
+    expect(result.metaRecaudo).toBe(0);
+    expect(result.comisionRecaudo).toBe(0);
+  });
+
+  test("meta_recaudo como string NaN retorna comision 0", () => {
+    const recaudos = [makeRecaudo(500000, true)];
+    const presupuestoRecaudo = {
+      meta_recaudo: "abc",
+      tramo1_max: 70,
+      tramo1_pct: 0.01,
+    };
+    const result = calcularComisionRecaudo({ recaudos, presupuestoRecaudo });
+    expect(result.metaRecaudo).toBe(0);
+    expect(result.comisionRecaudo).toBe(0);
   });
 });
 
@@ -766,5 +807,144 @@ describe("calcularComisionRecaudo — prorrateo exclusiones marca", () => {
     expect(result.totalExcluido).toBe(150000);
     expect(result.pctCumplimiento).toBe(65);
     expect(result.comisionRecaudo).toBe(6500);
+  });
+});
+
+describe("calcularComisionRecaudo — tramo 5", () => {
+  test("tramo 5 se aplica cuando cumplimiento >= tramo5_min", () => {
+    const recaudos = [makeRecaudo(1500000, true)];
+    const presupuestoRecaudo = {
+      meta_recaudo: 1000000,
+      tramo1_max: 70,
+      tramo1_pct: 0.01,
+      tramo2_min: 70,
+      tramo2_pct: 0.02,
+      tramo3_min: 90,
+      tramo3_pct: 0.03,
+      tramo4_min: 100,
+      tramo4_pct: 0.04,
+      tramo5_min: 140,
+      tramo5_pct: 0.05,
+    };
+    const result = calcularComisionRecaudo({ recaudos, presupuestoRecaudo });
+    // 150% cumplimiento → Tramo 5
+    expect(result.pctCumplimiento).toBe(150);
+    expect(result.tramoAplicado).toBe("Tramo 5");
+    expect(result.pctComision).toBe(0.05);
+    expect(result.comisionRecaudo).toBe(75000); // 1500000 * 0.05
+  });
+
+  test("tramo 5 con min=null es inalcanzable (fallback Infinity)", () => {
+    const recaudos = [makeRecaudo(2000000, true)];
+    const presupuestoRecaudo = {
+      meta_recaudo: 1000000,
+      tramo1_max: 70,
+      tramo1_pct: 0.01,
+      tramo2_min: 70,
+      tramo2_pct: 0.02,
+      tramo3_min: 90,
+      tramo3_pct: 0.03,
+      tramo4_min: 100,
+      tramo4_pct: 0.04,
+      tramo5_min: null,
+      tramo5_pct: 0.05,
+    };
+    const result = calcularComisionRecaudo({ recaudos, presupuestoRecaudo });
+    // 200% cumplimiento, tramo5_min=null→Infinity → no matchea → cae a Tramo 4
+    expect(result.tramoAplicado).toBe("Tramo 4");
+    expect(result.pctComision).toBe(0.04);
+  });
+});
+
+describe("calcularComisionRecaudo — descuento IVA", () => {
+  test("valor_iva se resta del comisionable", () => {
+    const recaudos = [
+      {
+        vendedor_codigo: "V1",
+        valor_recaudo: 1190000,
+        aplica_comision: true,
+        valor_excluido_marca: 0,
+        valor_iva: 190000,
+      },
+    ];
+    const result = calcularComisionRecaudo({
+      recaudos,
+      presupuestoRecaudo: null,
+    });
+    expect(result.totalRecaudado).toBe(1190000);
+    expect(result.totalComisionable).toBe(1000000);
+    expect(result.totalIva).toBe(190000);
+  });
+
+  test("valor_iva y valor_excluido_marca se descuentan independientemente", () => {
+    const recaudos = [
+      {
+        vendedor_codigo: "V1",
+        valor_recaudo: 1000000,
+        aplica_comision: true,
+        valor_excluido_marca: 200000,
+        valor_iva: 50000,
+      },
+    ];
+    const result = calcularComisionRecaudo({
+      recaudos,
+      presupuestoRecaudo: null,
+    });
+    expect(result.totalComisionable).toBe(750000);
+    expect(result.totalIva).toBe(50000);
+  });
+
+  test("valor_iva no aplica a recaudos con aplica_comision=false", () => {
+    const recaudos = [
+      {
+        vendedor_codigo: "V1",
+        valor_recaudo: 500000,
+        aplica_comision: false,
+        valor_iva: 80000,
+      },
+    ];
+    const result = calcularComisionRecaudo({
+      recaudos,
+      presupuestoRecaudo: null,
+    });
+    expect(result.totalComisionable).toBe(0);
+    expect(result.totalIva).toBe(0);
+  });
+
+  test("sin valor_iva funciona igual que antes (backward compatible)", () => {
+    const recaudos = [makeRecaudo(500000, true)];
+    const result = calcularComisionRecaudo({
+      recaudos,
+      presupuestoRecaudo: null,
+    });
+    expect(result.totalRecaudado).toBe(500000);
+    expect(result.totalComisionable).toBe(500000);
+    expect(result.totalIva).toBe(0);
+  });
+
+  test("IVA afecta el porcentaje de cumplimiento y el tramo", () => {
+    const recaudos = [
+      {
+        vendedor_codigo: "V1",
+        valor_recaudo: 1000000,
+        aplica_comision: true,
+        valor_excluido_marca: 0,
+        valor_iva: 159664, // ~19% IVA → base = 840336
+      },
+    ];
+    const presupuestoRecaudo = {
+      meta_recaudo: 1000000,
+      tramo1_max: 70,
+      tramo1_pct: 0.01,
+      tramo2_min: 70,
+      tramo2_pct: 0.02,
+      tramo3_min: 90,
+      tramo3_pct: 0.03,
+    };
+    const result = calcularComisionRecaudo({ recaudos, presupuestoRecaudo });
+    // comisionable = 1000000 - 159664 = 840336 → 84.03% → Tramo 2
+    expect(result.totalComisionable).toBe(840336);
+    expect(result.tramoAplicado).toBe("Tramo 2");
+    expect(result.pctComision).toBe(0.02);
   });
 });
