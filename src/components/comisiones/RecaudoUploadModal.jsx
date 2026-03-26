@@ -30,6 +30,7 @@ import {
   transformRC,
   calcularIvaFactura,
 } from "../../utils/recaudoUpload";
+import { validateWorkbook } from "../../utils/excelETL";
 
 const { DIAS_MORA_LIMITE } = RECAUDO_THRESHOLDS;
 
@@ -374,10 +375,7 @@ export default function RecaudoUploadModal({ isOpen, onClose, onSuccess }) {
         const XLSX = await import("xlsx-js-style");
         const data = new Uint8Array(e.target.result);
         const wb = XLSX.read(data, { type: "array", cellDates: false });
-        if (!wb.SheetNames?.length)
-          throw new Error("El archivo Excel no contiene hojas.");
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        if (!ws) throw new Error("La primera hoja del archivo está vacía.");
+        const ws = validateWorkbook(wb);
 
         // Headers en Row 0 (RC) o Row 1 (plano con fila decorativa)
         let jsonData = XLSX.utils.sheet_to_json(ws, { range: 0 });

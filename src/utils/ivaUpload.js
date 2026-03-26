@@ -1,16 +1,4 @@
-/** Busca un valor en el row con múltiples aliases (tolerante a espacios) */
-function col(row, ...aliases) {
-  for (const a of aliases) {
-    if (row[a] !== undefined) return row[a];
-  }
-  for (const key of Object.keys(row)) {
-    const trimmed = key.trim();
-    for (const a of aliases) {
-      if (trimmed === a) return row[key];
-    }
-  }
-  return undefined;
-}
+import { col } from "./excelETL";
 
 /**
  * Parsea filas del Informe Diario de Ventas tipo de IVA.

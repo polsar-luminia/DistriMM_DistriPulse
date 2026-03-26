@@ -1,3 +1,9 @@
+import { col, parseNumeric, parseFlexibleDate } from "./excelETL";
+import { format } from "date-fns";
+
+// Re-exportar para mantener compatibilidad con imports existentes
+export { col };
+
 // Cuenta CxC Clientes para filtrar líneas contables
 export const CUENTA_CXC = "13050501";
 
@@ -13,13 +19,6 @@ const RC_MARKERS = [
 // Marcadores para detectar formato "Comisiones x Cartera" (CxC)
 const CXC_MARKERS = ["Fec. Abono", "Doc. CxC", "Base", "Vendedor", "Fec. CxC"];
 
-/** Busca un valor en el row intentando key exacto y trimmed (headers con espacios) */
-export function col(row, name) {
-  if (row[name] !== undefined) return row[name];
-  const key = Object.keys(row).find((k) => k.trim() === name);
-  return key !== undefined ? row[key] : undefined;
-}
-
 export function isRCFormat(jsonData) {
   if (!jsonData.length) return false;
   const headers = Object.keys(jsonData[0]).map((h) => h.trim());
@@ -32,21 +31,10 @@ export function isCxCFormat(jsonData) {
   return CXC_MARKERS.filter((m) => headers.includes(m)).length >= 4;
 }
 
+/** Wrapper de parseFlexibleDate que retorna string ISO (compatibilidad) */
 export function parseExcelDate(raw) {
-  if (!raw) return null;
-  if (typeof raw === "number") {
-    const d = new Date(1899, 11, 30);
-    d.setDate(d.getDate() + raw);
-    return d.toISOString().split("T")[0];
-  }
-  const s = String(raw).trim();
-  const parts = s.split("/");
-  if (parts.length === 3) {
-    const [dd, mm, yyyy] = parts;
-    return `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
-  }
-  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-  return null;
+  const d = parseFlexibleDate(raw);
+  return d ? format(d, "yyyy-MM-dd") : null;
 }
 
 /**
@@ -66,7 +54,7 @@ export function transformCxC(jsonData) {
       fecha_cxc: parseExcelDate(col(row, "Fec. CxC")),
       fecha_vence: parseExcelDate(col(row, "Fec. Vence")),
       vendedor_codigo: String(col(row, "Vendedor") || "").trim(),
-      valor_recaudo: parseFloat(col(row, "Base")) || 0,
+      valor_recaudo: parseNumeric(col(row, "Base")),
       dias_mora: Math.max(0, parseInt(col(row, "Días")) || 0),
     }))
     .filter((r) => r.valor_recaudo > 0);
@@ -93,7 +81,7 @@ export function transformRC(jsonData) {
       fecha_abono: parseExcelDate(col(row, "Fecha")),
       cliente_nit: String(col(row, "Mov_Tercero") || "").trim(),
       factura: String(col(row, "Mov_DocDetalle") || "").trim(),
-      valor_recaudo: parseFloat(col(row, "Creditos")) || 0,
+      valor_recaudo: parseNumeric(col(row, "Creditos")),
       cliente_nombre: "",
       vendedor_codigo: "",
       fecha_cxc: null,
