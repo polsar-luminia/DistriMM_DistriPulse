@@ -52,13 +52,23 @@ async function enrichRecaudoExclusions(rows) {
         "factura",
         facturasConPrefijo,
       ),
-      supabase
-        .from("distrimm_productos_catalogo")
-        .select("codigo, marca, pct_iva")
-        .then(({ data, error }) => {
+      (async () => {
+        // Paginar catálogo completo (Supabase limita a 1000 por query)
+        const all = [];
+        const PAGE = 1000;
+        let from = 0;
+        while (true) {
+          const { data, error } = await supabase
+            .from("distrimm_productos_catalogo")
+            .select("codigo, marca, pct_iva")
+            .range(from, from + PAGE - 1);
           if (error) throw error;
-          return data || [];
-        }),
+          if (data) all.push(...data);
+          if (!data || data.length < PAGE) break;
+          from += PAGE;
+        }
+        return all;
+      })(),
       supabase
         .from("distrimm_comisiones_exclusiones")
         .select("tipo, valor")
