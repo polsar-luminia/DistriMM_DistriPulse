@@ -91,7 +91,7 @@ export function useComisionesCalculo(selectedCargaId, catalogo, exclusiones) {
         // Buscar última carga de recaudo del periodo
         const { data: recaudoCargas } = await getRecaudoCargas();
         const recaudoCargasMes = (recaudoCargas || []).filter((c) => {
-          const d = new Date(c.fecha_periodo);
+          const d = new Date(c.fecha_periodo + "T12:00:00");
           return d.getFullYear() === year && d.getMonth() + 1 === month;
         });
         const ultimaCargaRecaudo =
@@ -172,7 +172,8 @@ export function useComisionesCalculo(selectedCargaId, catalogo, exclusiones) {
         // 2. No snapshot o recalc forzado — calcular en vivo
         const productBrandMap = {};
         (catalogo || []).forEach((p) => {
-          if (p.marca) productBrandMap[p.codigo] = p.marca;
+          if (p.marca)
+            productBrandMap[String(p.codigo).trim().toUpperCase()] = p.marca;
         });
 
         const lookups = buildExclusionLookups(exclusiones, catalogo);

@@ -22,3 +22,14 @@ EXCEPTION WHEN OTHERS THEN
   RETURN fallback;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
+
+-- safe_date: conversión tolerante a DATE que no aborta la transacción
+CREATE OR REPLACE FUNCTION safe_date(val TEXT)
+RETURNS DATE AS $$
+BEGIN
+  IF val IS NULL OR val = '' THEN RETURN NULL; END IF;
+  RETURN val::DATE;
+EXCEPTION WHEN OTHERS THEN
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql IMMUTABLE;

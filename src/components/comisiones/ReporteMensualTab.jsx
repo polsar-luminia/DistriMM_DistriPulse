@@ -192,9 +192,9 @@ export default function ReporteMensualTab({ hook }) {
       totalComision: 0,
     };
     filteredLiquidacion.forEach((l) => {
-      t.totalComisionVentas += l.comisionVentas.totalComisionVentas;
-      t.totalComisionRecaudo += l.comisionRecaudo.comisionRecaudo;
-      t.totalComision += l.totalComision;
+      t.totalComisionVentas += l.comisionVentas?.totalComisionVentas || 0;
+      t.totalComisionRecaudo += l.comisionRecaudo?.comisionRecaudo || 0;
+      t.totalComision += l.totalComision || 0;
     });
     return t;
   }, [filteredLiquidacion]);

@@ -21,7 +21,8 @@ import {
   parseVentasWorkbookRows,
   VENTAS_FORMAT_ERROR,
 } from "../../utils/ventasUpload";
-import { validateWorkbook } from "../../utils/excelETL";
+import { validateWorkbook, parseFlexibleDate } from "../../utils/excelETL";
+import { format as fmtDate } from "date-fns";
 
 export default function VentasUploadModal({ isOpen, onClose, onSuccess }) {
   const [confirmProps, confirm] = useConfirm();
@@ -131,20 +132,17 @@ export default function VentasUploadModal({ isOpen, onClose, onSuccess }) {
         }
       }
 
-      // Parse fecha for each row
+      if (fullData.length > 8000) {
+        throw new Error(
+          `Archivo muy grande (${fullData.length} filas). Maximo 8.000 por carga.`,
+        );
+      }
+
+      // Parse fecha for each row (usa parseFlexibleDate compartido con ajuste timezone)
       const parseDate = (raw) => {
         if (!raw) return fechaVentas;
-        if (typeof raw === "number") {
-          const d = new Date(1899, 11, 30);
-          d.setDate(d.getDate() + raw);
-          return d.toISOString().split("T")[0];
-        }
-        const parts = String(raw).split("/");
-        if (parts.length === 3) {
-          const [dd, mm, yyyy] = parts;
-          return `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
-        }
-        return fechaVentas;
+        const d = parseFlexibleDate(raw);
+        return d ? fmtDate(d, "yyyy-MM-dd") : fechaVentas;
       };
 
       const rows = fullData.map((r) => ({

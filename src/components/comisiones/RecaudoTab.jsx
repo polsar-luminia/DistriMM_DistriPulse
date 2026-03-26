@@ -124,7 +124,7 @@ export default function RecaudoTab({ hook }) {
       const exclMarca = Number(r.valor_excluido_marca || 0);
       const iva = Number(r.valor_iva || 0);
       totalRecaudado += val;
-      if (!r.aplica_comision && r.dias_mora > DIAS_MORA_LIMITE) {
+      if (!r.aplica_comision) {
         totalExcluidoMora += val;
         countMora += 1;
       } else {
@@ -357,7 +357,7 @@ export default function RecaudoTab({ hook }) {
 
                           {isExpanded && (
                             <tr>
-                              <td colSpan={8} className="p-0 bg-slate-50">
+                              <td colSpan={7} className="p-0 bg-slate-50">
                                 <div className="overflow-x-auto">
                                   <table className="w-full text-xs text-left">
                                     <thead className="text-slate-400 uppercase font-bold border-b border-slate-200">

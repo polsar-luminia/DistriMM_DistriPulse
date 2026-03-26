@@ -614,13 +614,12 @@ export default function RecaudoUploadModal({ isOpen, onClose, onSuccess }) {
     0,
   );
   const totalExcluidoMora = fullData
-    .filter((r) => !r.aplica_comision && r.dias_mora > DIAS_MORA_LIMITE)
+    .filter((r) => !r.aplica_comision)
     .reduce((s, r) => s + r.valor_recaudo, 0);
-  const totalIvaPreview = fullData
+  // totalComisionable alineado con lo que se guarda en DB (suma de valor_recaudo comisionable)
+  const totalComisionable = fullData
     .filter((r) => r.aplica_comision)
-    .reduce((s, r) => s + (r._valor_iva || 0), 0);
-  const totalComisionable =
-    totalRecaudado - totalExcluidoMarca - totalExcluidoMora - totalIvaPreview;
+    .reduce((s, r) => s + r.valor_recaudo, 0);
 
   return (
     <>

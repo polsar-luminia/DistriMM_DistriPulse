@@ -11,7 +11,9 @@ export function calcularComisionVentas({
   //    IMPORTANTE: las DV ya vienen con valor_total negativo, se suman normalmente
   const ventasPorMarca = {};
   ventas.forEach((v) => {
-    const rawMarca = productBrandMap[v.producto_codigo] || "SIN MARCA";
+    const rawMarca =
+      productBrandMap[String(v.producto_codigo).trim().toUpperCase()] ||
+      "SIN MARCA";
     const marca = normalizeBrand(rawMarca);
     if (!ventasPorMarca[marca]) ventasPorMarca[marca] = 0;
     const rawVenta = Number(v.valor_total);
@@ -21,9 +23,11 @@ export function calcularComisionVentas({
   const detalleMarcas = [];
 
   // 2. Procesar presupuestos configurados (normalizar marca para matchear con ventas)
+  // Dedup: si dos presupuestos normalizan a la misma marca, el primero gana
   const marcasConPresupuesto = new Set();
   presupuestosMarca.forEach((p) => {
     const marcaNorm = normalizeBrand(p.marca);
+    if (marcasConPresupuesto.has(marcaNorm)) return;
     marcasConPresupuesto.add(marcaNorm);
     const rawVenta = ventasPorMarca[marcaNorm] || 0;
     // Si DV de meses anteriores dejan la venta negativa, tratar como 0 (no penalizar)
@@ -115,7 +119,11 @@ export function calcularComisionRecaudo({ recaudos, presupuestoRecaudo }) {
   // Tramos 2-5 solo usan `min` (sin `max`). La evaluación top-down con break
   // hace que el tramo más alto alcanzado gane. Los gaps se validan en
   // recaudoTierValidation.js al configurar presupuestos.
-  const toNum = (v, fallback) => (v == null || v === "" ? fallback : Number(v));
+  const toNum = (v, fallback) => {
+    if (v == null || String(v).trim() === "") return fallback;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : fallback;
+  };
   const tramos = [
     {
       nombre: "Tramo 5",

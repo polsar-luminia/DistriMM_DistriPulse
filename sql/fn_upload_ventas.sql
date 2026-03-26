@@ -47,7 +47,7 @@ BEGIN
     r->>'vendedor_codigo', r->>'vendedor_nit', r->>'vendedor_nombre',
     r->>'producto_codigo', r->>'producto_descripcion',
     r->>'cliente_nit', r->>'cliente_nombre', r->>'municipio',
-    NULLIF(r->>'fecha', '')::DATE, r->>'factura',
+    safe_date(r->>'fecha'), r->>'factura',
     safe_numeric(r->>'precio'), safe_numeric(r->>'descuento'),
     safe_numeric(r->>'valor_unidad'), safe_numeric(r->>'cantidad'),
     safe_numeric(r->>'valor_total'), safe_numeric(r->>'costo'),
