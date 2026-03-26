@@ -269,14 +269,6 @@ export async function generarReportePDF({
         4: { fontStyle: "bold", textColor: EMERALD },
       },
       margin: { left: 15, right: 15 },
-      didParseCell(data) {
-        if (data.column.index === 6 && data.section === "body") {
-          const val = parseFloat(data.cell.raw);
-          if (val >= 20) data.cell.styles.textColor = EMERALD;
-          else if (val >= 10) data.cell.styles.textColor = AMBER;
-          else data.cell.styles.textColor = ROSE;
-        }
-      },
     });
   }
 
@@ -376,14 +368,6 @@ export async function generarReportePDF({
           4: { fontStyle: "bold" },
         },
         margin: { left: 15, right: 15 },
-        didParseCell(data) {
-          if (data.column.index === 6 && data.section === "body") {
-            const val = parseFloat(data.cell.raw);
-            if (val >= 20) data.cell.styles.textColor = EMERALD;
-            else if (val >= 10) data.cell.styles.textColor = AMBER;
-            else data.cell.styles.textColor = ROSE;
-          }
-        },
       });
 
       y = doc.lastAutoTable.finalY + 8;

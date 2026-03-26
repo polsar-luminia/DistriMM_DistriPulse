@@ -1,6 +1,6 @@
 ﻿/**
  * @fileoverview Main Layout with collapsible sidebar navigation.
- * Sidebar grouped by sections, DistriPulse style.
+ * Sidebar grouped by sections, DistriMM style.
  * @module layouts/MainLayout
  */
 

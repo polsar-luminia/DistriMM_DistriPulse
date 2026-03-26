@@ -46,7 +46,5 @@ export function jsonResponse(body: Record<string, unknown>, status = 200, req?: 
   });
 }
 
-// Backward compat: export static headers for functions that don't pass req
-export const CORS_HEADERS: Record<string, string> = buildCorsHeaders(
-  ALLOWED_ORIGINS.length > 0 ? ALLOWED_ORIGINS[0] : "*",
-);
+// Todas las funciones deben usar corsResponse(req) o jsonResponse(body, status, req)
+// para obtener CORS headers con validación de origen.

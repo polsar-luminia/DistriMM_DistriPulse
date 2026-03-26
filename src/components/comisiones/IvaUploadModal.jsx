@@ -19,7 +19,12 @@ export default function IvaUploadModal({ isOpen, onClose, onSuccess }) {
   const [step, setStep] = useState("select");
   const [previewData, setPreviewData] = useState([]);
   const [fullData, setFullData] = useState([]);
-  const [stats, setStats] = useState({ iva5: 0, iva19: 0, unknown: 0 });
+  const [stats, setStats] = useState({
+    iva0: 0,
+    iva5: 0,
+    iva19: 0,
+    unknown: 0,
+  });
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -31,7 +36,7 @@ export default function IvaUploadModal({ isOpen, onClose, onSuccess }) {
     setStep("select");
     setPreviewData([]);
     setFullData([]);
-    setStats({ iva5: 0, iva19: 0, unknown: 0 });
+    setStats({ iva0: 0, iva5: 0, iva19: 0, unknown: 0 });
     setError(null);
     setProgress(0);
   };
@@ -97,6 +102,7 @@ export default function IvaUploadModal({ isOpen, onClose, onSuccess }) {
         setFullData(valid);
         setPreviewData(valid.slice(0, 8));
         setStats({
+          iva0: valid.filter((r) => r.pct_iva === 0).length,
           iva5: valid.filter((r) => r.pct_iva === 5).length,
           iva19: valid.filter((r) => r.pct_iva === 19).length,
           unknown: unknownCount,
@@ -135,8 +141,12 @@ export default function IvaUploadModal({ isOpen, onClose, onSuccess }) {
       }
       setProgress(100);
       setStep("success");
+      const parts = [];
+      if (stats.iva0) parts.push(`${stats.iva0} exentos`);
+      if (stats.iva5) parts.push(`${stats.iva5} al 5%`);
+      if (stats.iva19) parts.push(`${stats.iva19} al 19%`);
       sileo.success(
-        `${fullData.length} productos actualizados: ${stats.iva5} al 5%, ${stats.iva19} al 19%`,
+        `${fullData.length} productos actualizados: ${parts.join(", ")}`,
       );
       setTimeout(() => {
         onSuccess();
@@ -263,9 +273,14 @@ export default function IvaUploadModal({ isOpen, onClose, onSuccess }) {
                     Tasas de IVA Detectadas
                   </h4>
                   <p className="text-sm text-amber-700">
-                    <span className="font-bold">{stats.iva5}</span> productos al
-                    5% y <span className="font-bold">{stats.iva19}</span> al
-                    19%.
+                    {stats.iva0 > 0 && (
+                      <>
+                        <span className="font-bold">{stats.iva0}</span>{" "}
+                        exentos,{" "}
+                      </>
+                    )}
+                    <span className="font-bold">{stats.iva5}</span> al 5% y{" "}
+                    <span className="font-bold">{stats.iva19}</span> al 19%.
                     {stats.unknown > 0 && (
                       <span className="text-amber-500">
                         {" "}
@@ -357,6 +372,7 @@ export default function IvaUploadModal({ isOpen, onClose, onSuccess }) {
               <CheckCircle size={64} className="mb-4" />
               <h4 className="text-2xl font-bold mb-2">IVA Actualizado!</h4>
               <p className="text-slate-500">
+                {stats.iva0 > 0 && `${stats.iva0} exentos, `}
                 {stats.iva5} al 5%, {stats.iva19} al 19%.
               </p>
             </div>

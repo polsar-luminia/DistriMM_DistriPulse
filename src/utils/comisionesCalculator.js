@@ -111,7 +111,10 @@ export function calcularComisionRecaudo({ recaudos, presupuestoRecaudo }) {
   const pctCumplimiento =
     metaRecaudo > 0 ? (totalComisionable / metaRecaudo) * 100 : 0;
 
-  // Determinar tramo — evaluar de mayor a menor para tomar el más alto alcanzado
+  // Determinar tramo — evaluar de mayor a menor para tomar el más alto alcanzado.
+  // Tramos 2-5 solo usan `min` (sin `max`). La evaluación top-down con break
+  // hace que el tramo más alto alcanzado gane. Los gaps se validan en
+  // recaudoTierValidation.js al configurar presupuestos.
   const toNum = (v, fallback) => (v == null || v === "" ? fallback : Number(v));
   const tramos = [
     {

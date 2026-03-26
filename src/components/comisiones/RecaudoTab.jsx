@@ -90,8 +90,8 @@ export default function RecaudoTab({ hook }) {
       const exclMarca = Number(r.valor_excluido_marca || 0);
       const iva = Number(r.valor_iva || 0);
       map[cod].totalRecaudado += val;
-      if (!r.aplica_comision && r.dias_mora > DIAS_MORA_LIMITE) {
-        // Excluido totalmente por mora
+      if (!r.aplica_comision) {
+        // Excluido (por mora o por match desconocido)
         map[cod].totalExcluido += val;
         map[cod].excluidoMora += val;
         map[cod].countMora += 1;

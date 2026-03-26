@@ -521,13 +521,16 @@ export default function RecaudoUploadModal({ isOpen, onClose, onSuccess }) {
       const periodoDate = new Date(fechaPeriodo + "T12:00:00");
       const pYear = periodoDate.getFullYear();
       const pMonth = periodoDate.getMonth() + 1;
-      const { data: existing } = await supabase
+      const startOfMonth = `${pYear}-${String(pMonth).padStart(2, "0")}-01`;
+      const endOfMonth =
+        pMonth === 12
+          ? `${pYear + 1}-01-01`
+          : `${pYear}-${String(pMonth + 1).padStart(2, "0")}-01`;
+      const { data: existingMes } = await supabase
         .from("distrimm_comisiones_cargas_recaudo")
-        .select("id, nombre_archivo, fecha_periodo");
-      const existingMes = (existing || []).filter((e) => {
-        const d = new Date(e.fecha_periodo);
-        return d.getFullYear() === pYear && d.getMonth() + 1 === pMonth;
-      });
+        .select("id, nombre_archivo, fecha_periodo")
+        .gte("fecha_periodo", startOfMonth)
+        .lt("fecha_periodo", endOfMonth);
 
       if (existingMes?.length > 0) {
         const nombres = existingMes.map((e) => e.nombre_archivo).join(", ");
