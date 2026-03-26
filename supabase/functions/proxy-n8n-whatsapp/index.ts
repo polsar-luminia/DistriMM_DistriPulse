@@ -276,6 +276,9 @@ Deno.serve(async (req: Request) => {
   // --- 6. Preparar payload para n8n ---
   const n8nUrl = Deno.env.get("N8N_WHATSAPP_URL");
   const n8nAuthKey = Deno.env.get("N8N_AUTH_KEY");
+  if (!n8nAuthKey) {
+    console.error("[proxy-n8n-whatsapp] N8N_AUTH_KEY not configured — n8n requests are unauthenticated");
+  }
 
   if (!n8nUrl) {
     return errorResponse(
@@ -286,7 +289,8 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  // Agregar credenciales a cada item para que n8n las use
+  // SECURITY: access_token se pasa a n8n porque lo necesita para llamar Meta Cloud API.
+  // No loguear este payload. TODO: migrar a que n8n lea el token desde DB por instance_id.
   const n8nPayload = items.map((item) => ({
     phone: PRODUCTION_TEST_OVERRIDE_PHONE || item.phone,
     message: item.message,
@@ -294,7 +298,6 @@ Deno.serve(async (req: Request) => {
     tipo: item.tipo || "recordatorio",
     detalle_id: item.detalle_id || null,
     lote_id: item.lote_id || null,
-    // Credenciales para que n8n envíe con la cuenta correcta
     phone_number_id: inst.phone_number_id,
     access_token: credentials.access_token,
   }));

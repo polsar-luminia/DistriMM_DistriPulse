@@ -61,7 +61,10 @@ export default function IvaUploadModal({ isOpen, onClose, onSuccess }) {
         const XLSX = await import("xlsx-js-style");
         const data = new Uint8Array(e.target.result);
         const wb = XLSX.read(data, { type: "array" });
+        if (!wb.SheetNames?.length)
+          throw new Error("El archivo Excel no contiene hojas.");
         const ws = wb.Sheets[wb.SheetNames[0]];
+        if (!ws) throw new Error("La primera hoja del archivo está vacía.");
         let jsonData = XLSX.utils.sheet_to_json(ws, { range: 0 });
         if (jsonData.length === 0)
           jsonData = XLSX.utils.sheet_to_json(ws, { range: 1 });
@@ -113,6 +116,7 @@ export default function IvaUploadModal({ isOpen, onClose, onSuccess }) {
     setProgress(20);
     try {
       const batchSize = 200;
+      let processedCount = 0;
       for (let i = 0; i < fullData.length; i += batchSize) {
         const batch = fullData.slice(i, i + batchSize).map((r) => ({
           codigo: r.codigo,
@@ -122,10 +126,12 @@ export default function IvaUploadModal({ isOpen, onClose, onSuccess }) {
         const { error: err } = await supabase
           .from("distrimm_productos_catalogo")
           .upsert(batch, { onConflict: "codigo" });
-        if (err) throw err;
-        setProgress(
-          20 + Math.round(((i + batch.length) / fullData.length) * 75),
-        );
+        if (err)
+          throw new Error(
+            `Se actualizaron ${processedCount} de ${fullData.length} productos. Error: ${err.message}`,
+          );
+        processedCount += batch.length;
+        setProgress(20 + Math.round((processedCount / fullData.length) * 75));
       }
       setProgress(100);
       setStep("success");

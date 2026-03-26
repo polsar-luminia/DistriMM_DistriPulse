@@ -374,7 +374,10 @@ export default function RecaudoUploadModal({ isOpen, onClose, onSuccess }) {
         const XLSX = await import("xlsx-js-style");
         const data = new Uint8Array(e.target.result);
         const wb = XLSX.read(data, { type: "array", cellDates: false });
+        if (!wb.SheetNames?.length)
+          throw new Error("El archivo Excel no contiene hojas.");
         const ws = wb.Sheets[wb.SheetNames[0]];
+        if (!ws) throw new Error("La primera hoja del archivo está vacía.");
 
         // Headers en Row 0 (RC) o Row 1 (plano con fila decorativa)
         let jsonData = XLSX.utils.sheet_to_json(ws, { range: 0 });
@@ -410,9 +413,11 @@ export default function RecaudoUploadModal({ isOpen, onClose, onSuccess }) {
           processed = withExclusions
             .map((row) => ({
               ...row,
+              // aplica_comision: gate por mora únicamente.
+              // La exclusión por marca se aplica como descuento proporcional en la liquidación
+              // (ver valor_excluido_marca). Ambos criterios se combinan al calcular comisión final.
               // dias_mora negativo = factura vigente (pagada antes de vencer) → comisionable
               // _sinMatchCartera = desconocido → no comisionable (política conservadora)
-              // CRÍTICO #4: rechazar dias_mora = -1 (desconocido) junto con _sinMatchCartera
               // RC: requiere match en cartera porque sin él no sabemos mora real
               aplica_comision:
                 !row._sinMatchCartera &&

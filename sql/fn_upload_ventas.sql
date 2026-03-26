@@ -48,9 +48,9 @@ BEGIN
     r->>'producto_codigo', r->>'producto_descripcion',
     r->>'cliente_nit', r->>'cliente_nombre', r->>'municipio',
     NULLIF(r->>'fecha', '')::DATE, r->>'factura',
-    COALESCE(NULLIF(r->>'precio', '')::NUMERIC, 0), COALESCE(NULLIF(r->>'descuento', '')::NUMERIC, 0),
-    COALESCE(NULLIF(r->>'valor_unidad', '')::NUMERIC, 0), COALESCE(NULLIF(r->>'cantidad', '')::NUMERIC, 0),
-    COALESCE(NULLIF(r->>'valor_total', '')::NUMERIC, 0), COALESCE(NULLIF(r->>'costo', '')::NUMERIC, 0),
+    safe_numeric(r->>'precio'), safe_numeric(r->>'descuento'),
+    safe_numeric(r->>'valor_unidad'), safe_numeric(r->>'cantidad'),
+    safe_numeric(r->>'valor_total'), safe_numeric(r->>'costo'),
     COALESCE(r->>'tipo', 'VE')
   FROM jsonb_array_elements(p_ventas) AS r;
 

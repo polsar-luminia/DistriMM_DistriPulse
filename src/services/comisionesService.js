@@ -113,13 +113,13 @@ export const getMarcasUnicas = async () => {
 
 export const clearProductosCatalogo = async () => {
   try {
-    const { error } = await supabase
+    const { error, count } = await supabase
       .from("distrimm_productos_catalogo")
-      .delete()
+      .delete({ count: "exact" })
       .not("codigo", "is", null);
 
     if (error) throw error;
-    return { success: true };
+    return { success: true, deletedCount: count };
   } catch (error) {
     if (import.meta.env.DEV)
       console.error("[comisionesService] Error clearing catálogo:", error);

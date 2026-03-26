@@ -70,7 +70,10 @@ export default function VentasUploadModal({ isOpen, onClose, onSuccess }) {
         const XLSX = await import("xlsx-js-style");
         const data = new Uint8Array(e.target.result);
         const wb = XLSX.read(data, { type: "array", cellDates: false });
+        if (!wb.SheetNames?.length)
+          throw new Error("El archivo Excel no contiene hojas.");
         const ws = wb.Sheets[wb.SheetNames[0]];
+        if (!ws) throw new Error("La primera hoja del archivo está vacía.");
         // Try range 1 first (skip decorative row), then range 0 for plain sheets.
         const rowsWithHeader = XLSX.utils.sheet_to_json(ws, { range: 1 });
         const rowsWithoutHeader = XLSX.utils.sheet_to_json(ws, { range: 0 });

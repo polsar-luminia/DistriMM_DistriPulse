@@ -91,10 +91,10 @@ export default function CatalogoTab({ hook }) {
     });
     if (!ok) return;
     setClearing(true);
-    const success = await clearCatalogo();
+    const { success, deletedCount } = await clearCatalogo();
     setClearing(false);
     if (success) {
-      sileo.success("Catálogo eliminado");
+      sileo.success(`Catálogo eliminado (${deletedCount ?? 0} productos)`);
     } else {
       sileo.error("Error al limpiar el catálogo");
     }

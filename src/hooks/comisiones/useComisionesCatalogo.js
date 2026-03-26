@@ -25,7 +25,8 @@ export function useComisionesCatalogo() {
       setMarcas(marcasRes.data || []);
     } catch (err) {
       if (requestId !== fetchRequestIdRef.current) return;
-      if (import.meta.env.DEV) console.error("[useComisionesCatalogo] Error fetching catalogo:", err);
+      if (import.meta.env.DEV)
+        console.error("[useComisionesCatalogo] Error fetching catalogo:", err);
       setCatalogo([]);
       setMarcas([]);
     }
@@ -44,14 +45,21 @@ export function useComisionesCatalogo() {
       })
       .catch((err) => {
         if (cancelled || requestId !== fetchRequestIdRef.current) return;
-        if (import.meta.env.DEV) console.error("[useComisionesCatalogo] Error fetching catalogo:", err);
+        if (import.meta.env.DEV)
+          console.error(
+            "[useComisionesCatalogo] Error fetching catalogo:",
+            err,
+          );
         setCatalogo([]);
         setMarcas([]);
       })
       .finally(() => {
-        if (!cancelled && requestId === fetchRequestIdRef.current) setLoadingCatalogo(false);
+        if (!cancelled && requestId === fetchRequestIdRef.current)
+          setLoadingCatalogo(false);
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const uploadCatalogo = useCallback(
@@ -64,9 +72,9 @@ export function useComisionesCatalogo() {
   );
 
   const clearCatalogo = useCallback(async () => {
-    const { success } = await clearProductosCatalogo();
+    const { success, deletedCount } = await clearProductosCatalogo();
     if (success) await fetchCatalogo();
-    return success;
+    return { success, deletedCount };
   }, [fetchCatalogo]);
 
   return {

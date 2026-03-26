@@ -36,7 +36,14 @@ function hasVentasHeaders(rows) {
 
 function parseNumeric(value) {
   if (value === null || value === undefined || value === "") return 0;
-  const parsed = Number.parseFloat(String(value).replace(",", "."));
+  let s = String(value).trim();
+  // Formato colombiano: 1.234.567,89 (puntos = miles, coma = decimal)
+  if (s.includes(",") && s.includes(".")) {
+    s = s.replace(/\./g, "").replace(",", ".");
+  } else {
+    s = s.replace(",", ".");
+  }
+  const parsed = Number.parseFloat(s);
   return Number.isFinite(parsed) ? parsed : 0;
 }
 

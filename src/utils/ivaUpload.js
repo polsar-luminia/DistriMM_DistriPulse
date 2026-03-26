@@ -14,7 +14,7 @@ function col(row, ...aliases) {
 
 /**
  * Parsea filas del Informe Diario de Ventas tipo de IVA.
- * Retorna array deduplicado de { codigo, nombre, pct_iva } con pct_iva 5 o 19.
+ * Retorna array deduplicado de { codigo, nombre, pct_iva } con pct_iva 0, 5 o 19.
  */
 export function parseIvaRows(jsonData) {
   const processed = jsonData
@@ -29,7 +29,7 @@ export function parseIvaRows(jsonData) {
       const pctIva = parseInt(rawIva, 10);
       return { codigo, nombre, pct_iva: pctIva };
     })
-    .filter((r) => r.codigo && (r.pct_iva === 5 || r.pct_iva === 19));
+    .filter((r) => r.codigo && [0, 5, 19].includes(r.pct_iva));
 
   const seen = new Set();
   return processed.filter((r) => {
