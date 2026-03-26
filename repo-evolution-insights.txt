@@ -4,16 +4,16 @@
 - **Nombre:** DistriMM DistriPulse
 - **Tipo:** SaaS de analytics para distribuidoras colombianas
 - **Stack:** React 19 + Vite + Supabase + Tailwind CSS 4 + shadcn/ui
-- **Vida del proyecto:** 17 días (8 mar 2026 → 24 mar 2026)
-- **Total commits:** 56
+- **Vida del proyecto:** 18 días (8 mar 2026 → 25 mar 2026)
+- **Total commits:** 65
 - **Branches:** 4 (main, feat/shadcn-integration, feat/security-and-cleanup, claude/code-review-security)
 - **Tags/Releases:** 0 (aún no hay releases formales)
 
 ### Autores
 | Autor | Commits | Rol |
 |---|---|---|
-| polsar-luminia | 41 (73%) | Humano — features, fixes, arquitectura |
-| Claude | 15 (27%) | IA — code review, bug fixes, tests |
+| polsar-luminia | 48 (74%) | Humano — features, fixes, arquitectura |
+| Claude | 17 (26%) | IA — code review, bug fixes, tests, docs |
 
 ### Crecimiento del código (líneas acumuladas netas)
 | Fecha | Líneas netas añadidas | Acumulado |
@@ -25,26 +25,27 @@
 | 2026-03-19 | +157 | 75,459 (módulo recaudo, fixes puntuales) |
 | 2026-03-20 | +3,166 | 78,625 (recaudo + comisiones refactor) |
 | 2026-03-24 | +210 | 78,835 (branding + últimos fixes) |
+| 2026-03-25 | +1,742 | 80,577 (IVA upload, auditoría técnica, licencia, ETL refactor) |
 
 ### Estado actual del código
 | Métrica | Valor |
 |---|---|
-| Archivos en src/ | 148 |
-| Archivos .jsx | 81 |
-| Archivos .js | 64 |
+| Archivos en src/ | 154 |
+| Archivos .jsx | 82 |
+| Archivos .js | 69 |
 | Archivos .css | 2 |
-| LOC JSX | 21,051 |
-| LOC JS | 12,111 |
+| LOC JSX | 21,483 |
+| LOC JS | 13,176 |
 | LOC CSS | 279 |
-| Total LOC | 33,441 |
+| Total LOC | 34,938 |
 | Deps producción | 26 |
 | Deps desarrollo | 18 |
 
 ### Distribución por directorio
 | Directorio | Archivos |
 |---|---|
-| src/components | 62 |
-| src/utils | 24 |
+| src/components | 63 |
+| src/utils | 29 |
 | src/hooks | 21 |
 | src/pages | 15 |
 | src/services | 12 |
@@ -52,32 +53,34 @@
 ### Top 10 archivos más grandes
 | Archivo | Líneas |
 |---|---|
-| ReporteMensualTab.jsx | 1,010 |
-| RecaudoUploadModal.jsx | 947 |
+| ReporteMensualTab.jsx | 1,016 |
+| comisionesCalculator.test.js | 950 |
+| RecaudoUploadModal.jsx | 898 |
 | UploadModal.jsx | 885 |
 | reporteCartera.js | 848 |
-| PresupuestosTab.jsx | 817 |
-| reportePDF.js | 784 |
-| comisionesCalculator.test.js | 770 |
+| PresupuestosTab.jsx | 780 |
 | NuevoLoteTab.jsx | 762 |
+| reportePDF.js | 747 |
 | VendedoresPage.jsx | 723 |
-| comisionesService.js | 709 |
+| comisionesService.js | 712 |
 
 ### Tipos de commits (conventional commits)
 | Tipo | Cantidad |
 |---|---|
-| fix | 39 (70%) |
-| feat | 10 (18%) |
-| refactor | 2 |
-| chore | 2 |
+| fix | 43 (66%) |
+| feat | 11 (17%) |
+| refactor | 3 (5%) |
+| chore | 3 (5%) |
+| docs | 1 |
 
 ### Módulos más mencionados en commits
 | Módulo | Menciones |
 |---|---|
 | recaudo | 14 |
-| comisiones | 5 |
+| comisiones | 8 |
 | e2e | 4 |
 | cfo | 2 |
+| audit | 1 |
 | security | 1 |
 | branding | 1 |
 | clientes | 1 |
@@ -86,8 +89,8 @@
 | Día | Commits |
 |---|---|
 | Lunes | 19 |
-| Miércoles | 10 |
-| Jueves | 10 |
+| Miércoles | 18 |
+| Jueves | 11 |
 | Viernes | 8 |
 | Domingo | 6 |
 | Martes | 3 |
@@ -151,6 +154,13 @@
 | 54 | 2026-03-24 | polsar-luminia | fix(comisiones): mejoras de UI, 5 tramos, reporte sin duplicados | +205 | -68 |
 | 55 | 2026-03-24 | polsar-luminia | fix(branding): eliminar DistriPulse, renombrar a DistriMM en toda la app | +109 | -45 |
 | 56 | 2026-03-24 | polsar-luminia | fix(clientes): no sobreescribir datos maestros con NULLs al subir cartera | +39 | -30 |
+| 57 | 2026-03-25 | polsar-luminia | feat(comisiones): IVA upload, recaudo refactor, mejoras post-auditoría | +2,063 | -859 |
+| 58 | 2026-03-25 | polsar-luminia | chore: agregar licencia propietaria — uso no autorizado prohibido | +16 | -0 |
+| 59 | 2026-03-25 | polsar-luminia | fix(audit): correcciones de 10 hallazgos de auditoría técnica | +124 | -36 |
+| 60 | 2026-03-25 | polsar-luminia | fix: corregir regresiones y riesgos de análisis post-auditoría | +40 | -36 |
+| 61 | 2026-03-25 | polsar-luminia | refactor: consolidar utilidades ETL + tests de integración comisiones | +466 | -88 |
+| 62 | 2026-03-25 | polsar-luminia | fix(comisiones): 8 bugs + 3 riesgos del modulo de comisiones | +48 | -31 |
+| 63 | 2026-03-25 | polsar-luminia | fix(comisiones): robustez de exports, vendor names, error feedback | +168 | -133 |
 
 ### Hitos clave (storyline para timeline)
 1. 8 mar — Big bang: initial commit con 30,321 líneas + integración shadcn/ui (46 archivos migrados a cn())
@@ -160,14 +170,17 @@
 5. 19 mar — Sprint intenso de recaudo: 10 commits en un día, arreglando lógica de comisiones de recaudo paso a paso
 6. 20 mar — Refactor atómico de comisiones: uploads atómicos, audit log, eliminación de dualidad RPC/JS
 7. 24 mar — Rebranding: eliminar "DistriPulse", renombrar todo a "DistriMM"
+8. 25 mar — Mega-commit de comisiones: IVA upload, recaudo refactor (+2,063/-859 líneas), licencia propietaria, auditoría técnica (10 hallazgos), consolidación ETL, y 11 bug fixes adicionales. 7 commits en un día.
 
 ### Narrativa interesante para la visualización
-- Colaboración humano-IA: 73% humano / 27% Claude. Claude entró el día del RC (16 mar) e hizo 15 commits seguidos de code review, encontrando bugs P0/P1/P2
-- Velocidad: De 0 a ~79K líneas en 17 días
-- Fix-heavy: 70% de los commits son fixes — típico de un proyecto que itera rápido y corrige sobre la marcha
+- Colaboración humano-IA: 74% humano / 26% Claude. Claude entró el día del RC (16 mar) e hizo 15 commits seguidos de code review, encontrando bugs P0/P1/P2
+- Velocidad: De 0 a ~81K líneas en 18 días
+- Fix-heavy: 66% de los commits son fixes — típico de un proyecto que itera rápido y corrige sobre la marcha
 - Recaudo fue el módulo más problemático: 14 menciones en commits, con correcciones iterativas de lógica contable (días de mora, facturas, deduplicación)
+- Comisiones es el módulo más activo: 8 menciones, con constantes mejoras de robustez y auditoría
 - El día más productivo fue el 16 de marzo (domingo): 18 commits entre humano y Claude
 - El proyecto empezó como "DistriPulse" y fue renombrado a "DistriMM" al final
+- El 25 de marzo fue otro día intenso: 7 commits con el refactor más grande de comisiones (+2,925 líneas netas), tests de integración nuevos, y la primera licencia propietaria del proyecto
 
 ### Key dependencies (para visualizar el stack)
 React 19, Vite, Supabase, Tailwind CSS 4, shadcn/ui (Radix UI), Recharts, Framer Motion, React Router 7, jsPDF, XLSX, Lucide icons, date-fns, DOMPurify, React Markdown, Sileo (toasts)
