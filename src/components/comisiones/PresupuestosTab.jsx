@@ -518,7 +518,7 @@ export default function PresupuestosTab({ hook }) {
     });
     if (!ok) return;
     setCopying(true);
-    const { error } = await copiarPresupuestos(
+    const { data, error } = await copiarPresupuestos(
       copyFromYear,
       copyFromMonth,
       selectedYear,
@@ -526,7 +526,10 @@ export default function PresupuestosTab({ hook }) {
     );
     setCopying(false);
     if (error) {
-      sileo.error("Error al copiar cuotas");
+      const detail = data
+        ? ` (${data.copiedRecaudo || 0} recaudo, ${data.copiedMarcas || 0} marca)`
+        : "";
+      sileo.error(`Error al copiar cuotas${detail}`);
     } else {
       sileo.success(
         `Cuotas copiadas de ${MESES[copyFromMonth - 1]} ${copyFromYear}`,

@@ -20,6 +20,7 @@ import RecaudoUploadModal from "./RecaudoUploadModal";
 import { RECAUDO_THRESHOLDS } from "../../constants/thresholds";
 import { DashboardContext } from "../DashboardManager";
 import { getPeriodoOperativo } from "../../utils/periodoOperativo";
+import { getVendedores } from "../../services/portfolioService";
 
 const { DIAS_MORA_LIMITE } = RECAUDO_THRESHOLDS;
 
@@ -48,15 +49,20 @@ export default function RecaudoTab({ hook }) {
   const [showModal, setShowModal] = useState(false);
   const [expandedVendedor, setExpandedVendedor] = useState(null);
 
-  // Mapa codigo → nombre desde ventas (ya cargadas en el hook)
-  const vendedorNombres = useMemo(() => {
-    const map = {};
-    (hook.ventasDetail || []).forEach((v) => {
-      if (v.vendedor_codigo && v.vendedor_nombre)
-        map[v.vendedor_codigo] = v.vendedor_nombre;
+  // Mapa codigo → nombre desde tabla maestra de vendedores
+  const [vendedorNombres, setVendedorNombres] = useState({});
+  useEffect(() => {
+    getVendedores().then(({ data }) => {
+      if (data) {
+        const map = {};
+        data.forEach((v) => {
+          if (v.codigo)
+            map[String(v.codigo)] = v.nombre || `Vendedor ${v.codigo}`;
+        });
+        setVendedorNombres(map);
+      }
     });
-    return map;
-  }, [hook.ventasDetail]);
+  }, []);
 
   // Derive exclusion reason from persisted data
   const getMotivo = (r) => {

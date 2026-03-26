@@ -250,15 +250,21 @@ export default function ReporteMensualTab({ hook }) {
   // ── Excel Export ──
   const handleExport = useCallback(async () => {
     if (!hasData) return;
-    await generarReporteExcelMensual({
-      vendedorData,
-      classifiedVentas,
-      cargas,
-      grandTotals,
-      selectedMonth,
-      selectedYear,
-    });
-    sileo.success("Reporte mensual exportado");
+    try {
+      await generarReporteExcelMensual({
+        vendedorData,
+        classifiedVentas,
+        cargas,
+        grandTotals,
+        selectedMonth,
+        selectedYear,
+      });
+      sileo.success("Reporte mensual exportado");
+    } catch (err) {
+      sileo.error("Error al exportar Excel");
+      if (import.meta.env.DEV)
+        console.error("[ReporteMensualTab] Error exportando Excel:", err);
+    }
   }, [
     hasData,
     vendedorData,
@@ -366,13 +372,15 @@ export default function ReporteMensualTab({ hook }) {
           <>
             <button
               onClick={handleExportPDF}
-              className="px-3 py-2 bg-emerald-600 rounded-lg text-xs font-bold text-white hover:bg-emerald-700 transition-colors shadow-sm flex items-center gap-1.5"
+              disabled={loadingReporte}
+              className="px-3 py-2 bg-emerald-600 rounded-lg text-xs font-bold text-white hover:bg-emerald-700 transition-colors shadow-sm flex items-center gap-1.5 disabled:opacity-50"
             >
               <FileDown size={14} /> PDF
             </button>
             <button
               onClick={handleExport}
-              className="px-3 py-2 bg-slate-700 rounded-lg text-xs font-bold text-white hover:bg-slate-800 transition-colors shadow-sm flex items-center gap-1.5"
+              disabled={loadingReporte}
+              className="px-3 py-2 bg-slate-700 rounded-lg text-xs font-bold text-white hover:bg-slate-800 transition-colors shadow-sm flex items-center gap-1.5 disabled:opacity-50"
             >
               <Download size={14} /> Excel
             </button>
