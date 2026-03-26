@@ -20,6 +20,7 @@ import RecaudoUploadModal from "./RecaudoUploadModal";
 import { RECAUDO_THRESHOLDS } from "../../constants/thresholds";
 import { DashboardContext } from "../DashboardManager";
 import { getPeriodoOperativo } from "../../utils/periodoOperativo";
+import { getVendedores } from "../../services/portfolioService";
 
 const { DIAS_MORA_LIMITE } = RECAUDO_THRESHOLDS;
 
@@ -48,6 +49,21 @@ export default function RecaudoTab({ hook }) {
   const [showModal, setShowModal] = useState(false);
   const [expandedVendedor, setExpandedVendedor] = useState(null);
 
+  // Mapa codigo → nombre desde tabla maestra de vendedores
+  const [vendedorNombres, setVendedorNombres] = useState({});
+  useEffect(() => {
+    getVendedores().then(({ data }) => {
+      if (data) {
+        const map = {};
+        data.forEach((v) => {
+          if (v.codigo)
+            map[String(v.codigo)] = v.nombre || `Vendedor ${v.codigo}`;
+        });
+        setVendedorNombres(map);
+      }
+    });
+  }, []);
+
   // Derive exclusion reason from persisted data
   const getMotivo = (r) => {
     if (!r.aplica_comision && r.dias_mora > DIAS_MORA_LIMITE) return "mora";
@@ -70,6 +86,7 @@ export default function RecaudoTab({ hook }) {
           totalExcluido: 0,
           excluidoMora: 0,
           excluidoMarca: 0,
+          excluidoIva: 0,
           countMora: 0,
           countMarca: 0,
           items: [],
@@ -77,18 +94,20 @@ export default function RecaudoTab({ hook }) {
       }
       const val = Number(r.valor_recaudo || 0);
       const exclMarca = Number(r.valor_excluido_marca || 0);
+      const iva = Number(r.valor_iva || 0);
       map[cod].totalRecaudado += val;
-      if (!r.aplica_comision && r.dias_mora > DIAS_MORA_LIMITE) {
-        // Excluido totalmente por mora
+      if (!r.aplica_comision) {
+        // Excluido (por mora o por match desconocido)
         map[cod].totalExcluido += val;
         map[cod].excluidoMora += val;
         map[cod].countMora += 1;
       } else {
-        // Comisionable (parcial o total)
-        map[cod].totalComisionable += val - exclMarca;
+        // Comisionable (parcial o total) — descontar exclusiones de marca + IVA
+        map[cod].totalComisionable += val - exclMarca - iva;
         map[cod].excluidoMarca += exclMarca;
+        map[cod].excluidoIva += iva;
         if (exclMarca > 0) map[cod].countMarca += 1;
-        map[cod].totalExcluido += exclMarca;
+        map[cod].totalExcluido += exclMarca + iva;
       }
       map[cod].items.push(r);
     });
@@ -103,22 +122,26 @@ export default function RecaudoTab({ hook }) {
     let totalComisionable = 0;
     let totalExcluidoMora = 0;
     let totalExcluidoMarca = 0;
+    let totalExcluidoIva = 0;
     let countMora = 0;
     let countMarca = 0;
     recaudos.forEach((r) => {
       const val = Number(r.valor_recaudo || 0);
       const exclMarca = Number(r.valor_excluido_marca || 0);
+      const iva = Number(r.valor_iva || 0);
       totalRecaudado += val;
-      if (!r.aplica_comision && r.dias_mora > DIAS_MORA_LIMITE) {
+      if (!r.aplica_comision) {
         totalExcluidoMora += val;
         countMora += 1;
       } else {
-        totalComisionable += val - exclMarca;
+        totalComisionable += val - exclMarca - iva;
         totalExcluidoMarca += exclMarca;
+        totalExcluidoIva += iva;
         if (exclMarca > 0) countMarca += 1;
       }
     });
-    const totalExcluido = totalExcluidoMora + totalExcluidoMarca;
+    const totalExcluido =
+      totalExcluidoMora + totalExcluidoMarca + totalExcluidoIva;
     const pctComisionable =
       totalRecaudado > 0 ? (totalComisionable / totalRecaudado) * 100 : 0;
     return {
@@ -127,6 +150,7 @@ export default function RecaudoTab({ hook }) {
       totalExcluido,
       totalExcluidoMora,
       totalExcluidoMarca,
+      totalExcluidoIva,
       countMora,
       countMarca,
       pctComisionable,
@@ -226,6 +250,14 @@ export default function RecaudoTab({ hook }) {
               icon={Tag}
               type="danger"
             />
+            {totals.totalExcluidoIva > 0 && (
+              <KpiCard
+                title="IVA Descontado"
+                value={formatCurrency(totals.totalExcluidoIva)}
+                icon={Percent}
+                type="warning"
+              />
+            )}
             <KpiCard
               title="% Comisionable"
               value={`${totals.pctComisionable.toFixed(1)}%`}
@@ -276,8 +308,14 @@ export default function RecaudoTab({ hook }) {
                               ),
                             )}
                           >
-                            <td className="px-4 py-3 font-bold text-slate-900">
-                              {v.vendedor_codigo}
+                            <td className="px-4 py-3">
+                              <span className="font-bold text-slate-900">
+                                {vendedorNombres[v.vendedor_codigo] ||
+                                  v.vendedor_codigo}
+                              </span>
+                              <span className="text-xs text-slate-400 ml-2">
+                                #{v.vendedor_codigo}
+                              </span>
                             </td>
                             <td className="px-4 py-3 text-right font-mono text-slate-700">
                               {formatFullCurrency(v.totalRecaudado)}
@@ -325,7 +363,7 @@ export default function RecaudoTab({ hook }) {
 
                           {isExpanded && (
                             <tr>
-                              <td colSpan={8} className="p-0 bg-slate-50">
+                              <td colSpan={7} className="p-0 bg-slate-50">
                                 <div className="overflow-x-auto">
                                   <table className="w-full text-xs text-left">
                                     <thead className="text-slate-400 uppercase font-bold border-b border-slate-200">
@@ -397,13 +435,21 @@ export default function RecaudoTab({ hook }) {
                                                     <span className="text-emerald-700 font-bold">
                                                       {formatFullCurrency(
                                                         item.valor_recaudo -
-                                                          exclM,
+                                                          exclM -
+                                                          Number(
+                                                            item.valor_iva || 0,
+                                                          ),
                                                       )}
                                                     </span>
                                                   );
                                                 return (
-                                                  <span className="text-slate-400">
-                                                    —
+                                                  <span className="text-emerald-700 font-bold">
+                                                    {formatFullCurrency(
+                                                      item.valor_recaudo -
+                                                        Number(
+                                                          item.valor_iva || 0,
+                                                        ),
+                                                    )}
                                                   </span>
                                                 );
                                               })()}

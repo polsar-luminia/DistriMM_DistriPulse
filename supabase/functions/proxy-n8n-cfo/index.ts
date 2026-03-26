@@ -31,7 +31,10 @@ Deno.serve(async (req: Request) => {
 
     // --- Read secrets ---
     const n8nWebhookUrl = Deno.env.get("N8N_WEBHOOK_URL");
-    const n8nAuthKey = Deno.env.get("N8N_AUTH_KEY") || "";
+    const n8nAuthKey = Deno.env.get("N8N_AUTH_KEY") ?? "";
+    if (!n8nAuthKey) {
+      console.error("[proxy-n8n-cfo] N8N_AUTH_KEY not configured — n8n requests are unauthenticated");
+    }
 
     if (!n8nWebhookUrl) {
       return jsonResponse({ error: "N8N_WEBHOOK_URL not configured" }, 500, req);

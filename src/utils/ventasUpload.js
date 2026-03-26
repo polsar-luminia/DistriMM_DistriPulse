@@ -1,3 +1,8 @@
+import { col, normalizeHeader, parseNumeric } from "./excelETL";
+
+// Re-exportar col para mantener compatibilidad con imports existentes
+export { col };
+
 const VENTAS_FORMAT_ERROR =
   "Formato no reconocido. Se esperaba 'Ventas de Productos por Factura'.";
 
@@ -11,33 +16,11 @@ const VENTAS_REQUIRED_HEADERS = [
   "Tipo",
 ];
 
-function normalizeHeader(value) {
-  return String(value || "")
-    .trim()
-    .replace(/\s+/g, " ")
-    .toLowerCase();
-}
-
-export function col(row, name) {
-  if (!row || typeof row !== "object") return undefined;
-  if (row[name] !== undefined) return row[name];
-
-  const wanted = normalizeHeader(name);
-  const key = Object.keys(row).find((k) => normalizeHeader(k) === wanted);
-  return key !== undefined ? row[key] : undefined;
-}
-
 function hasVentasHeaders(rows) {
   if (!Array.isArray(rows) || rows.length === 0) return false;
 
   const headers = new Set(Object.keys(rows[0]).map(normalizeHeader));
   return VENTAS_REQUIRED_HEADERS.every((h) => headers.has(normalizeHeader(h)));
-}
-
-function parseNumeric(value) {
-  if (value === null || value === undefined || value === "") return 0;
-  const parsed = Number.parseFloat(String(value).replace(",", "."));
-  return Number.isFinite(parsed) ? parsed : 0;
 }
 
 function parseVentaRow(row) {

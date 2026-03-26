@@ -21,6 +21,8 @@ import {
   parseVentasWorkbookRows,
   VENTAS_FORMAT_ERROR,
 } from "../../utils/ventasUpload";
+import { validateWorkbook, parseFlexibleDate } from "../../utils/excelETL";
+import { format as fmtDate } from "date-fns";
 
 export default function VentasUploadModal({ isOpen, onClose, onSuccess }) {
   const [confirmProps, confirm] = useConfirm();
@@ -70,7 +72,7 @@ export default function VentasUploadModal({ isOpen, onClose, onSuccess }) {
         const XLSX = await import("xlsx-js-style");
         const data = new Uint8Array(e.target.result);
         const wb = XLSX.read(data, { type: "array", cellDates: false });
-        const ws = wb.Sheets[wb.SheetNames[0]];
+        const ws = validateWorkbook(wb);
         // Try range 1 first (skip decorative row), then range 0 for plain sheets.
         const rowsWithHeader = XLSX.utils.sheet_to_json(ws, { range: 1 });
         const rowsWithoutHeader = XLSX.utils.sheet_to_json(ws, { range: 0 });
@@ -78,8 +80,14 @@ export default function VentasUploadModal({ isOpen, onClose, onSuccess }) {
           rowsWithHeader,
           rowsWithoutHeader,
         );
+        const hasDV = filtered.some((r) => r.tipo === "DV");
         setFullData(filtered);
         setPreviewData(filtered.slice(0, 5));
+        if (!hasDV) {
+          setError(
+            "Este archivo no contiene devoluciones (DV). Si el periodo tiene devoluciones, verifica que estes subiendo el archivo correcto.",
+          );
+        }
         setStep("preview");
       } catch (err) {
         const message =
@@ -124,20 +132,17 @@ export default function VentasUploadModal({ isOpen, onClose, onSuccess }) {
         }
       }
 
-      // Parse fecha for each row
+      if (fullData.length > 8000) {
+        throw new Error(
+          `Archivo muy grande (${fullData.length} filas). Maximo 8.000 por carga.`,
+        );
+      }
+
+      // Parse fecha for each row (usa parseFlexibleDate compartido con ajuste timezone)
       const parseDate = (raw) => {
         if (!raw) return fechaVentas;
-        if (typeof raw === "number") {
-          const d = new Date(1899, 11, 30);
-          d.setDate(d.getDate() + raw);
-          return d.toISOString().split("T")[0];
-        }
-        const parts = String(raw).split("/");
-        if (parts.length === 3) {
-          const [dd, mm, yyyy] = parts;
-          return `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
-        }
-        return fechaVentas;
+        const d = parseFlexibleDate(raw);
+        return d ? fmtDate(d, "yyyy-MM-dd") : fechaVentas;
       };
 
       const rows = fullData.map((r) => ({

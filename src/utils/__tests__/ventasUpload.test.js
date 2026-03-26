@@ -62,6 +62,25 @@ describe("parseVentasRows", () => {
     });
   });
 
+  test("parsea valores numéricos en formato colombiano (1.234.567,89)", () => {
+    const rows = [
+      {
+        Vend: "14",
+        Producto: "PROD-01",
+        Cliente: "900100200",
+        Factura: "F-001",
+        ValorTotal: "1.234.567,89",
+        Costo: "800.000,50",
+        Tipo: "VE",
+      },
+    ];
+
+    const parsed = parseVentasRows(rows);
+    expect(parsed).toHaveLength(1);
+    expect(parsed[0].valor_total).toBe(1234567.89);
+    expect(parsed[0].costo).toBe(800000.5);
+  });
+
   test("rechaza un archivo con headers no reconocidos", () => {
     expect(() =>
       parseVentasRows([

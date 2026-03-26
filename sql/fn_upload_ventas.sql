@@ -12,6 +12,15 @@ DECLARE
   v_carga_id UUID;
   v_old_ids UUID[];
 BEGIN
+  IF jsonb_array_length(p_ventas) = 0 THEN
+    RAISE EXCEPTION 'p_ventas no puede estar vacío';
+  END IF;
+
+  -- Bloquear filas para evitar race conditions, luego agregar IDs
+  PERFORM id FROM distrimm_comisiones_cargas
+  WHERE fecha_ventas = (p_carga->>'fecha_ventas')::DATE
+  FOR UPDATE;
+
   SELECT array_agg(id) INTO v_old_ids
   FROM distrimm_comisiones_cargas
   WHERE fecha_ventas = (p_carga->>'fecha_ventas')::DATE;
@@ -38,10 +47,10 @@ BEGIN
     r->>'vendedor_codigo', r->>'vendedor_nit', r->>'vendedor_nombre',
     r->>'producto_codigo', r->>'producto_descripcion',
     r->>'cliente_nit', r->>'cliente_nombre', r->>'municipio',
-    (r->>'fecha')::DATE, r->>'factura',
-    (r->>'precio')::NUMERIC, (r->>'descuento')::NUMERIC,
-    (r->>'valor_unidad')::NUMERIC, (r->>'cantidad')::NUMERIC,
-    (r->>'valor_total')::NUMERIC, (r->>'costo')::NUMERIC,
+    safe_date(r->>'fecha'), r->>'factura',
+    safe_numeric(r->>'precio'), safe_numeric(r->>'descuento'),
+    safe_numeric(r->>'valor_unidad'), safe_numeric(r->>'cantidad'),
+    safe_numeric(r->>'valor_total'), safe_numeric(r->>'costo'),
     COALESCE(r->>'tipo', 'VE')
   FROM jsonb_array_elements(p_ventas) AS r;
 

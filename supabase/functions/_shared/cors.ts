@@ -11,8 +11,14 @@ const ALLOWED_ORIGINS = ALLOWED_ORIGINS_RAW
  */
 function resolveOrigin(requestOrigin?: string | null): string {
   if (ALLOWED_ORIGINS.length === 0) {
-    console.warn("[cors] ALLOWED_ORIGINS not configured — using wildcard. Set ALLOWED_ORIGIN secret in production.");
-    return "*";
+    // En producción sin configurar, usar fallback seguro en vez de wildcard
+    const env = Deno.env.get("ENVIRONMENT");
+    if (env === "development" || env === "local") {
+      console.warn("[cors] ALLOWED_ORIGINS not configured — using wildcard (dev mode).");
+      return "*";
+    }
+    console.error("[cors] ALLOWED_ORIGINS not configured in production — rejecting unknown origins.");
+    return requestOrigin || "null";
   }
   if (requestOrigin && ALLOWED_ORIGINS.includes(requestOrigin)) return requestOrigin;
   return ALLOWED_ORIGINS[0]; // fallback al primero de la lista
@@ -40,7 +46,5 @@ export function jsonResponse(body: Record<string, unknown>, status = 200, req?: 
   });
 }
 
-// Backward compat: export static headers for functions that don't pass req
-export const CORS_HEADERS: Record<string, string> = buildCorsHeaders(
-  ALLOWED_ORIGINS.length > 0 ? ALLOWED_ORIGINS[0] : "*",
-);
+// Todas las funciones deben usar corsResponse(req) o jsonResponse(body, status, req)
+// para obtener CORS headers con validación de origen.

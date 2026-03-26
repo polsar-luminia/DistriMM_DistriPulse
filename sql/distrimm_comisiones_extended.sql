@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS distrimm_comisiones_cargas_recaudo (
   total_recaudado         numeric     DEFAULT 0,
   total_comisionable      numeric     DEFAULT 0,
   registros_excluidos_mora integer    DEFAULT 0,
+  total_iva          NUMERIC     DEFAULT 0,
   created_at              timestamptz DEFAULT timezone('utc', now())
 );
 
@@ -64,6 +65,8 @@ CREATE TABLE IF NOT EXISTS distrimm_comisiones_recaudos (
   fecha_cxc        date,
   fecha_vence      date,
   valor_recaudo    numeric     DEFAULT 0,
+  valor_excluido_marca NUMERIC DEFAULT 0,
+  valor_iva          NUMERIC     DEFAULT 0,
   dias_mora        integer     DEFAULT 0,
   aplica_comision  boolean     DEFAULT true,
   periodo_year     integer,
@@ -98,7 +101,7 @@ CREATE POLICY "Usuarios autenticados pueden eliminar recaudos"
 -- ---------------------------------------------------------------------------
 -- distrimm_comisiones_presupuestos_recaudo
 -- Metas y tramos de comisión por recaudo para cada vendedor/periodo.
--- Hasta 4 tramos escalonados (tramo1..tramo4).
+-- Hasta 5 tramos escalonados (tramo1..tramo5).
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS distrimm_comisiones_presupuestos_recaudo (
   id               uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -116,7 +119,11 @@ CREATE TABLE IF NOT EXISTS distrimm_comisiones_presupuestos_recaudo (
   tramo3_max       numeric,
   tramo3_pct       numeric     DEFAULT 0,
   tramo4_min       numeric,
+  tramo4_max       numeric,
   tramo4_pct       numeric     DEFAULT 0,
+  tramo5_min       numeric,
+  tramo5_max       numeric,
+  tramo5_pct       numeric     DEFAULT 0,
   activo           boolean     DEFAULT true,
   created_at       timestamptz DEFAULT timezone('utc', now()),
   updated_at       timestamptz DEFAULT timezone('utc', now()),
@@ -163,8 +170,6 @@ CREATE TABLE IF NOT EXISTS distrimm_comisiones_presupuestos_marca (
   activo           boolean     DEFAULT true,
   created_at       timestamptz DEFAULT timezone('utc', now()),
   updated_at       timestamptz DEFAULT timezone('utc', now()),
-  bono_fijo        numeric     DEFAULT 0,
-
   UNIQUE (vendedor_codigo, marca, periodo_year, periodo_month)
 );
 
@@ -191,3 +196,10 @@ CREATE POLICY "Usuarios autenticados pueden eliminar presupuestos por marca"
   ON distrimm_comisiones_presupuestos_marca FOR DELETE
   TO authenticated
   USING (true);
+
+-- ---------------------------------------------------------------------------
+-- distrimm_comisiones_ventas — columna tipo (VE = venta, DV = devolución)
+-- La tabla se define en comisiones_schema.sql; aquí solo la extensión.
+-- ---------------------------------------------------------------------------
+ALTER TABLE distrimm_comisiones_ventas
+  ADD COLUMN IF NOT EXISTS tipo TEXT DEFAULT 'VE';

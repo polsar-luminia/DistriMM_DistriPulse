@@ -6,6 +6,7 @@ import {
   CalendarRange,
   Wallet,
   Settings,
+  Info,
 } from "lucide-react";
 import useComisiones from "../hooks/useComisiones";
 import { TabButton } from "../components/comisiones/ComisionesShared";
@@ -30,6 +31,31 @@ export default function ComisionesPage() {
         <p className="text-sm text-slate-500 mt-1">
           Gestion de ventas, exclusiones y calculo de comisiones por vendedor
         </p>
+      </div>
+
+      {/* Orden de carga */}
+      <div className="bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200 rounded-xl px-5 py-3 flex items-center gap-4 text-sm text-indigo-800 shadow-sm">
+        <div className="bg-indigo-100 p-2 rounded-lg shrink-0">
+          <Info size={18} className="text-indigo-600" />
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="font-bold text-indigo-900">Orden de carga:</span>
+          <span className="bg-white px-2.5 py-1 rounded-md font-semibold text-indigo-700 border border-indigo-100 text-xs">
+            1. Catalogo / IVA
+          </span>
+          <span className="text-indigo-300 font-bold">→</span>
+          <span className="bg-white px-2.5 py-1 rounded-md font-semibold text-indigo-700 border border-indigo-100 text-xs">
+            2. Ventas
+          </span>
+          <span className="text-indigo-300 font-bold">→</span>
+          <span className="bg-white px-2.5 py-1 rounded-md font-semibold text-indigo-700 border border-indigo-100 text-xs">
+            3. Recaudo
+          </span>
+          <span className="text-indigo-300 font-bold">→</span>
+          <span className="bg-white px-2.5 py-1 rounded-md font-semibold text-emerald-700 border border-emerald-200 text-xs">
+            4. Generar Reporte
+          </span>
+        </div>
       </div>
 
       {/* Tabs */}

@@ -91,10 +91,10 @@ export default function CatalogoTab({ hook }) {
     });
     if (!ok) return;
     setClearing(true);
-    const success = await clearCatalogo();
+    const { success, deletedCount } = await clearCatalogo();
     setClearing(false);
     if (success) {
-      sileo.success("Catálogo eliminado");
+      sileo.success(`Catálogo eliminado (${deletedCount ?? 0} productos)`);
     } else {
       sileo.error("Error al limpiar el catálogo");
     }
@@ -172,7 +172,7 @@ export default function CatalogoTab({ hook }) {
         {excludedCount > 0 && (
           <span className="text-rose-500 font-bold ml-1">
             {" "}
-            · {excludedCount} excluidos
+            · {excludedCount} sin comisión
           </span>
         )}
       </p>
@@ -216,7 +216,7 @@ export default function CatalogoTab({ hook }) {
                     <td className="px-4 py-2.5 text-center">
                       {isExcl ? (
                         <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700">
-                          Excluido
+                          Sin comisión
                         </span>
                       ) : (
                         <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">

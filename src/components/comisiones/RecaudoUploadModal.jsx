@@ -22,67 +22,17 @@ import {
   buildExclusionLookups,
   getExclusionInfo,
 } from "../../hooks/comisiones/utils";
+import {
+  CUENTA_CXC,
+  isRCFormat,
+  isCxCFormat,
+  transformCxC,
+  transformRC,
+  calcularIvaFactura,
+} from "../../utils/recaudoUpload";
+import { validateWorkbook } from "../../utils/excelETL";
 
 const { DIAS_MORA_LIMITE } = RECAUDO_THRESHOLDS;
-
-// Cuenta CxC Clientes para filtrar líneas contables en formato RC
-const CUENTA_CXC = "13050501";
-
-// Marcadores para detectar formato "Movimiento de Comprobante RC"
-const RC_MARKERS = [
-  "Doc_Oficina",
-  "Tipo",
-  "Comprobante",
-  "Mov_Cuenta",
-  "Creditos",
-];
-
-/** Busca un valor en el row intentando key exacto y trimmed (headers con espacios) */
-function col(row, name) {
-  if (row[name] !== undefined) return row[name];
-  // Fallback: buscar key trimmed
-  const key = Object.keys(row).find((k) => k.trim() === name);
-  return key !== undefined ? row[key] : undefined;
-}
-
-function isRCFormat(jsonData) {
-  if (!jsonData.length) return false;
-  const headers = Object.keys(jsonData[0]).map((h) => h.trim());
-  return RC_MARKERS.filter((m) => headers.includes(m)).length >= 3;
-}
-
-// Marcadores para detectar formato "Comisiones x Cartera" (CxC)
-const CXC_MARKERS = ["Fec. Abono", "Doc. CxC", "Base", "Vendedor", "Fec. CxC"];
-
-function isCxCFormat(jsonData) {
-  if (!jsonData.length) return false;
-  const headers = Object.keys(jsonData[0]).map((h) => h.trim());
-  return CXC_MARKERS.filter((m) => headers.includes(m)).length >= 4;
-}
-
-/**
- * Transforma filas CxC (Comisiones x Cartera) al formato plano de recaudo.
- * Todo viene directo del archivo — sin enrichment de DB.
- */
-function transformCxC(jsonData) {
-  return jsonData
-    .filter((row) => String(col(row, "Cuenta") || "").trim() === CUENTA_CXC)
-    .map((row) => ({
-      comprobante: [col(row, "Tipo"), col(row, "Id Comp"), col(row, "Comprob")]
-        .filter(Boolean)
-        .join("-"),
-      fecha_abono: parseExcelDate(col(row, "Fec. Abono")),
-      cliente_nit: String(col(row, "Cliente") || "").trim(),
-      cliente_nombre: String(col(row, "Nombre Cliente") || "").trim(),
-      factura: String(col(row, "Doc. CxC") || "").trim(),
-      fecha_cxc: parseExcelDate(col(row, "Fec. CxC")),
-      fecha_vence: parseExcelDate(col(row, "Fec. Vence")),
-      vendedor_codigo: String(col(row, "Vendedor") || "").trim(),
-      valor_recaudo: parseFloat(col(row, "Base")) || 0,
-      dias_mora: Math.max(0, parseInt(col(row, "Días")) || 0),
-    }))
-    .filter((r) => r.valor_recaudo > 0);
-}
 
 /**
  * Enriquece filas de recaudo con exclusiones de marca/producto.
@@ -104,7 +54,7 @@ async function enrichRecaudoExclusions(rows) {
       ),
       supabase
         .from("distrimm_productos_catalogo")
-        .select("codigo, marca")
+        .select("codigo, marca, pct_iva")
         .then(({ data, error }) => {
           if (error) throw error;
           return data || [];
@@ -119,10 +69,20 @@ async function enrichRecaudoExclusions(rows) {
         }),
     ]);
 
-    if (exclusiones.length === 0) return rows;
-
     const { productExclusionSet, brandExclusionSet, productBrandMap } =
-      buildExclusionLookups(exclusiones, catalogo);
+      exclusiones.length > 0
+        ? buildExclusionLookups(exclusiones, catalogo)
+        : {
+            productExclusionSet: new Set(),
+            brandExclusionSet: new Set(),
+            productBrandMap: {},
+          };
+
+    // Mapa producto → pct_iva para cálculo de IVA por factura
+    const catalogoIvaMap = {};
+    catalogo.forEach((p) => {
+      catalogoIvaMap[p.codigo] = p.pct_iva || 0;
+    });
 
     // Mapear factura (sin prefijo) → lista de { producto_codigo, costo }
     const facturaProductos = {};
@@ -161,6 +121,7 @@ async function enrichRecaudoExclusions(rows) {
       const productos = facturaProductos[row.factura];
       if (!productos || productos.length === 0) return row;
 
+      // --- Exclusiones de marca ---
       let costoExcluido = 0;
       productos.forEach((p) => {
         const info = getExclusionInfo(
@@ -172,62 +133,42 @@ async function enrichRecaudoExclusions(rows) {
         if (info.excluded) costoExcluido += p.costo;
       });
 
-      if (costoExcluido === 0) return row;
+      let valorExcluidoMarca = 0;
+      if (costoExcluido > 0) {
+        const previo =
+          (yaDescontadoMap[row.factura] || 0) +
+          (descontadoEnEstaCarga[row.factura] || 0);
+        const pendiente = Math.max(0, costoExcluido - previo);
+        if (pendiente > 0) {
+          valorExcluidoMarca = Math.min(
+            Math.round(pendiente),
+            row.valor_recaudo,
+          );
+          descontadoEnEstaCarga[row.factura] =
+            (descontadoEnEstaCarga[row.factura] || 0) + valorExcluidoMarca;
+        }
+      }
 
-      // Solo descontar lo que falta (DB previas + rows anteriores de esta carga)
-      const previo =
-        (yaDescontadoMap[row.factura] || 0) +
-        (descontadoEnEstaCarga[row.factura] || 0);
-      const pendiente = Math.max(0, costoExcluido - previo);
-      if (pendiente === 0) return row;
-
-      const valorExcluidoMarca = Math.min(
-        Math.round(pendiente),
-        row.valor_recaudo,
+      // --- IVA proporcional (solo sobre la parte no excluida por marca) ---
+      const baseParaIva = Math.max(0, row.valor_recaudo - valorExcluidoMarca);
+      const valorIva = calcularIvaFactura(
+        productos,
+        baseParaIva,
+        catalogoIvaMap,
       );
 
-      descontadoEnEstaCarga[row.factura] =
-        (descontadoEnEstaCarga[row.factura] || 0) + valorExcluidoMarca;
-
-      return { ...row, _valor_excluido_marca: valorExcluidoMarca };
+      return {
+        ...row,
+        _valor_excluido_marca:
+          valorExcluidoMarca || row._valor_excluido_marca || 0,
+        _valor_iva: valorIva,
+      };
     });
   } catch (err) {
     if (import.meta.env.DEV)
       console.warn("[enrichRecaudoExclusions] Error:", err.message);
-    return rows;
+    return rows.map((r) => ({ ...r, _enrichment_failed: true }));
   }
-}
-
-/**
- * Transforma filas RC (diario contable) al formato plano de recaudo.
- * Solo toma líneas de cuenta CxC Clientes con crédito > 0.
- */
-function transformRC(jsonData) {
-  return jsonData
-    .filter((row) => {
-      const cuenta = String(col(row, "Mov_Cuenta") || "").trim();
-      const anulado = String(col(row, "Anulado") || "").toLowerCase();
-      return cuenta === CUENTA_CXC && anulado !== "sí" && anulado !== "si";
-    })
-    .map((row) => ({
-      comprobante: [
-        col(row, "Tipo"),
-        col(row, "Comprobante"),
-        col(row, "Doc_NumDocumento"),
-      ]
-        .filter(Boolean)
-        .join("-"),
-      fecha_abono: parseExcelDate(col(row, "Fecha")),
-      cliente_nit: String(col(row, "Mov_Tercero") || "").trim(),
-      factura: String(col(row, "Mov_DocDetalle") || "").trim(),
-      valor_recaudo: parseFloat(col(row, "Creditos")) || 0,
-      cliente_nombre: "",
-      vendedor_codigo: "",
-      fecha_cxc: null,
-      fecha_vence: null,
-      dias_mora: 0,
-    }))
-    .filter((r) => r.valor_recaudo > 0);
 }
 
 /**
@@ -384,25 +325,6 @@ async function enrichFromDB(rows) {
   });
 }
 
-// Parses a date value from Excel (serial number or dd/MM/yyyy string).
-function parseExcelDate(raw) {
-  if (!raw) return null;
-  if (typeof raw === "number") {
-    const d = new Date(1899, 11, 30);
-    d.setDate(d.getDate() + raw);
-    return d.toISOString().split("T")[0];
-  }
-  const s = String(raw).trim();
-  const parts = s.split("/");
-  if (parts.length === 3) {
-    const [dd, mm, yyyy] = parts;
-    return `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
-  }
-  // ISO fallback
-  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-  return null;
-}
-
 export default function RecaudoUploadModal({ isOpen, onClose, onSuccess }) {
   const [confirmProps, confirm] = useConfirm();
   const [file, setFile] = useState(null);
@@ -453,7 +375,7 @@ export default function RecaudoUploadModal({ isOpen, onClose, onSuccess }) {
         const XLSX = await import("xlsx-js-style");
         const data = new Uint8Array(e.target.result);
         const wb = XLSX.read(data, { type: "array", cellDates: false });
-        const ws = wb.Sheets[wb.SheetNames[0]];
+        const ws = validateWorkbook(wb);
 
         // Headers en Row 0 (RC) o Row 1 (plano con fila decorativa)
         let jsonData = XLSX.utils.sheet_to_json(ws, { range: 0 });
@@ -480,12 +402,20 @@ export default function RecaudoUploadModal({ isOpen, onClose, onSuccess }) {
           const enriched = await enrichFromDB(transformed);
           // Enriquecer con exclusiones de marca (CRÍTICO #3: RC necesita valor_excluido_marca)
           const withExclusions = await enrichRecaudoExclusions(enriched);
+          if (withExclusions.some((r) => r._enrichment_failed)) {
+            setError(
+              "No se pudieron calcular exclusiones ni IVA. Verifica la conexión e intenta de nuevo.",
+            );
+            return;
+          }
           processed = withExclusions
             .map((row) => ({
               ...row,
+              // aplica_comision: gate por mora únicamente.
+              // La exclusión por marca se aplica como descuento proporcional en la liquidación
+              // (ver valor_excluido_marca). Ambos criterios se combinan al calcular comisión final.
               // dias_mora negativo = factura vigente (pagada antes de vencer) → comisionable
               // _sinMatchCartera = desconocido → no comisionable (política conservadora)
-              // CRÍTICO #4: rechazar dias_mora = -1 (desconocido) junto con _sinMatchCartera
               // RC: requiere match en cartera porque sin él no sabemos mora real
               aplica_comision:
                 !row._sinMatchCartera &&
@@ -505,15 +435,19 @@ export default function RecaudoUploadModal({ isOpen, onClose, onSuccess }) {
                 ") en el archivo.",
             );
           const withExclusions = await enrichRecaudoExclusions(transformed);
+          if (withExclusions.some((r) => r._enrichment_failed)) {
+            setError(
+              "No se pudieron calcular exclusiones ni IVA. Verifica la conexión e intenta de nuevo.",
+            );
+            return;
+          }
           processed = withExclusions
             .map((row) => ({
               ...row,
               // CRÍTICO #4: rechazar dias_mora = -1 (desconocido)
-              // CxC: confiamos en mora del ERP; excluimos si 100% costo es de marca excluida
+              // CxC: confiamos en mora del ERP; exclusión de marca se maneja via valor_excluido_marca
               aplica_comision:
-                row.dias_mora >= 0 &&
-                row.dias_mora <= DIAS_MORA_LIMITE &&
-                (row._valor_excluido_marca || 0) < row.valor_recaudo,
+                row.dias_mora >= 0 && row.dias_mora <= DIAS_MORA_LIMITE,
               periodo_year: periodoYear,
               periodo_month: periodoMonth,
             }))
@@ -531,6 +465,12 @@ export default function RecaudoUploadModal({ isOpen, onClose, onSuccess }) {
               );
             // CRÍTICO #1: enriquecer con exclusiones ANTES de calcular aplica_comision
             const withExclusions = await enrichRecaudoExclusions(transformed);
+            if (withExclusions.some((r) => r._enrichment_failed)) {
+              setError(
+                "No se pudieron calcular exclusiones ni IVA. Verifica la conexión e intenta de nuevo.",
+              );
+              return;
+            }
             processed = withExclusions
               .map((row) => ({
                 ...row,
@@ -538,9 +478,7 @@ export default function RecaudoUploadModal({ isOpen, onClose, onSuccess }) {
                 // no _excluded (variable que nunca se asigna)
                 // CRÍTICO #4: rechazar dias_mora = -1 (desconocido)
                 aplica_comision:
-                  row.dias_mora >= 0 &&
-                  row.dias_mora <= DIAS_MORA_LIMITE &&
-                  (row._valor_excluido_marca || 0) < row.valor_recaudo,
+                  row.dias_mora >= 0 && row.dias_mora <= DIAS_MORA_LIMITE,
                 periodo_year: periodoYear,
                 periodo_month: periodoMonth,
               }))
@@ -577,17 +515,26 @@ export default function RecaudoUploadModal({ isOpen, onClose, onSuccess }) {
         .reduce((s, r) => s + r.valor_recaudo, 0);
       const excluidos = fullData.filter((r) => !r.aplica_comision).length;
 
-      // 0. Verificar duplicados por periodo
-      const { data: existing } = await supabase
+      // 0. Verificar duplicados por mes (la nueva carga reemplaza todas las del mismo mes)
+      const periodoDate = new Date(fechaPeriodo + "T12:00:00");
+      const pYear = periodoDate.getFullYear();
+      const pMonth = periodoDate.getMonth() + 1;
+      const startOfMonth = `${pYear}-${String(pMonth).padStart(2, "0")}-01`;
+      const endOfMonth =
+        pMonth === 12
+          ? `${pYear + 1}-01-01`
+          : `${pYear}-${String(pMonth + 1).padStart(2, "0")}-01`;
+      const { data: existingMes } = await supabase
         .from("distrimm_comisiones_cargas_recaudo")
-        .select("id, nombre_archivo")
-        .eq("fecha_periodo", fechaPeriodo);
+        .select("id, nombre_archivo, fecha_periodo")
+        .gte("fecha_periodo", startOfMonth)
+        .lt("fecha_periodo", endOfMonth);
 
-      if (existing?.length > 0) {
-        const nombres = existing.map((e) => e.nombre_archivo).join(", ");
+      if (existingMes?.length > 0) {
+        const nombres = existingMes.map((e) => e.nombre_archivo).join(", ");
         const ok = await confirm({
-          title: "Carga duplicada",
-          message: `Ya existe${existing.length > 1 ? "n" : ""} ${existing.length} carga${existing.length > 1 ? "s" : ""} de recaudos para esta fecha (${nombres}). ¿Deseas reemplazarla${existing.length > 1 ? "s" : ""}?`,
+          title: "Carga existente",
+          message: `Ya existe${existingMes.length > 1 ? "n" : ""} ${existingMes.length} carga${existingMes.length > 1 ? "s" : ""} de recaudos para este mes (${nombres}). La nueva carga reemplazará las anteriores.`,
           confirmText: "Reemplazar",
           cancelText: "Cancelar",
           variant: "warning",
@@ -610,6 +557,7 @@ export default function RecaudoUploadModal({ isOpen, onClose, onSuccess }) {
         fecha_vence: r.fecha_vence || null,
         valor_recaudo: r.valor_recaudo,
         valor_excluido_marca: r._valor_excluido_marca || 0,
+        valor_iva: r._valor_iva || 0,
         dias_mora: r.dias_mora,
         aplica_comision: r.aplica_comision,
         periodo_year: r.periodo_year,
@@ -627,6 +575,7 @@ export default function RecaudoUploadModal({ isOpen, onClose, onSuccess }) {
           total_recaudado: totalRecaudado,
           total_comisionable: totalComisionable,
           registros_excluidos_mora: excluidos,
+          total_iva: fullData.reduce((s, r) => s + (r._valor_iva || 0), 0),
         },
         p_recaudos: rows,
       });
@@ -665,10 +614,12 @@ export default function RecaudoUploadModal({ isOpen, onClose, onSuccess }) {
     0,
   );
   const totalExcluidoMora = fullData
-    .filter((r) => !r.aplica_comision && r.dias_mora > DIAS_MORA_LIMITE)
+    .filter((r) => !r.aplica_comision)
     .reduce((s, r) => s + r.valor_recaudo, 0);
-  const totalComisionable =
-    totalRecaudado - totalExcluidoMarca - totalExcluidoMora;
+  // totalComisionable alineado con lo que se guarda en DB (suma de valor_recaudo comisionable)
+  const totalComisionable = fullData
+    .filter((r) => r.aplica_comision)
+    .reduce((s, r) => s + r.valor_recaudo, 0);
 
   return (
     <>

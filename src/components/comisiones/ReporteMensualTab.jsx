@@ -192,9 +192,9 @@ export default function ReporteMensualTab({ hook }) {
       totalComision: 0,
     };
     filteredLiquidacion.forEach((l) => {
-      t.totalComisionVentas += l.comisionVentas.totalComisionVentas;
-      t.totalComisionRecaudo += l.comisionRecaudo.comisionRecaudo;
-      t.totalComision += l.totalComision;
+      t.totalComisionVentas += l.comisionVentas?.totalComisionVentas || 0;
+      t.totalComisionRecaudo += l.comisionRecaudo?.comisionRecaudo || 0;
+      t.totalComision += l.totalComision || 0;
     });
     return t;
   }, [filteredLiquidacion]);
@@ -250,15 +250,21 @@ export default function ReporteMensualTab({ hook }) {
   // ── Excel Export ──
   const handleExport = useCallback(async () => {
     if (!hasData) return;
-    await generarReporteExcelMensual({
-      vendedorData,
-      classifiedVentas,
-      cargas,
-      grandTotals,
-      selectedMonth,
-      selectedYear,
-    });
-    sileo.success("Reporte mensual exportado");
+    try {
+      await generarReporteExcelMensual({
+        vendedorData,
+        classifiedVentas,
+        cargas,
+        grandTotals,
+        selectedMonth,
+        selectedYear,
+      });
+      sileo.success("Reporte mensual exportado");
+    } catch (err) {
+      sileo.error("Error al exportar Excel");
+      if (import.meta.env.DEV)
+        console.error("[ReporteMensualTab] Error exportando Excel:", err);
+    }
   }, [
     hasData,
     vendedorData,
@@ -366,13 +372,15 @@ export default function ReporteMensualTab({ hook }) {
           <>
             <button
               onClick={handleExportPDF}
-              className="px-3 py-2 bg-emerald-600 rounded-lg text-xs font-bold text-white hover:bg-emerald-700 transition-colors shadow-sm flex items-center gap-1.5"
+              disabled={loadingReporte}
+              className="px-3 py-2 bg-emerald-600 rounded-lg text-xs font-bold text-white hover:bg-emerald-700 transition-colors shadow-sm flex items-center gap-1.5 disabled:opacity-50"
             >
               <FileDown size={14} /> PDF
             </button>
             <button
               onClick={handleExport}
-              className="px-3 py-2 bg-slate-700 rounded-lg text-xs font-bold text-white hover:bg-slate-800 transition-colors shadow-sm flex items-center gap-1.5"
+              disabled={loadingReporte}
+              className="px-3 py-2 bg-slate-700 rounded-lg text-xs font-bold text-white hover:bg-slate-800 transition-colors shadow-sm flex items-center gap-1.5 disabled:opacity-50"
             >
               <Download size={14} /> Excel
             </button>
@@ -498,12 +506,6 @@ export default function ReporteMensualTab({ hook }) {
               subtitle="Marcas sin cuota"
               icon={XCircle}
               type="neutral"
-            />
-            <KpiCard
-              title="Margen %"
-              value={formatPercentage(displayTotals.margenPct)}
-              icon={TrendingUp}
-              type="warning"
             />
           </div>
 
@@ -658,7 +660,7 @@ export default function ReporteMensualTab({ hook }) {
                                                   Marca
                                                 </th>
                                                 <th className="px-3 py-1.5 text-right">
-                                                  Costo Vendido
+                                                  Valor Vendido
                                                 </th>
                                                 <th className="px-3 py-1.5 text-right">
                                                   Meta
@@ -695,7 +697,7 @@ export default function ReporteMensualTab({ hook }) {
                                                     </td>
                                                     <td className="px-3 py-1.5 text-right font-mono">
                                                       {formatFullCurrency(
-                                                        dm.totalCosto,
+                                                        dm.totalVenta,
                                                       )}
                                                     </td>
                                                     <td className="px-3 py-1.5 text-right font-mono">
@@ -768,8 +770,8 @@ export default function ReporteMensualTab({ hook }) {
                                       </h4>
                                       {liq.comisionRecaudo.metaRecaudo === 0 ? (
                                         <p className="text-xs text-slate-400">
-                                          Sin presupuesto de recaudo configurado
-                                          para este vendedor
+                                          Sin cuota de recaudo configurada para
+                                          este vendedor
                                         </p>
                                       ) : (
                                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -783,6 +785,19 @@ export default function ReporteMensualTab({ hook }) {
                                               )}
                                             </p>
                                           </div>
+                                          {(liq.comisionRecaudo.totalIva || 0) >
+                                            0 && (
+                                            <div className="bg-white rounded-lg border border-amber-200 p-3">
+                                              <p className="text-[10px] text-amber-500 font-bold uppercase">
+                                                IVA Descontado
+                                              </p>
+                                              <p className="text-sm font-black text-amber-700 tabular-nums">
+                                                {formatFullCurrency(
+                                                  liq.comisionRecaudo.totalIva,
+                                                )}
+                                              </p>
+                                            </div>
+                                          )}
                                           <div className="bg-white rounded-lg border border-slate-200 p-3">
                                             <p className="text-[10px] text-slate-400 font-bold uppercase">
                                               Recaudo Comisionable
@@ -889,7 +904,7 @@ export default function ReporteMensualTab({ hook }) {
                 Detalle de Ventas
               </h2>
               <p className="text-xs text-slate-500">
-                Desglose por vendedor — marcas con y sin presupuesto de comisión
+                Desglose por vendedor — marcas con y sin cuota de comisión
               </p>
             </div>
           </div>
@@ -905,7 +920,6 @@ export default function ReporteMensualTab({ hook }) {
                     <th className="px-4 py-3 text-right">Sin comisión</th>
                     <th className="px-4 py-3 text-right">Con comisión</th>
                     <th className="px-4 py-3 text-right">Costo</th>
-                    <th className="px-4 py-3 text-right">Margen %</th>
                     <th className="px-4 py-3 text-center">Facturas</th>
                     <th className="px-4 py-3 w-8"></th>
                   </tr>
@@ -947,11 +961,6 @@ export default function ReporteMensualTab({ hook }) {
                           <td className="px-4 py-3 text-right font-mono text-slate-700">
                             {formatFullCurrency(v.costoComisionable)}
                           </td>
-                          <td className="px-4 py-3 text-right">
-                            <span className="text-xs font-bold tabular-nums">
-                              {formatPercentage(v.margenPct)}
-                            </span>
-                          </td>
                           <td className="px-4 py-3 text-center text-xs font-bold text-slate-600">
                             {v.numFacturas}
                           </td>
@@ -992,9 +1001,6 @@ export default function ReporteMensualTab({ hook }) {
                     </td>
                     <td className="px-4 py-3 text-right font-mono text-slate-900">
                       {formatFullCurrency(displayTotals.costoComisionable)}
-                    </td>
-                    <td className="px-4 py-3 text-right text-xs font-bold">
-                      {formatPercentage(displayTotals.margenPct)}
                     </td>
                     <td className="px-4 py-3"></td>
                     <td className="px-4 py-3"></td>

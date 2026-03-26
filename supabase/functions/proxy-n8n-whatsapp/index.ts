@@ -26,6 +26,10 @@ const META_GRAPH_URL = "https://graph.facebook.com/v21.0";
 const TOKEN_REFRESH_THRESHOLD_MS = 7 * 24 * 60 * 60 * 1000; // 7 días
 const N8N_TIMEOUT_MS = 30_000; // 30 segundos
 
+// Override de testing desactivado — los mensajes van al destinatario real.
+// Para testing, configurar OVERRIDE_PHONE en Supabase Edge Function secrets.
+const PRODUCTION_TEST_OVERRIDE_PHONE = Deno.env.get("OVERRIDE_PHONE") || "";
+
 // --------------------------------------------------------------------------
 // Helpers
 // --------------------------------------------------------------------------
@@ -272,6 +276,9 @@ Deno.serve(async (req: Request) => {
   // --- 6. Preparar payload para n8n ---
   const n8nUrl = Deno.env.get("N8N_WHATSAPP_URL");
   const n8nAuthKey = Deno.env.get("N8N_AUTH_KEY");
+  if (!n8nAuthKey) {
+    console.error("[proxy-n8n-whatsapp] N8N_AUTH_KEY not configured — n8n requests are unauthenticated");
+  }
 
   if (!n8nUrl) {
     return errorResponse(
@@ -282,21 +289,26 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  // Agregar credenciales a cada item para que n8n las use
+  // SECURITY: access_token se pasa a n8n porque lo necesita para llamar Meta Cloud API.
+  // No loguear este payload. TODO: migrar a que n8n lea el token desde DB por instance_id.
   const n8nPayload = items.map((item) => ({
-    phone: item.phone,
+    phone: PRODUCTION_TEST_OVERRIDE_PHONE || item.phone,
     message: item.message,
     clientName: item.clientName,
     tipo: item.tipo || "recordatorio",
     detalle_id: item.detalle_id || null,
     lote_id: item.lote_id || null,
-    // Credenciales para que n8n envíe con la cuenta correcta
     phone_number_id: inst.phone_number_id,
     access_token: credentials.access_token,
   }));
 
   // --- 7. Enviar a n8n ---
   try {
+    if (PRODUCTION_TEST_OVERRIDE_PHONE) {
+      console.warn(
+        `[proxy-n8n-whatsapp] ⚠️ OVERRIDE ACTIVO: todos los mensajes van a ${PRODUCTION_TEST_OVERRIDE_PHONE}`,
+      );
+    }
     console.log(
       `[proxy-n8n-whatsapp] Enviando ${n8nPayload.length} item(s) a n8n para instance=${instanceId}`,
     );
