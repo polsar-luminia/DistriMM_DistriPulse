@@ -1,9 +1,3 @@
-/**
- * @fileoverview Inline chart renderer for DistriBot chat messages.
- * Receives parsed JSON from ```chart code blocks and renders Recharts components.
- * @module components/chatbot/ChatChart
- */
-
 import {
   ResponsiveContainer,
   BarChart,
@@ -171,10 +165,6 @@ const CHART_RENDERERS = {
   composed: RenderComposedChart,
 };
 
-/**
- * Renders an inline chart from parsed JSON data.
- * @param {object} props - Chart specification (type, title, data, xKey, bars, lines, pieKey, pieValue)
- */
 export default function ChatChart({ type, title, ...rest }) {
   const Renderer = CHART_RENDERERS[type];
   if (!Renderer || !rest.data?.length) return null;

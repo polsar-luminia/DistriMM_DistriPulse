@@ -1,7 +1,11 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
-import { formatDateUTC, formatCurrency, formatFullCurrency } from "../../utils/formatters";
+import {
+  formatDateUTC,
+  formatCurrency,
+  formatFullCurrency,
+} from "../../utils/formatters";
 import CreditScoreCard from "./CreditScoreCard";
 import {
   Users,
@@ -18,15 +22,11 @@ import {
 // Re-export formatters for backward compatibility
 export { formatCurrency, formatFullCurrency };
 
-// ============================================================================
-// UI COMPONENTS
-// ============================================================================
-
 export const Card = ({ children, className = "", ...props }) => (
   <div
     className={cn(
       "bg-white rounded-xl border border-navy-100 shadow-[0_1px_3px_rgba(15,22,41,0.04),0_1px_2px_rgba(15,22,41,0.02)] hover:shadow-[0_4px_12px_rgba(15,22,41,0.06),0_1px_3px_rgba(15,22,41,0.04)] transition-all duration-300 p-4 md:p-5",
-      className
+      className,
     )}
     {...props}
   >
@@ -75,12 +75,28 @@ export const StatCard = ({
 
   const len = String(value).length;
   const valueSize =
-    len > 14 ? "text-xl" : len > 10 ? "text-2xl" : len > 7 ? "text-3xl" : "text-4xl";
+    len > 14
+      ? "text-xl"
+      : len > 10
+        ? "text-2xl"
+        : len > 7
+          ? "text-3xl"
+          : "text-4xl";
 
   return (
-    <Card className={cn("relative group hover:translate-y-[-1px]", !tooltip && "overflow-hidden")}>
+    <Card
+      className={cn(
+        "relative group hover:translate-y-[-1px]",
+        !tooltip && "overflow-hidden",
+      )}
+    >
       {/* Top accent bar */}
-      <div className={cn("absolute top-0 left-0 right-0 h-[2px] opacity-60", t.bar)} />
+      <div
+        className={cn(
+          "absolute top-0 left-0 right-0 h-[2px] opacity-60",
+          t.bar,
+        )}
+      />
 
       <div className="flex items-center gap-2 mb-2">
         <div className={cn("p-1.5 rounded-lg shrink-0", t.icon)}>
@@ -91,7 +107,10 @@ export const StatCard = ({
         </p>
         {tooltip && (
           <div className="relative group/tip ml-auto shrink-0">
-            <Info size={12} className="text-navy-300 hover:text-navy-500 cursor-help transition-colors" />
+            <Info
+              size={12}
+              className="text-navy-300 hover:text-navy-500 cursor-help transition-colors"
+            />
             <div className="absolute top-full right-0 mt-2 w-56 p-2.5 bg-navy-800 text-white text-[10px] leading-relaxed rounded-lg shadow-lg opacity-0 pointer-events-none group-hover/tip:opacity-100 group-hover/tip:pointer-events-auto transition-opacity duration-200 z-50">
               {tooltip}
               <div className="absolute bottom-full right-2 border-4 border-transparent border-b-navy-800" />
@@ -101,14 +120,20 @@ export const StatCard = ({
       </div>
 
       <h3
-        className={cn(valueSize, "font-bold text-navy-900 tracking-tight leading-tight font-mono truncate")}
+        className={cn(
+          valueSize,
+          "font-bold text-navy-900 tracking-tight leading-tight font-mono truncate",
+        )}
       >
         {value}
       </h3>
 
-      {trend !== undefined && trend !== null && (
+      {trend !== undefined && trend !== null && trend !== 0 && (
         <div
-          className={cn("text-[10px] font-semibold flex items-center gap-1 mt-2", trend > 0 ? "text-rose-500" : "text-emerald-500")}
+          className={cn(
+            "text-[10px] font-semibold flex items-center gap-1 mt-2",
+            trend > 0 ? "text-rose-500" : "text-emerald-500",
+          )}
         >
           {trend > 0 ? <ArrowUp size={10} /> : <ArrowDown size={10} />}
           <span>{Math.abs(trend).toFixed(1)}% vs anterior</span>
@@ -131,20 +156,23 @@ export const CustomTooltip = ({ active, payload, label }) => {
     const val = payload[0].value;
     const dataKey = payload[0].dataKey;
 
-    const isDays =
-      dataKey === "dias_mora" ||
-      dataKey === "maxMora" ||
-      (val > 0 && val < 10000 && !dataKey);
+    const isDays = dataKey === "dias_mora" || dataKey === "maxMora";
 
     return (
       <div className="bg-white/95 backdrop-blur-md p-3 border border-navy-100 shadow-[0_8px_24px_rgba(15,22,41,0.12)] rounded-lg text-sm">
         <p className="font-semibold text-navy-800 text-xs mb-1.5">{fullName}</p>
         <div className="flex items-center gap-2">
           <span
-            className={cn("w-1.5 h-1.5 rounded-full", isDays ? "bg-rose-400" : "bg-emerald-400")}
+            className={cn(
+              "w-1.5 h-1.5 rounded-full",
+              isDays ? "bg-rose-400" : "bg-emerald-400",
+            )}
           />
           <p
-            className={cn("font-mono font-semibold text-xs", isDays ? "text-rose-600" : "text-navy-700")}
+            className={cn(
+              "font-mono font-semibold text-xs",
+              isDays ? "text-rose-600" : "text-navy-700",
+            )}
           >
             {isDays ? `${val} días` : formatFullCurrency(val)}
           </p>
@@ -301,11 +329,17 @@ export const SortableHeader = ({
 
   return (
     <th
-      className={cn("px-4 py-3 cursor-pointer hover:bg-navy-50/50 transition-colors group select-none", align === "right" ? "text-right" : "text-left")}
+      className={cn(
+        "px-4 py-3 cursor-pointer hover:bg-navy-50/50 transition-colors group select-none",
+        align === "right" ? "text-right" : "text-left",
+      )}
       onClick={handleClick}
     >
       <div
-        className={cn("flex items-center gap-1", align === "right" ? "justify-end" : "justify-start")}
+        className={cn(
+          "flex items-center gap-1",
+          align === "right" ? "justify-end" : "justify-start",
+        )}
       >
         <span className="text-[10px] font-semibold text-navy-400 uppercase tracking-[0.06em]">
           {label}
@@ -335,7 +369,13 @@ export const ClientCard = ({ client, onExpand, isExpanded }) => {
   const clientNit = client.items?.[0]?.tercero_nit ?? null;
   return (
     <div
-      className={cn("bg-white rounded-xl border overflow-hidden transition-all duration-200", isVencido ? "border-l-[3px] border-l-rose-400 border-navy-100" : "border-l-[3px] border-l-emerald-400 border-navy-100", isExpanded ? "ring-1 ring-sky-200 shadow-md" : "shadow-sm")}
+      className={cn(
+        "bg-white rounded-xl border overflow-hidden transition-all duration-200",
+        isVencido
+          ? "border-l-[3px] border-l-rose-400 border-navy-100"
+          : "border-l-[3px] border-l-emerald-400 border-navy-100",
+        isExpanded ? "ring-1 ring-sky-200 shadow-md" : "shadow-sm",
+      )}
     >
       <div
         className="p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 cursor-pointer hover:bg-navy-50/30 transition-colors"
@@ -343,7 +383,12 @@ export const ClientCard = ({ client, onExpand, isExpanded }) => {
       >
         <div className="flex items-center gap-3">
           <div
-            className={cn("p-2.5 rounded-lg", isVencido ? "bg-rose-50 text-rose-500" : "bg-emerald-50 text-emerald-500")}
+            className={cn(
+              "p-2.5 rounded-lg",
+              isVencido
+                ? "bg-rose-50 text-rose-500"
+                : "bg-emerald-50 text-emerald-500",
+            )}
           >
             <User size={20} strokeWidth={1.8} />
           </div>
@@ -353,7 +398,12 @@ export const ClientCard = ({ client, onExpand, isExpanded }) => {
             </h3>
             <div className="flex items-center gap-2 mt-1">
               <span
-                className={cn("text-[9px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-wide", isVencido ? "bg-rose-50 text-rose-600" : "bg-emerald-50 text-emerald-600")}
+                className={cn(
+                  "text-[9px] font-semibold px-1.5 py-0.5 rounded uppercase tracking-wide",
+                  isVencido
+                    ? "bg-rose-50 text-rose-600"
+                    : "bg-emerald-50 text-emerald-600",
+                )}
               >
                 {isVencido ? "Vencido" : "Al Día"}
               </span>
@@ -383,11 +433,7 @@ export const ClientCard = ({ client, onExpand, isExpanded }) => {
             </div>
           )}
           <div className="p-1 text-navy-300">
-            {isExpanded ? (
-              <ChevronUp size={18} />
-            ) : (
-              <ChevronDown size={18} />
-            )}
+            {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
           </div>
         </div>
       </div>
@@ -405,8 +451,11 @@ export const ClientCard = ({ client, onExpand, isExpanded }) => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-navy-50">
-                {client.items?.map((item, idx) => (
-                  <tr key={idx} className="hover:bg-navy-50/30">
+                {client.items?.map((item) => (
+                  <tr
+                    key={item.documento_id || item.id}
+                    className="hover:bg-navy-50/30"
+                  >
                     <td className="px-3 py-2 font-mono text-navy-600">
                       {item.documento_id}
                     </td>
@@ -417,7 +466,12 @@ export const ClientCard = ({ client, onExpand, isExpanded }) => {
                       {formatDateUTC(item.fecha_vencimiento)}
                     </td>
                     <td
-                      className={cn("px-3 py-2 text-right font-mono font-semibold", item.dias_mora > 0 ? "text-rose-500" : "text-emerald-500")}
+                      className={cn(
+                        "px-3 py-2 text-right font-mono font-semibold",
+                        item.dias_mora > 0
+                          ? "text-rose-500"
+                          : "text-emerald-500",
+                      )}
                     >
                       {item.dias_mora}
                     </td>
@@ -431,8 +485,8 @@ export const ClientCard = ({ client, onExpand, isExpanded }) => {
           </div>
 
           {/* Credit Score section */}
-          {clientNit && (
-            showScore ? (
+          {clientNit &&
+            (showScore ? (
               <CreditScoreCard
                 nit={clientNit}
                 onClose={() => setShowScore(false)}
@@ -445,8 +499,7 @@ export const ClientCard = ({ client, onExpand, isExpanded }) => {
                 <ShieldCheck size={13} strokeWidth={1.8} />
                 Ver Score Crediticio Interno
               </button>
-            )
-          )}
+            ))}
         </div>
       )}
     </div>

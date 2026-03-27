@@ -1,35 +1,24 @@
-﻿/**
- * @fileoverview Professional PDF and Excel report generation for the Cartera module.
- * Generates reports grouped by municipio or vendedor,
- * cross-referencing cartera_items with clientes data.
- * Uses jsPDF + jspdf-autotable for landscape A4 and xlsx for Excel.
- * @module utils/reporteCartera
- */
-
-import * as XLSX from "xlsx";
-
-// ── Color palette ──
+﻿// ── Color palette ──
 const C = {
-  primary: [30, 41, 59],       // Slate 800
-  accent: [99, 102, 241],      // Indigo 500
-  emerald: [16, 185, 129],     // Emerald 500
-  amber: [245, 158, 11],       // Amber 500
-  rose: [244, 63, 94],         // Rose 500
+  primary: [30, 41, 59], // Slate 800
+  accent: [99, 102, 241], // Indigo 500
+  emerald: [16, 185, 129], // Emerald 500
+  amber: [245, 158, 11], // Amber 500
+  rose: [244, 63, 94], // Rose 500
   white: [255, 255, 255],
-  slate: [148, 163, 184],      // Slate 400
+  slate: [148, 163, 184], // Slate 400
   slate500: [100, 116, 139],
   slate700: [51, 65, 85],
   slate900: [30, 41, 59],
-  lightBg: [241, 245, 250],    // Slate 50
-  footerBg: [248, 250, 252],   // Slate 100
+  lightBg: [241, 245, 250], // Slate 50
+  footerBg: [248, 250, 252], // Slate 100
   accentLight: [238, 242, 255], // Indigo 50
-  accentMid: [224, 231, 255],  // Indigo 100
-  border: [226, 232, 240],     // Slate 200
+  accentMid: [224, 231, 255], // Indigo 100
+  border: [226, 232, 240], // Slate 200
 };
 
 // ── Formatters ──
 
-/** @param {number} v */
 const $f = (v) => {
   if (v == null || isNaN(v)) return "$0";
   return new Intl.NumberFormat("es-CO", {
@@ -39,19 +28,16 @@ const $f = (v) => {
   }).format(v);
 };
 
-/** @param {number} v */
 const pf = (v) => {
   if (v == null || isNaN(v)) return "0,0%";
   return v.toFixed(1).replace(".", ",") + "%";
 };
 
-/** @param {number} v */
 const ni = (v) => {
   if (v == null || isNaN(v)) return "0";
   return Math.round(v).toLocaleString("es-CO");
 };
 
-/** @param {string} dateStr */
 const fmtDate = (dateStr) => {
   if (!dateStr) return "—";
   const d = new Date(`${dateStr}T12:00:00`);
@@ -90,12 +76,6 @@ const tableDefaults = {
 
 // ── Grouping logic ──
 
-/**
- * Groups enriched items and computes per-group metrics.
- * @param {Array} items - Enriched cartera items
- * @param {"vendedor"|"municipio"} groupBy
- * @returns {Array<Object>} Sorted by carteraTotal descending
- */
 function buildGroups(items, groupBy) {
   const map = {};
   for (const item of items) {
@@ -137,12 +117,14 @@ function buildGroups(items, groupBy) {
         numFacturas: g.items.length,
         carteraTotal,
         carteraVencida,
-        pctVencido: carteraTotal > 0 ? (carteraVencida / carteraTotal) * 100 : 0,
+        pctVencido:
+          carteraTotal > 0 ? (carteraVencida / carteraTotal) * 100 : 0,
         pctParticipacion:
           totalCarteraGlobal > 0
             ? Math.round((carteraTotal / totalCarteraGlobal) * 1000) / 10
             : 0,
-        ticketPromedio: numClientes > 0 ? Math.round(carteraTotal / numClientes) : 0,
+        ticketPromedio:
+          numClientes > 0 ? Math.round(carteraTotal / numClientes) : 0,
         moraPromedio:
           g.items.length > 0 ? Math.round(diasMoraSum / g.items.length) : 0,
       };
@@ -150,11 +132,6 @@ function buildGroups(items, groupBy) {
     .sort((a, b) => b.carteraTotal - a.carteraTotal);
 }
 
-/**
- * Global summary across all items.
- * @param {Array} items
- * @returns {Object}
- */
 function computeGlobalSummary(items) {
   const carteraTotal = items.reduce(
     (s, i) => s + Number(i.valor_saldo || 0),
@@ -173,7 +150,6 @@ function computeGlobalSummary(items) {
   };
 }
 
-/** Build filename for cartera reports. */
 function buildFilename(groupBy, status, ext) {
   const d = new Date();
   const yyyy = d.getFullYear();
@@ -188,12 +164,6 @@ function statusLabel(status) {
   return "Toda la Cartera";
 }
 
-/**
- * Aggregate items by unique client (NIT) for the detail section.
- * Groups invoices per client and computes per-client totals.
- * @param {Array} items
- * @returns {Array<Object>} Sorted by saldoTotal descending
- */
 function aggregateByClient(items) {
   const map = {};
   for (const item of items) {
@@ -226,17 +196,6 @@ function aggregateByClient(items) {
   return Object.values(map).sort((a, b) => b.saldoTotal - a.saldoTotal);
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// PDF GENERATION
-// ═══════════════════════════════════════════════════════════════════════════
-
-/**
- * Generates a PDF cartera report.
- * @param {Object} params
- * @param {Array} params.items - Pre-filtered, enriched cartera items
- * @param {"vendedor"|"municipio"} params.groupBy
- * @param {Object} params.filters - { status, groupBy, selectedVendedores, selectedMunicipios }
- */
 export async function generarCarteraPDF({ items, groupBy, filters }) {
   const { default: jsPDF } = await import("jspdf");
   const { default: autoTable } = await import("jspdf-autotable");
@@ -248,17 +207,13 @@ export async function generarCarteraPDF({ items, groupBy, filters }) {
   const summary = computeGlobalSummary(items);
   const groupLabel = groupBy === "vendedor" ? "Vendedor" : "Municipio";
 
-  // ════════════════════════════════════════════════════════════════════════
-  // PAGE 1 — COVER
-  // ════════════════════════════════════════════════════════════════════════
-
   const cx = pageW / 2;
 
   // Title
   doc.setFont("helvetica", "bold");
   doc.setFontSize(28);
   doc.setTextColor(...C.accent);
-  doc.text("DistriPulse", cx, 38, { align: "center" });
+  doc.text("DistriMM", cx, 38, { align: "center" });
 
   // Accent line
   doc.setDrawColor(...C.accent);
@@ -293,8 +248,16 @@ export async function generarCarteraPDF({ items, groupBy, filters }) {
   doc.roundedRect(boxX, boxY, boxW, boxH, 3, 3, "FD");
 
   const metrics = [
-    { label: "Cartera Total", value: $f(summary.carteraTotal), color: C.slate900 },
-    { label: "Cartera Vencida", value: $f(summary.carteraVencida), color: C.rose },
+    {
+      label: "Cartera Total",
+      value: $f(summary.carteraTotal),
+      color: C.slate900,
+    },
+    {
+      label: "Cartera Vencida",
+      value: $f(summary.carteraVencida),
+      color: C.rose,
+    },
     {
       label: "% Vencido",
       value: pf(summary.pctVencido),
@@ -351,10 +314,6 @@ export async function generarCarteraPDF({ items, groupBy, filters }) {
   doc.setFontSize(8);
   doc.setTextColor(...C.slate);
   doc.text(`Generado: ${genDate}`, cx, pageH - 18, { align: "center" });
-
-  // ════════════════════════════════════════════════════════════════════════
-  // PAGE 2 — SUMMARY TABLE (with % Participación)
-  // ════════════════════════════════════════════════════════════════════════
 
   if (groups.length > 0) {
     doc.addPage();
@@ -438,7 +397,7 @@ export async function generarCarteraPDF({ items, groupBy, filters }) {
         if (data.section !== "body") return;
         // % vencido coloring
         if (data.column.index === 5) {
-          const val = parseFloat(data.cell.raw);
+          const val = parseFloat(String(data.cell.raw).replace(",", "."));
           if (val > 50) data.cell.styles.textColor = C.rose;
           else if (val > 25) data.cell.styles.textColor = C.amber;
           else data.cell.styles.textColor = C.emerald;
@@ -450,10 +409,6 @@ export async function generarCarteraPDF({ items, groupBy, filters }) {
       },
     });
   }
-
-  // ════════════════════════════════════════════════════════════════════════
-  // PAGES 3+ — DETAIL PER GROUP (client summary + per-client invoices)
-  // ════════════════════════════════════════════════════════════════════════
 
   groups.forEach((group) => {
     doc.addPage();
@@ -564,10 +519,6 @@ export async function generarCarteraPDF({ items, groupBy, filters }) {
       },
     });
 
-    // ════════════════════════════════════════════════════════════════════
-    // INVOICE DETAIL PER CLIENT (always rendered, new pages as needed)
-    // ════════════════════════════════════════════════════════════════════
-
     y = doc.lastAutoTable.finalY + 8;
 
     // Section title
@@ -609,7 +560,9 @@ export async function generarCarteraPDF({ items, groupBy, filters }) {
         `NIT: ${client.nit}`,
         client.celular ? `Tel: ${client.celular}` : "",
         `Saldo: ${$f(client.saldoTotal)}`,
-        client.saldoVencido > 0 ? `Vencido: ${$f(client.saldoVencido)}` : "Al día",
+        client.saldoVencido > 0
+          ? `Vencido: ${$f(client.saldoVencido)}`
+          : "Al día",
         client.maxMora > 0 ? `Mora máx: ${client.maxMora}d` : "",
       ].filter(Boolean);
       doc.text(clientInfo.join("   |   "), 20, y + 11);
@@ -632,7 +585,16 @@ export async function generarCarteraPDF({ items, groupBy, filters }) {
 
       autoTable(doc, {
         startY: y,
-        head: [["DOCUMENTO", "EMISIÓN", "VENCIMIENTO", "DÍAS MORA", "SALDO", "ESTADO"]],
+        head: [
+          [
+            "DOCUMENTO",
+            "EMISIÓN",
+            "VENCIMIENTO",
+            "DÍAS MORA",
+            "SALDO",
+            "ESTADO",
+          ],
+        ],
         body: invoiceRows,
         foot: [
           [
@@ -696,17 +658,13 @@ export async function generarCarteraPDF({ items, groupBy, filters }) {
     });
   });
 
-  // ════════════════════════════════════════════════════════════════════════
-  // FOOTER — Page numbers on all pages
-  // ════════════════════════════════════════════════════════════════════════
-
   const totalPages = doc.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
     doc.setFontSize(7);
     doc.setTextColor(...C.slate);
     doc.text(
-      `DistriPulse \u00B7 Informe de Cartera \u00B7 P\u00E1gina ${i} de ${totalPages}`,
+      `DistriMM \u00B7 Informe de Cartera \u00B7 P\u00E1gina ${i} de ${totalPages}`,
       pageW / 2,
       pageH - 8,
       { align: "center" },
@@ -716,19 +674,8 @@ export async function generarCarteraPDF({ items, groupBy, filters }) {
   doc.save(buildFilename(groupBy, filters.status, "pdf"));
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// EXCEL GENERATION
-// ═══════════════════════════════════════════════════════════════════════════
-
-/**
- * Generates an Excel workbook with summary and detail sheets,
- * including full client data cross-referenced from clientes.
- * @param {Object} params
- * @param {Array} params.items - Pre-filtered, enriched cartera items
- * @param {"vendedor"|"municipio"} params.groupBy
- * @param {Object} params.filters
- */
-export function generarCarteraExcel({ items, groupBy, filters }) {
+export async function generarCarteraExcel({ items, groupBy, filters }) {
+  const XLSX = await import("xlsx-js-style");
   const groups = buildGroups(items, groupBy);
   const summary = computeGlobalSummary(items);
   const groupLabel = groupBy === "vendedor" ? "Vendedor" : "Municipio";
@@ -776,7 +723,10 @@ export function generarCarteraExcel({ items, groupBy, filters }) {
     "",
   ]);
 
-  const resumenSheet = XLSX.utils.aoa_to_sheet([resumenHeaders, ...resumenData]);
+  const resumenSheet = XLSX.utils.aoa_to_sheet([
+    resumenHeaders,
+    ...resumenData,
+  ]);
   resumenSheet["!cols"] = [
     { wch: 5 },
     { wch: 28 },
@@ -820,7 +770,10 @@ export function generarCarteraExcel({ items, groupBy, filters }) {
     c.maxMora,
   ]);
 
-  const clienteSheet = XLSX.utils.aoa_to_sheet([clienteHeaders, ...clienteData]);
+  const clienteSheet = XLSX.utils.aoa_to_sheet([
+    clienteHeaders,
+    ...clienteData,
+  ]);
   clienteSheet["!cols"] = [
     { wch: 35 },
     { wch: 15 },
@@ -866,7 +819,10 @@ export function generarCarteraExcel({ items, groupBy, filters }) {
     Number(item.valor_saldo || 0),
   ]);
 
-  const facturaSheet = XLSX.utils.aoa_to_sheet([facturaHeaders, ...facturaData]);
+  const facturaSheet = XLSX.utils.aoa_to_sheet([
+    facturaHeaders,
+    ...facturaData,
+  ]);
   facturaSheet["!cols"] = [
     { wch: 35 },
     { wch: 15 },
@@ -890,4 +846,3 @@ export function generarCarteraExcel({ items, groupBy, filters }) {
 
   XLSX.writeFile(wb, buildFilename(groupBy, filters.status, "xlsx"));
 }
-

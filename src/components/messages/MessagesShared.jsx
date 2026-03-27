@@ -1,9 +1,4 @@
 /* eslint-disable react-refresh/only-export-components */
-/**
- * @fileoverview Shared constants and small components for the Messages module.
- * @module components/messages/MessagesShared
- */
-
 import {
   Loader,
   Phone,
@@ -15,10 +10,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// ════════════════════════════════════════════════════════════════════════════
-// TAB DEFINITIONS
-// ════════════════════════════════════════════════════════════════════════════
-
 export const TABS = [
   { id: "nuevo_lote", label: "Nuevo Lote", icon: Plus },
   { id: "historial", label: "Historial", icon: History },
@@ -26,18 +17,11 @@ export const TABS = [
   { id: "whatsapp", label: "WhatsApp", icon: Smartphone },
 ];
 
-// ════════════════════════════════════════════════════════════════════════════
-// CURRENCY FORMATTER
-// ════════════════════════════════════════════════════════════════════════════
 export const fmtCOP = new Intl.NumberFormat("es-CO", {
   style: "currency",
   currency: "COP",
   maximumFractionDigits: 0,
 });
-
-// ════════════════════════════════════════════════════════════════════════════
-// LOTE PROGRESS BADGE (header indicator)
-// ════════════════════════════════════════════════════════════════════════════
 
 export function LoteProgressBadge({ lote }) {
   const pct =
@@ -70,10 +54,6 @@ export function LoteProgressBadge({ lote }) {
   );
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// PHONE STATUS BADGE
-// ════════════════════════════════════════════════════════════════════════════
-
 export function PhoneBadge({ phoneData }) {
   if (!phoneData || !phoneData.valid) {
     return (
@@ -88,10 +68,6 @@ export function PhoneBadge({ phoneData }) {
     </span>
   );
 }
-
-// ════════════════════════════════════════════════════════════════════════════
-// ESTADO BADGE
-// ════════════════════════════════════════════════════════════════════════════
 
 export function EstadoBadge({ estado }) {
   const styles = {

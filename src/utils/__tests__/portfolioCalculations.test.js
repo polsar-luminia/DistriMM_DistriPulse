@@ -1,8 +1,3 @@
-/**
- * @fileoverview Tests for portfolioCalculations.js — pure financial calculation functions.
- * Uses Vitest with globals: true.
- */
-
 vi.mock("../constants", () => ({
   AGING_BUCKETS: [
     { key: "Al Día", min: -Infinity, max: 0, color: "#10B981" },
@@ -31,13 +26,10 @@ import {
   buildRadarData,
   buildTopOldest,
   buildVendedorStats,
+  calculateMoraPonderada,
+  calculateHHI,
 } from "../portfolioCalculations";
 
-// ============================================================================
-// HELPERS
-// ============================================================================
-
-/** Returns "YYYY-MM-DD" in local time for a Date object */
 function isoDate(d) {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -64,27 +56,29 @@ function makeItem(overrides = {}) {
   };
 }
 
-// ============================================================================
-// preprocessItems
-// ============================================================================
-
 describe("preprocessItems", () => {
   test("item vencido ayer tiene dias_mora=1 y days_until_due=-1", () => {
-    const items = [makeItem({ fecha_vencimiento: daysFromToday(-1), dias_mora: 0 })];
+    const items = [
+      makeItem({ fecha_vencimiento: daysFromToday(-1), dias_mora: 0 }),
+    ];
     const [result] = preprocessItems(items);
     expect(result.dias_mora).toBe(1);
     expect(result.days_until_due).toBe(-1);
   });
 
   test("item que vence mañana tiene dias_mora=0 y days_until_due=1", () => {
-    const items = [makeItem({ fecha_vencimiento: daysFromToday(1), dias_mora: 0 })];
+    const items = [
+      makeItem({ fecha_vencimiento: daysFromToday(1), dias_mora: 0 }),
+    ];
     const [result] = preprocessItems(items);
     expect(result.dias_mora).toBe(0);
     expect(result.days_until_due).toBe(1);
   });
 
   test("item que vence hoy tiene dias_mora=0 y days_until_due=0", () => {
-    const items = [makeItem({ fecha_vencimiento: daysFromToday(0), dias_mora: 0 })];
+    const items = [
+      makeItem({ fecha_vencimiento: daysFromToday(0), dias_mora: 0 }),
+    ];
     const [result] = preprocessItems(items);
     expect(result.dias_mora).toBe(0);
     expect(result.days_until_due).toBe(0);
@@ -98,17 +92,15 @@ describe("preprocessItems", () => {
   });
 
   test("item con fecha inválida retorna dias_mora=0 (guard contra Invalid Date)", () => {
-    const items = [makeItem({ fecha_vencimiento: "not-a-date", dias_mora: 99 })];
+    const items = [
+      makeItem({ fecha_vencimiento: "not-a-date", dias_mora: 99 }),
+    ];
     const [result] = preprocessItems(items);
     // new Date("not-a-dateT00:00:00") → Invalid Date → isNaN guard catches it
     expect(result.days_until_due).toBe(0);
     expect(result.dias_mora).toBe(0);
   });
 });
-
-// ============================================================================
-// calculateKPIs
-// ============================================================================
 
 describe("calculateKPIs", () => {
   test("retorna totales correctos con mezcla de facturas vencidas y al día", () => {
@@ -177,22 +169,33 @@ describe("calculateKPIs", () => {
   });
 });
 
-// ============================================================================
-// buildClientMap
-// ============================================================================
-
 describe("buildClientMap", () => {
   test("agrupa 3 items en 2 clientes con deuda y maxMora correctos", () => {
     const items = [
-      makeItem({ cliente_nombre: "Cliente A", valor_saldo: 300000, dias_mora: 10 }),
-      makeItem({ cliente_nombre: "Cliente A", valor_saldo: 200000, dias_mora: 30 }),
-      makeItem({ cliente_nombre: "Cliente B", valor_saldo: 500000, dias_mora: 5 }),
+      makeItem({
+        cliente_nombre: "Cliente A",
+        tercero_nit: "NIT-A",
+        valor_saldo: 300000,
+        dias_mora: 10,
+      }),
+      makeItem({
+        cliente_nombre: "Cliente A",
+        tercero_nit: "NIT-A",
+        valor_saldo: 200000,
+        dias_mora: 30,
+      }),
+      makeItem({
+        cliente_nombre: "Cliente B",
+        tercero_nit: "NIT-B",
+        valor_saldo: 500000,
+        dias_mora: 5,
+      }),
     ];
     const { sortedClients, uniqueClientsCount } = buildClientMap(items);
     expect(uniqueClientsCount).toBe(2);
 
-    const clientA = sortedClients.find(c => c.name === "Cliente A");
-    const clientB = sortedClients.find(c => c.name === "Cliente B");
+    const clientA = sortedClients.find((c) => c.name === "Cliente A");
+    const clientB = sortedClients.find((c) => c.name === "Cliente B");
     expect(clientA.deuda).toBe(500000);
     expect(clientA.maxMora).toBe(30);
     expect(clientB.deuda).toBe(500000);
@@ -207,9 +210,21 @@ describe("buildClientMap", () => {
 
   test("sortedClients ordenados por deuda descendente", () => {
     const items = [
-      makeItem({ cliente_nombre: "Pequeño", valor_saldo: 100000 }),
-      makeItem({ cliente_nombre: "Grande", valor_saldo: 900000 }),
-      makeItem({ cliente_nombre: "Mediano", valor_saldo: 500000 }),
+      makeItem({
+        cliente_nombre: "Pequeño",
+        tercero_nit: "NIT-P",
+        valor_saldo: 100000,
+      }),
+      makeItem({
+        cliente_nombre: "Grande",
+        tercero_nit: "NIT-G",
+        valor_saldo: 900000,
+      }),
+      makeItem({
+        cliente_nombre: "Mediano",
+        tercero_nit: "NIT-M",
+        valor_saldo: 500000,
+      }),
     ];
     const { sortedClients } = buildClientMap(items);
     expect(sortedClients[0].name).toBe("Grande");
@@ -219,19 +234,15 @@ describe("buildClientMap", () => {
 
   test("uniqueClientsCount es correcto", () => {
     const items = [
-      makeItem({ cliente_nombre: "A" }),
-      makeItem({ cliente_nombre: "B" }),
-      makeItem({ cliente_nombre: "A" }),
-      makeItem({ cliente_nombre: "C" }),
+      makeItem({ cliente_nombre: "A", tercero_nit: "NIT-A" }),
+      makeItem({ cliente_nombre: "B", tercero_nit: "NIT-B" }),
+      makeItem({ cliente_nombre: "A", tercero_nit: "NIT-A" }),
+      makeItem({ cliente_nombre: "C", tercero_nit: "NIT-C" }),
     ];
     const { uniqueClientsCount } = buildClientMap(items);
     expect(uniqueClientsCount).toBe(3);
   });
 });
-
-// ============================================================================
-// calculatePareto
-// ============================================================================
 
 describe("calculatePareto", () => {
   test("1 cliente con 100% de la deuda retorna 100%", () => {
@@ -266,25 +277,21 @@ describe("calculatePareto", () => {
   });
 });
 
-// ============================================================================
-// calculateAging
-// ============================================================================
-
 describe("calculateAging", () => {
   test("distribuye items en cada bucket correctamente", () => {
     const items = [
-      makeItem({ dias_mora: 0, valor_saldo: 100000 }),   // Al Día
-      makeItem({ dias_mora: 15, valor_saldo: 200000 }),  // 1-30
-      makeItem({ dias_mora: 45, valor_saldo: 300000 }),  // 31-60
-      makeItem({ dias_mora: 75, valor_saldo: 400000 }),  // 61-90
+      makeItem({ dias_mora: 0, valor_saldo: 100000 }), // Al Día
+      makeItem({ dias_mora: 15, valor_saldo: 200000 }), // 1-30
+      makeItem({ dias_mora: 45, valor_saldo: 300000 }), // 31-60
+      makeItem({ dias_mora: 75, valor_saldo: 400000 }), // 61-90
       makeItem({ dias_mora: 120, valor_saldo: 500000 }), // +90
     ];
     const aging = calculateAging(items);
-    expect(aging.find(a => a.name === "Al Día").value).toBe(100000);
-    expect(aging.find(a => a.name === "1-30 Días").value).toBe(200000);
-    expect(aging.find(a => a.name === "31-60 Días").value).toBe(300000);
-    expect(aging.find(a => a.name === "61-90 Días").value).toBe(400000);
-    expect(aging.find(a => a.name === "+90 Días").value).toBe(500000);
+    expect(aging.find((a) => a.name === "Al Día").value).toBe(100000);
+    expect(aging.find((a) => a.name === "1-30 Días").value).toBe(200000);
+    expect(aging.find((a) => a.name === "31-60 Días").value).toBe(300000);
+    expect(aging.find((a) => a.name === "61-90 Días").value).toBe(400000);
+    expect(aging.find((a) => a.name === "+90 Días").value).toBe(500000);
   });
 
   test("porcentajes suman 100", () => {
@@ -305,39 +312,53 @@ describe("calculateAging", () => {
       makeItem({ dias_mora: 0, valor_saldo: 500000 }),
     ];
     const aging = calculateAging(items);
-    expect(aging.find(a => a.name === "Al Día").percent).toBe(100);
-    expect(aging.find(a => a.name === "1-30 Días").percent).toBe(0);
+    expect(aging.find((a) => a.name === "Al Día").percent).toBe(100);
+    expect(aging.find((a) => a.name === "1-30 Días").percent).toBe(0);
   });
 
   test("array vacío produce todos ceros", () => {
     const aging = calculateAging([]);
-    aging.forEach(a => {
+    aging.forEach((a) => {
       expect(a.value).toBe(0);
       expect(a.percent).toBe(0);
     });
   });
 });
 
-// ============================================================================
-// calculateProjection
-// ============================================================================
-
 describe("calculateProjection", () => {
   test("item que vence en 15 días se incluye", () => {
-    const items = [makeItem({ dias_mora: 0, fecha_vencimiento: daysFromToday(15), valor_saldo: 100000 })];
+    const items = [
+      makeItem({
+        dias_mora: 0,
+        fecha_vencimiento: daysFromToday(15),
+        valor_saldo: 100000,
+      }),
+    ];
     const proj = calculateProjection(items);
     expect(proj.length).toBe(1);
     expect(proj[0].total).toBe(100000);
   });
 
   test("item que vence en 45 días se excluye", () => {
-    const items = [makeItem({ dias_mora: 0, fecha_vencimiento: daysFromToday(45), valor_saldo: 100000 })];
+    const items = [
+      makeItem({
+        dias_mora: 0,
+        fecha_vencimiento: daysFromToday(45),
+        valor_saldo: 100000,
+      }),
+    ];
     const proj = calculateProjection(items);
     expect(proj.length).toBe(0);
   });
 
   test("item vencido se excluye", () => {
-    const items = [makeItem({ dias_mora: 10, fecha_vencimiento: daysFromToday(-10), valor_saldo: 100000 })];
+    const items = [
+      makeItem({
+        dias_mora: 10,
+        fecha_vencimiento: daysFromToday(-10),
+        valor_saldo: 100000,
+      }),
+    ];
     const proj = calculateProjection(items);
     expect(proj.length).toBe(0);
   });
@@ -354,13 +375,15 @@ describe("calculateProjection", () => {
   });
 });
 
-// ============================================================================
-// buildLists
-// ============================================================================
-
 describe("buildLists", () => {
   test("cliente con 100 días mora aparece en urgentItems con 'Cobro Jurídico'", () => {
-    const items = [makeItem({ cliente_nombre: "Moroso", valor_saldo: 500000, dias_mora: 100 })];
+    const items = [
+      makeItem({
+        cliente_nombre: "Moroso",
+        valor_saldo: 500000,
+        dias_mora: 100,
+      }),
+    ];
     const { clientMap } = buildClientMap(items);
     const { urgentItems } = buildLists(items, clientMap);
     expect(urgentItems.length).toBe(1);
@@ -369,7 +392,13 @@ describe("buildLists", () => {
   });
 
   test("cliente con 50 días mora aparece en urgentItems con 'Riesgo Alto'", () => {
-    const items = [makeItem({ cliente_nombre: "Riesgoso", valor_saldo: 300000, dias_mora: 50 })];
+    const items = [
+      makeItem({
+        cliente_nombre: "Riesgoso",
+        valor_saldo: 300000,
+        dias_mora: 50,
+      }),
+    ];
     const { clientMap } = buildClientMap(items);
     const { urgentItems } = buildLists(items, clientMap);
     expect(urgentItems.length).toBe(1);
@@ -378,21 +407,42 @@ describe("buildLists", () => {
 
   test("máximo 3 items urgentes", () => {
     const items = [
-      makeItem({ cliente_nombre: "A", valor_saldo: 100000, dias_mora: 50 }),
-      makeItem({ cliente_nombre: "B", valor_saldo: 100000, dias_mora: 60 }),
-      makeItem({ cliente_nombre: "C", valor_saldo: 100000, dias_mora: 70 }),
-      makeItem({ cliente_nombre: "D", valor_saldo: 100000, dias_mora: 80 }),
-      makeItem({ cliente_nombre: "E", valor_saldo: 100000, dias_mora: 90 }),
+      makeItem({
+        cliente_nombre: "A",
+        tercero_nit: "NIT-A",
+        valor_saldo: 100000,
+        dias_mora: 50,
+      }),
+      makeItem({
+        cliente_nombre: "B",
+        tercero_nit: "NIT-B",
+        valor_saldo: 100000,
+        dias_mora: 60,
+      }),
+      makeItem({
+        cliente_nombre: "C",
+        tercero_nit: "NIT-C",
+        valor_saldo: 100000,
+        dias_mora: 70,
+      }),
+      makeItem({
+        cliente_nombre: "D",
+        tercero_nit: "NIT-D",
+        valor_saldo: 100000,
+        dias_mora: 80,
+      }),
+      makeItem({
+        cliente_nombre: "E",
+        tercero_nit: "NIT-E",
+        valor_saldo: 100000,
+        dias_mora: 90,
+      }),
     ];
     const { clientMap } = buildClientMap(items);
     const { urgentItems } = buildLists(items, clientMap);
     expect(urgentItems.length).toBe(3);
   });
 });
-
-// ============================================================================
-// buildRadarData
-// ============================================================================
 
 describe("buildRadarData", () => {
   test("3 clientes vencidos generan 3 puntos de radar", () => {
@@ -429,14 +479,14 @@ describe("buildRadarData", () => {
   });
 });
 
-// ============================================================================
-// buildTopOldest
-// ============================================================================
-
 describe("buildTopOldest", () => {
   test("15 items retorna solo 10", () => {
     const items = Array.from({ length: 15 }, (_, i) =>
-      makeItem({ documento_id: `DOC-${i}`, dias_mora: i + 1, valor_saldo: 100000 })
+      makeItem({
+        documento_id: `DOC-${i}`,
+        dias_mora: i + 1,
+        valor_saldo: 100000,
+      }),
     );
     const top = buildTopOldest(items);
     expect(top.length).toBe(10);
@@ -462,20 +512,31 @@ describe("buildTopOldest", () => {
   });
 });
 
-// ============================================================================
-// buildVendedorStats
-// ============================================================================
-
 describe("buildVendedorStats", () => {
   test("2 vendedores con múltiples items producen totales correctos", () => {
     const items = [
-      makeItem({ vendedor_codigo: "V01", valor_saldo: 500000, dias_mora: 0, cliente_nombre: "C1" }),
-      makeItem({ vendedor_codigo: "V01", valor_saldo: 300000, dias_mora: 10, cliente_nombre: "C2" }),
-      makeItem({ vendedor_codigo: "V02", valor_saldo: 200000, dias_mora: 5, cliente_nombre: "C3" }),
+      makeItem({
+        vendedor_codigo: "V01",
+        valor_saldo: 500000,
+        dias_mora: 0,
+        cliente_nombre: "C1",
+      }),
+      makeItem({
+        vendedor_codigo: "V01",
+        valor_saldo: 300000,
+        dias_mora: 10,
+        cliente_nombre: "C2",
+      }),
+      makeItem({
+        vendedor_codigo: "V02",
+        valor_saldo: 200000,
+        dias_mora: 5,
+        cliente_nombre: "C3",
+      }),
     ];
     const { vendedorStats } = buildVendedorStats(items);
-    const v01 = vendedorStats.find(v => v.codigo === "V01");
-    const v02 = vendedorStats.find(v => v.codigo === "V02");
+    const v01 = vendedorStats.find((v) => v.codigo === "V01");
+    const v02 = vendedorStats.find((v) => v.codigo === "V02");
 
     expect(v01.totalCartera).toBe(800000);
     expect(v01.totalVencida).toBe(300000);
@@ -511,5 +572,86 @@ describe("buildVendedorStats", () => {
     const items = [makeItem({ vendedor_codigo: null, valor_saldo: 100000 })];
     const { vendedorStats } = buildVendedorStats(items);
     expect(vendedorStats[0].codigo).toBe("Sin Asignar");
+  });
+});
+
+describe("calculateMoraPonderada", () => {
+  test("pondera mora por saldo correctamente", () => {
+    const items = [
+      makeItem({ dias_mora: 30, valor_saldo: 200000 }),
+      makeItem({ dias_mora: 60, valor_saldo: 800000 }),
+    ];
+    // weighted = (30*200000 + 60*800000) / (200000+800000) = 54000000/1000000 = 54
+    const result = calculateMoraPonderada(items);
+    expect(result).toBe(54);
+  });
+
+  test("items al día (dias_mora=0) se excluyen del cálculo", () => {
+    const items = [
+      makeItem({ dias_mora: 0, valor_saldo: 500000 }),
+      makeItem({ dias_mora: 30, valor_saldo: 200000 }),
+    ];
+    // Solo el item con mora>0 cuenta: 30*200000/200000 = 30
+    const result = calculateMoraPonderada(items);
+    expect(result).toBe(30);
+  });
+
+  test("retorna 0 con array vacío", () => {
+    expect(calculateMoraPonderada([])).toBe(0);
+  });
+
+  test("retorna 0 cuando todos están al día", () => {
+    const items = [
+      makeItem({ dias_mora: 0, valor_saldo: 500000 }),
+      makeItem({ dias_mora: 0, valor_saldo: 300000 }),
+    ];
+    expect(calculateMoraPonderada(items)).toBe(0);
+  });
+});
+
+describe("calculateHHI", () => {
+  test("un solo cliente tiene HHI=10000 (concentración máxima)", () => {
+    const clients = [{ deuda: 1000000, name: "Único" }];
+    const { hhi, riskLevel } = calculateHHI(clients, 1000000);
+    expect(hhi).toBe(10000);
+    expect(riskLevel).toBe("Alto");
+  });
+
+  test("2 clientes iguales tienen HHI=5000", () => {
+    const clients = [
+      { deuda: 500000, name: "A" },
+      { deuda: 500000, name: "B" },
+    ];
+    const { hhi } = calculateHHI(clients, 1000000);
+    expect(hhi).toBe(5000);
+  });
+
+  test("10 clientes iguales tienen HHI=1000 (bajo riesgo)", () => {
+    const clients = Array.from({ length: 10 }, (_, i) => ({
+      deuda: 100000,
+      name: `C${i}`,
+    }));
+    const { hhi, riskLevel } = calculateHHI(clients, 1000000);
+    expect(hhi).toBe(1000);
+    expect(riskLevel).toBe("Bajo");
+  });
+
+  test("retorna ceros con array vacío", () => {
+    const { hhi, top3Pct, riskLevel } = calculateHHI([], 0);
+    expect(hhi).toBe(0);
+    expect(top3Pct).toBe(0);
+    expect(riskLevel).toBe("Bajo");
+  });
+
+  test("top3Pct se calcula correctamente", () => {
+    const clients = [
+      { deuda: 400000, name: "A" },
+      { deuda: 300000, name: "B" },
+      { deuda: 200000, name: "C" },
+      { deuda: 100000, name: "D" },
+    ];
+    const { top3Pct } = calculateHHI(clients, 1000000);
+    // top3 = (400000+300000+200000)/1000000 * 100 = 90%
+    expect(top3Pct).toBe(90);
   });
 });

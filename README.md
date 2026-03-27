@@ -21,12 +21,11 @@ Copiar `.env.example` a `.env` y completar los valores. El archivo documenta cad
 
 **Variables requeridas:**
 - `VITE_SUPABASE_URL` / `VITE_SUPABASE_KEY` — Proyecto Supabase
-- `VITE_N8N_CHAT_URL` — Webhook del chatbot n8n (llamada directa)
-- `VITE_N8N_AUTH_KEY` — Clave de autenticacion n8n
 
 **Secretos en Supabase Edge Functions** (Dashboard > Edge Functions > Secrets):
 - `N8N_WHATSAPP_URL` — Webhook de mensajeria n8n
 - `N8N_WEBHOOK_URL` — Webhook de analisis CFO n8n
+- `N8N_CHAT_URL` — Webhook de chatbot n8n
 - `N8N_AUTH_KEY` — Secreto compartido para llamadas n8n
 
 ## Scripts
@@ -95,7 +94,7 @@ Las variables `VITE_*` se incorporan al build en tiempo de compilacion. Si cambi
 
 - **RLS**: Supabase Row Level Security habilitado en todas las tablas. Solo usuarios autenticados pueden acceder.
 - **Edge Functions**: WhatsApp y CFO se proxean via Edge Functions para proteger secretos.
-- **Chatbot**: Llamada directa a n8n (solo lectura, no modifica datos).
+- **Chatbot**: Proxeado via Edge Function (`proxy-n8n-chatbot`), solo lectura.
 - Las migraciones SQL de referencia estan en la carpeta `sql/`.
 
 ## Arquitectura

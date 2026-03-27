@@ -1,10 +1,3 @@
-/**
- * @fileoverview Hook for managing commission exclusion rules (CRUD).
- * Receives selectedCargaId as a param to avoid stale closures.
- * Uses a ref for fetchComisiones to break circular dependency with calculo hook.
- * @module hooks/comisiones/useComisionesExclusiones
- */
-
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
   getExclusiones,
@@ -13,29 +6,15 @@ import {
   toggleExclusion as toggleExclusionSvc,
 } from "../../services/comisionesService";
 
-/**
- * Gestiona reglas de exclusion de comisiones (por producto o marca).
- * @param {string|null} selectedCargaId - ID de carga seleccionada (param, no closure)
- * @returns {{
- *   exclusiones: Array,
- *   loadingExclusiones: boolean,
- *   addExclusion: (exclusion: Object) => Promise<{data: any, error: any}>,
- *   removeExclusion: (id: string) => Promise<boolean>,
- *   toggleExclusion: (id: string, activa: boolean) => Promise<boolean>,
- *   setFetchComisionesRef: (fn: Function) => void
- * }}
- */
-export function useComisionesExclusiones(selectedCargaId) {
+export function useComisionesExclusiones() {
   const [exclusiones, setExclusiones] = useState([]);
   const [loadingExclusiones, setLoadingExclusiones] = useState(true);
 
-  // Ref for fetchComisiones — set by the barrel hook after calculo is ready.
-  // Avoids circular dependency: exclusiones <-> calculo.
-  const fetchComisionesRef = useRef(null);
+  // Guard against concurrent mutation calls (double-click protection)
+  const operationInFlightRef = useRef(false);
 
-  const setFetchComisionesRef = useCallback((fn) => {
-    fetchComisionesRef.current = fn;
-  }, []);
+  // Legacy ref kept for API compat — comisiones now recalculates reactively via useMemo
+  const setFetchComisionesRef = useCallback(() => {}, []);
 
   const fetchExclusiones = useCallback(async () => {
     setLoadingExclusiones(true);
@@ -43,10 +22,11 @@ export function useComisionesExclusiones(selectedCargaId) {
       const { data } = await getExclusiones();
       setExclusiones(data || []);
     } catch (err) {
-      if (import.meta.env.DEV) console.error(
-        "[useComisionesExclusiones] Error fetching exclusiones:",
-        err,
-      );
+      if (import.meta.env.DEV)
+        console.error(
+          "[useComisionesExclusiones] Error fetching exclusiones:",
+          err,
+        );
       setExclusiones([]);
     }
     setLoadingExclusiones(false);
@@ -61,59 +41,71 @@ export function useComisionesExclusiones(selectedCargaId) {
       })
       .catch((err) => {
         if (!cancelled) {
-          if (import.meta.env.DEV) console.error(
-            "[useComisionesExclusiones] Error fetching exclusiones:",
-            err,
-          );
+          if (import.meta.env.DEV)
+            console.error(
+              "[useComisionesExclusiones] Error fetching exclusiones:",
+              err,
+            );
           setExclusiones([]);
         }
       })
       .finally(() => {
         if (!cancelled) setLoadingExclusiones(false);
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const addExclusion = useCallback(
     async (exclusion) => {
-      const { data, error } = await addExclusionSvc(exclusion);
-      if (!error) {
-        await fetchExclusiones();
-        if (selectedCargaId && fetchComisionesRef.current) {
-          fetchComisionesRef.current(selectedCargaId);
+      if (operationInFlightRef.current) return { data: null, error: null };
+      operationInFlightRef.current = true;
+      try {
+        const { data, error } = await addExclusionSvc(exclusion);
+        if (!error) {
+          await fetchExclusiones();
         }
+        return { data, error };
+      } finally {
+        operationInFlightRef.current = false;
       }
-      return { data, error };
     },
-    [fetchExclusiones, selectedCargaId],
+    [fetchExclusiones],
   );
 
   const removeExclusion = useCallback(
     async (id) => {
-      const { success } = await removeExclusionSvc(id);
-      if (success) {
-        await fetchExclusiones();
-        if (selectedCargaId && fetchComisionesRef.current) {
-          fetchComisionesRef.current(selectedCargaId);
+      if (operationInFlightRef.current) return false;
+      operationInFlightRef.current = true;
+      try {
+        const { success } = await removeExclusionSvc(id);
+        if (success) {
+          await fetchExclusiones();
         }
+        return success;
+      } finally {
+        operationInFlightRef.current = false;
       }
-      return success;
     },
-    [fetchExclusiones, selectedCargaId],
+    [fetchExclusiones],
   );
 
   const toggleExclusion = useCallback(
     async (id, activa) => {
-      const { success } = await toggleExclusionSvc(id, activa);
-      if (success) {
-        await fetchExclusiones();
-        if (selectedCargaId && fetchComisionesRef.current) {
-          fetchComisionesRef.current(selectedCargaId);
+      if (operationInFlightRef.current) return false;
+      operationInFlightRef.current = true;
+      try {
+        const { success } = await toggleExclusionSvc(id, activa);
+        if (success) {
+          await fetchExclusiones();
         }
+        return success;
+      } finally {
+        operationInFlightRef.current = false;
       }
-      return success;
     },
-    [fetchExclusiones, selectedCargaId],
+    [fetchExclusiones],
   );
 
   return {

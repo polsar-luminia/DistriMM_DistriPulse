@@ -5,13 +5,6 @@ import { formatCurrency } from "../../utils/formatters";
 import { supabase } from "../../lib/supabase";
 import { Users } from "lucide-react";
 
-/**
- * Top 3 vendors mini cards showing cartera total and % vencida health bar.
- * Self-contained: fetches distrimm_vendedores for real names.
- * @param {Object} props
- * @param {Object} props.vendedores - { stats: Array, uniqueCodes: Array, count: number } from context
- * @returns {JSX.Element|null}
- */
 export default function VendedoresKpiCards({ vendedores }) {
   const vendedorStats = vendedores?.stats;
   const [nameMap, setNameMap] = useState({});

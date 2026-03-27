@@ -1,9 +1,3 @@
-/**
- * @fileoverview Upload modal for "CONDICION VENDEDORES PRESEPUESTO AÑO" Excel files.
- * Parses vendor sections with brand commission rates, monthly targets, and recaudo tiers.
- * @module components/comisiones/PresupuestosUploadModal
- */
-
 import { useState, useEffect } from "react";
 import {
   Upload,
@@ -16,26 +10,16 @@ import {
   Target,
   User,
 } from "lucide-react";
-import * as XLSX from "xlsx";
 import { sileo } from "sileo";
 import { cn } from "@/lib/utils";
 import { formatFullCurrency } from "../../utils/formatters";
 import { getVendedores } from "../../services/portfolioService";
 
-
-/**
- * Parses the CONDICION VENDEDORES PRESEPUESTO workbook into structured vendor data.
- *
- * The Excel has a semi-structured layout with two (or more) vendor sections:
- * - A header row with vendor name in col A and "MARCAS" in col B
- * - 16 brand rows with: marca (B), % venta (C), presupuesto mes (F), bonificacion (I)
- * - Recaudo tier data is embedded in cols K-N near the vendor sections
- *
- * @param {XLSX.WorkBook} workbook - The parsed XLSX workbook
- * @param {Record<string, string>} vendorNameToCode - Uppercase name → codigo map from DB
- * @returns {{ vendors: Array<{ nombre: string, codigo: string, marcas: Array, recaudo: object|null }>, warnings: string[] }}
- */
-function parsePresupuestosExcel(workbook, vendorNameToCode) {
+// Parses the CONDICION VENDEDORES PRESEPUESTO workbook into structured vendor data.
+// Excel layout: col A = vendor name, col B = "MARCAS", then brand rows below.
+// Brand cols: marca (B), % venta (C), presupuesto mes (F), bonificacion (I).
+// Recaudo tier data in cols K-N near vendor sections.
+function parsePresupuestosExcel(workbook, vendorNameToCode, XLSX) {
   const ws = workbook.Sheets[workbook.SheetNames[0]];
   if (!ws) throw new Error("No se encontró la hoja de datos.");
 
@@ -66,7 +50,9 @@ function parsePresupuestosExcel(workbook, vendorNameToCode) {
     const vendorName = nameStr;
     const vendorCode = vendorNameToCode[vendorName];
     if (!vendorCode) {
-      warnings.push(`Vendedor "${vendorName}" no tiene código asignado en el sistema. Se omitirá.`);
+      warnings.push(
+        `Vendedor "${vendorName}" no tiene código asignado en el sistema. Se omitirá.`,
+      );
       continue;
     }
 
@@ -81,8 +67,6 @@ function parsePresupuestosExcel(workbook, vendorNameToCode) {
 
       const pctRaw = parseFloat(cell(br, 2)) || 0;
       const metaMes = parseFloat(cell(br, 5)) || 0;
-      const bonificacion = parseFloat(cell(br, 8)) || 0;
-
       // Normalize commission percentage:
       // - pctRaw > 1 (e.g. 2): percentage form → 2/100 = 0.02
       // - pctRaw >= 0.1 (e.g. 0.5): likely 0.5% not 50% → 0.5/100 = 0.005
@@ -96,13 +80,11 @@ function parsePresupuestosExcel(workbook, vendorNameToCode) {
 
       // Skip text values in presupuesto_mes (some special brands have notes)
       const metaVentas = typeof metaMes === "number" ? Math.round(metaMes) : 0;
-      const bonoFijo = typeof bonificacion === "number" ? Math.round(bonificacion) : 0;
 
       marcas.push({
         marca: marcaStr,
         pct_comision: pctComision,
         meta_ventas: metaVentas,
-        bono_fijo: bonoFijo,
       });
     }
 
@@ -121,7 +103,7 @@ function parsePresupuestosExcel(workbook, vendorNameToCode) {
 
   if (vendors.length === 0) {
     throw new Error(
-      "No se detectaron secciones de vendedores. Verifica que el archivo tiene el formato correcto (columna A: nombre vendedor, columna B: 'MARCAS')."
+      "No se detectaron secciones de vendedores. Verifica que el archivo tiene el formato correcto (columna A: nombre vendedor, columna B: 'MARCAS').",
     );
   }
 
@@ -157,9 +139,14 @@ function parsePresupuestosExcel(workbook, vendorNameToCode) {
 
       // Look for the percentage row (all 4 values small decimals like 0.005-0.015)
       if (
-        typeof k === "number" && typeof l === "number" &&
-        typeof m === "number" && typeof n === "number" &&
-        k < 0.1 && l < 0.1 && m < 0.1 && n < 0.1
+        typeof k === "number" &&
+        typeof l === "number" &&
+        typeof m === "number" &&
+        typeof n === "number" &&
+        k < 0.1 &&
+        l < 0.1 &&
+        m < 0.1 &&
+        n < 0.1
       ) {
         pcts = [k, l, m, n];
       }
@@ -193,7 +180,9 @@ function parsePresupuestosExcel(workbook, vendorNameToCode) {
   // Warn about vendors without recaudo data
   for (const v of vendors) {
     if (!v.recaudo) {
-      warnings.push(`No se detectó escala de recaudo para ${v.nombre}. Se puede agregar manualmente.`);
+      warnings.push(
+        `No se detectó escala de recaudo para ${v.nombre}. Se puede agregar manualmente.`,
+      );
     }
   }
 
@@ -220,7 +209,9 @@ export default function PresupuestosUploadModal({
     getVendedores().then(({ data }) => {
       if (data) {
         const map = {};
-        data.forEach((v) => { map[v.nombre.toUpperCase()] = v.codigo; });
+        data.forEach((v) => {
+          map[(v.nombre || "").toUpperCase()] = v.codigo;
+        });
         setVendorNameToCode(map);
       }
     });
@@ -236,9 +227,23 @@ export default function PresupuestosUploadModal({
     setSaveProgress({ done: 0, total: 0 });
   };
 
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
   const handleClose = () => {
     reset();
     onClose();
+  };
+
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      if (selectedFile.size > MAX_FILE_SIZE) {
+        setError("El archivo excede el tamaño máximo permitido (10MB)");
+        return;
+      }
+      setFile(selectedFile);
+      setError(null);
+    }
   };
 
   const handleAnalyze = () => {
@@ -246,11 +251,16 @@ export default function PresupuestosUploadModal({
     setError(null);
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
+        const XLSX = await import("xlsx-js-style");
         const data = new Uint8Array(e.target.result);
         const wb = XLSX.read(data, { type: "array" });
-        const { vendors, warnings } = parsePresupuestosExcel(wb, vendorNameToCode);
+        const { vendors, warnings } = parsePresupuestosExcel(
+          wb,
+          vendorNameToCode,
+          XLSX,
+        );
         setParsedVendors(vendors);
         setParseWarnings(warnings);
         setStep("preview");
@@ -262,12 +272,13 @@ export default function PresupuestosUploadModal({
   };
 
   const handleSave = async () => {
+    if (saving) return;
     setStep("saving");
     setSaving(true);
 
     const totalOps = parsedVendors.reduce(
       (sum, v) => sum + v.marcas.length + (v.recaudo ? 1 : 0),
-      0
+      0,
     );
     setSaveProgress({ done: 0, total: totalOps });
 
@@ -282,7 +293,6 @@ export default function PresupuestosUploadModal({
           marca: marca.marca,
           pct_comision: marca.pct_comision,
           meta_ventas: marca.meta_ventas,
-          bono_fijo: marca.bono_fijo,
           periodo_year: selectedYear,
           periodo_month: selectedMonth,
           activo: true,
@@ -336,7 +346,8 @@ export default function PresupuestosUploadModal({
         {/* Header */}
         <div className="bg-slate-900 p-4 flex justify-between items-center text-white shrink-0">
           <h3 className="font-bold text-lg flex items-center gap-2">
-            <Upload size={20} className="text-amber-400" /> Importar Presupuestos desde Excel
+            <Upload size={20} className="text-amber-400" /> Importar
+            Presupuestos desde Excel
           </h3>
           <button
             onClick={handleClose}
@@ -367,7 +378,9 @@ export default function PresupuestosUploadModal({
                   Excel &quot;CONDICION VENDEDORES PRESEPUESTO AÑO&quot;
                 </p>
                 <p className="text-xs text-amber-600">
-                  Se detectan secciones de vendedores automáticamente. Se extraen marcas con % comisión, meta mensual y bonificación, más la escala de recaudo.
+                  Se detectan secciones de vendedores automáticamente. Se
+                  extraen marcas con % comisión, meta mensual y bonificación,
+                  más la escala de recaudo.
                 </p>
               </div>
 
@@ -380,16 +393,13 @@ export default function PresupuestosUploadModal({
                     "border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-all group",
                     file
                       ? "border-amber-500 bg-amber-50/50"
-                      : "border-slate-300 hover:border-amber-400 hover:bg-slate-50"
+                      : "border-slate-300 hover:border-amber-400 hover:bg-slate-50",
                   )}
                 >
                   <input
                     type="file"
                     accept=".xlsx,.xls"
-                    onChange={(e) => {
-                      setFile(e.target.files[0]);
-                      setError(null);
-                    }}
+                    onChange={handleFileChange}
                     className="hidden"
                     id="presupuestos-file"
                   />
@@ -400,7 +410,10 @@ export default function PresupuestosUploadModal({
                     {file ? (
                       <>
                         <div className="bg-amber-100 p-3 rounded-full mb-3">
-                          <FileSpreadsheet size={32} className="text-amber-700" />
+                          <FileSpreadsheet
+                            size={32}
+                            className="text-amber-700"
+                          />
                         </div>
                         <span className="text-base font-bold text-slate-900 break-all">
                           {file.name}
@@ -445,7 +458,9 @@ export default function PresupuestosUploadModal({
               {/* Warnings */}
               {parseWarnings.length > 0 && (
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                  <h4 className="text-sm font-bold text-amber-800 mb-2">Advertencias</h4>
+                  <h4 className="text-sm font-bold text-amber-800 mb-2">
+                    Advertencias
+                  </h4>
                   <ul className="text-xs text-amber-700 space-y-1">
                     {parseWarnings.map((w, i) => (
                       <li key={i}>- {w}</li>
@@ -458,10 +473,14 @@ export default function PresupuestosUploadModal({
               <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 flex gap-3">
                 <Target className="text-indigo-600 shrink-0" size={24} />
                 <div>
-                  <h4 className="font-bold text-sm text-indigo-800">Datos Detectados</h4>
+                  <h4 className="font-bold text-sm text-indigo-800">
+                    Datos Detectados
+                  </h4>
                   <p className="text-sm text-indigo-700">
-                    {parsedVendors.length} vendedor{parsedVendors.length !== 1 ? "es" : ""},{" "}
-                    {totalMarcas} comisiones por marca, {totalRecaudo} escala{totalRecaudo !== 1 ? "s" : ""} de recaudo.
+                    {parsedVendors.length} vendedor
+                    {parsedVendors.length !== 1 ? "es" : ""}, {totalMarcas}{" "}
+                    comisiones por marca, {totalRecaudo} escala
+                    {totalRecaudo !== 1 ? "s" : ""} de recaudo.
                   </p>
                 </div>
               </div>
@@ -491,22 +510,27 @@ export default function PresupuestosUploadModal({
                         <tr>
                           <th className="px-3 py-2">Marca</th>
                           <th className="px-3 py-2 text-right">% Comisión</th>
-                          <th className="px-3 py-2 text-right">Meta Ventas Mes</th>
-                          <th className="px-3 py-2 text-right">Bonificación</th>
+                          <th className="px-3 py-2 text-right">
+                            Meta Ventas Mes
+                          </th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
                         {vendor.marcas.map((m) => (
-                          <tr key={`${vendor.codigo}-${m.marca}`} className="hover:bg-slate-50">
-                            <td className="px-3 py-2 text-xs font-medium">{m.marca}</td>
+                          <tr
+                            key={`${vendor.codigo}-${m.marca}`}
+                            className="hover:bg-slate-50"
+                          >
+                            <td className="px-3 py-2 text-xs font-medium">
+                              {m.marca}
+                            </td>
                             <td className="px-3 py-2 text-xs text-right font-mono">
                               {(m.pct_comision * 100).toFixed(1)}%
                             </td>
                             <td className="px-3 py-2 text-xs text-right font-mono">
-                              {m.meta_ventas > 0 ? formatFullCurrency(m.meta_ventas) : "-"}
-                            </td>
-                            <td className="px-3 py-2 text-xs text-right font-mono">
-                              {m.bono_fijo > 0 ? formatFullCurrency(m.bono_fijo) : "-"}
+                              {m.meta_ventas > 0
+                                ? formatFullCurrency(m.meta_ventas)
+                                : "-"}
                             </td>
                           </tr>
                         ))}
@@ -555,7 +579,8 @@ export default function PresupuestosUploadModal({
                   onClick={handleSave}
                   className="flex-[2] px-4 py-3 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 shadow-xl shadow-indigo-900/20 flex items-center justify-center gap-2 transition-all"
                 >
-                  <CheckCircle size={18} /> Guardar {totalMarcas} marcas + {totalRecaudo} recaudo
+                  <CheckCircle size={18} /> Guardar {totalMarcas} marcas +{" "}
+                  {totalRecaudo} recaudo
                 </button>
               </div>
             </div>
@@ -564,7 +589,10 @@ export default function PresupuestosUploadModal({
           {/* ── Step: Saving ── */}
           {step === "saving" && (
             <div className="flex flex-col items-center justify-center py-12">
-              <Loader2 size={48} className="text-indigo-600 animate-spin mb-4" />
+              <Loader2
+                size={48}
+                className="text-indigo-600 animate-spin mb-4"
+              />
               <h4 className="text-xl font-bold text-slate-900 mb-2">
                 Guardando Presupuestos...
               </h4>
@@ -575,7 +603,9 @@ export default function PresupuestosUploadModal({
                   style={{
                     width:
                       saveProgress.total > 0
-                        ? Math.round((saveProgress.done / saveProgress.total) * 100) + "%"
+                        ? Math.round(
+                            (saveProgress.done / saveProgress.total) * 100,
+                          ) + "%"
                         : "0%",
                   }}
                 />
@@ -592,7 +622,8 @@ export default function PresupuestosUploadModal({
               <CheckCircle size={64} className="mb-4" />
               <h4 className="text-2xl font-bold mb-2">Importación Exitosa!</h4>
               <p className="text-slate-500">
-                {totalMarcas} comisiones por marca y {totalRecaudo} escalas de recaudo guardadas.
+                {totalMarcas} comisiones por marca y {totalRecaudo} escalas de
+                recaudo guardadas.
               </p>
             </div>
           )}

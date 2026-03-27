@@ -38,12 +38,12 @@ Each service has a single responsibility and communicates with exactly one backe
 - `portfolioService.js` — Supabase CRUD for cartera data
 - `comisionesService.js` — Supabase CRUD for commissions module (cargas, ventas, catálogo, exclusiones, RPC)
 - `messagingService.js` — WhatsApp bulk sends (via Edge Function proxy) + Supabase logging
-- `chatbotService.js` — AI agent chat (direct n8n call, needs >60s)
+- `chatbotService.js` — AI agent chat (via Edge Function proxy)
 - `cfoService.js` — CFO analysis (via Edge Function proxy)
 
 Hybrid n8n architecture:
-- **WhatsApp & CFO**: Proxied through Supabase Edge Functions (`proxy-n8n-whatsapp`, `proxy-n8n-cfo`). Frontend uses `supabase.functions.invoke()`. Secrets (`N8N_WHATSAPP_URL`, `N8N_WEBHOOK_URL`, `N8N_AUTH_KEY`) live in Supabase Edge Function secrets.
-- **Chatbot**: Direct `fetch` to n8n (90s timeout). The AI Agent workflow can take 40-70s which exceeds the 60s Edge Function limit on Free tier. Uses `VITE_N8N_CHAT_URL` + `VITE_N8N_AUTH_KEY` in `.env`. Acceptable risk: read-only, no writes.
+- **All n8n calls** (WhatsApp, CFO, Chatbot) are proxied through Supabase Edge Functions (`proxy-n8n-whatsapp`, `proxy-n8n-cfo`, `proxy-n8n-chatbot`). Frontend uses `supabase.functions.invoke()`. Secrets (`N8N_WHATSAPP_URL`, `N8N_WEBHOOK_URL`, `N8N_CHAT_URL`, `N8N_AUTH_KEY`) live in Supabase Edge Function secrets.
+- **Chatbot**: The AI Agent workflow can take 40-70s. The Edge Function has a 100s timeout to accommodate this. Client-side keeps a 90s AbortController as safety net.
 
 ### Supabase Tables
 Legacy tables (no prefix): `historial_cargas`, `cartera_items`
@@ -51,7 +51,8 @@ New tables (`distrimm_` prefix): `distrimm_clientes`, `distrimm_vendedores`, `di
 Comisiones tables: `distrimm_comisiones_cargas` (upload history), `distrimm_comisiones_ventas` (sale line items, CASCADE on carga), `distrimm_productos_catalogo` (product master with marca/categoría), `distrimm_comisiones_exclusiones` (brand/product exclusion rules)
 RPC: `fn_calcular_comisiones(p_carga_id UUID)` — returns per-salesperson totals with exclusions applied
 
-`distrimm_whatsapp_instances` is managed exclusively via n8n workflows — the frontend never accesses it directly.
+`distrimm_whatsapp_instances` stores per-user WhatsApp Business connections (via Embedded Signup). The frontend reads it (SELECT) to show connection status; Edge Functions write to it (INSERT/UPDATE via `service_role`).
+`distrimm_whatsapp_credentials` stores access tokens for each instance — only accessible via Edge Functions with `service_role` key (no RLS policies for users).
 
 Link key between datasets: `cartera_items.tercero_nit` ↔ `distrimm_clientes.no_identif`
 
@@ -94,16 +95,20 @@ See `.env.example` for full documentation with instructions on where to obtain e
 
 ```
 VITE_SUPABASE_URL / VITE_SUPABASE_KEY     — Supabase project
-VITE_N8N_CHAT_URL                         — n8n chatbot webhook (direct call)
-VITE_N8N_AUTH_KEY                         — n8n auth key (only for chatbot)
-VITE_META_PHONE_NUMBER_ID                 — Meta Cloud API phone number ID
+VITE_META_APP_ID                          — Facebook App ID (for Embedded Signup)
+VITE_META_CONFIG_ID                       — FB Login for Business config ID
+VITE_META_SOLUTION_ID                     — Solution ID (optional)
 ```
 
 Supabase Edge Function secrets (Dashboard → Edge Functions → Secrets):
 ```
 N8N_WHATSAPP_URL   — n8n messaging webhook URL
 N8N_WEBHOOK_URL    — n8n CFO analysis webhook URL
-N8N_AUTH_KEY       — Shared secret for n8n calls (same as VITE_N8N_AUTH_KEY)
+N8N_CHAT_URL       — n8n chatbot webhook URL
+N8N_AUTH_KEY       — Shared secret for n8n calls
+META_APP_ID        — Facebook App ID (for token exchange)
+META_APP_SECRET    — Facebook App Secret (NEVER in frontend)
 ```
 
-Other server-side secrets (Meta access token) live in n8n credentials.
+Edge Functions: `proxy-n8n-whatsapp` (messaging with lazy token refresh), `proxy-n8n-cfo` (CFO analysis), `proxy-n8n-chatbot` (AI agent chat, 100s timeout), `proxy-embedded-signup` (WhatsApp Embedded Signup onboarding).
+Other server-side secrets (Meta access token per instance) live in `distrimm_whatsapp_credentials`.

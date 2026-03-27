@@ -20,13 +20,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-/**
- * Expanded CFO health widget for the dashboard.
- * Shows score, KPIs, insights, and top action items.
- * Self-contained: fetches latest analysis via cfoService.
- * @returns {JSX.Element}
- */
-export default function CfoHealthWidget() {
+export default function CfoHealthWidget({ currentLoadId }) {
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -39,15 +33,23 @@ export default function CfoHealthWidget() {
       try {
         setLoading(true);
         setError(null);
-        const { data, error: fetchErr } = await getCfoAnalyses();
+        // Try current load first, then fallback to most recent analysis
+        let { data, error: fetchErr } = await getCfoAnalyses(currentLoadId);
         if (cancelled) return;
         if (fetchErr) throw fetchErr;
+        if (!data || data.length === 0) {
+          // No analysis for current load — show most recent from any load
+          const fallback = await getCfoAnalyses(null);
+          if (cancelled) return;
+          data = fallback.data;
+        }
         if (data && data.length > 0) {
           setAnalysis(data[0].analysis);
         }
       } catch (err) {
         if (cancelled) return;
-        if (import.meta.env.DEV) console.error("[CfoHealthWidget] Error fetching analysis:", err);
+        if (import.meta.env.DEV)
+          console.error("[CfoHealthWidget] Error fetching analysis:", err);
         setError(err.message || "Error cargando análisis");
       } finally {
         if (!cancelled) setLoading(false);
@@ -55,8 +57,10 @@ export default function CfoHealthWidget() {
     }
 
     fetchLatest();
-    return () => { cancelled = true; };
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [currentLoadId]);
 
   if (loading) {
     return (
@@ -159,17 +163,31 @@ export default function CfoHealthWidget() {
       </div>
 
       <Card className="relative overflow-hidden">
-        <div className={cn("absolute top-0 left-0 right-0 h-[2px] opacity-80", sem.bg.replace("bg-", "bg-"))} />
+        <div
+          className={cn(
+            "absolute top-0 left-0 right-0 h-[2px] opacity-80",
+            sem.bg.replace("bg-", "bg-"),
+          )}
+        />
 
         {/* Row 1: Score + KPIs */}
         <div className="flex flex-col sm:flex-row gap-4">
           {/* Score column */}
           <div className="flex flex-col items-center shrink-0 sm:pr-4 sm:border-r sm:border-navy-100">
-            <p className={cn("text-4xl font-bold font-mono tracking-tight", scoreColor)}>
+            <p
+              className={cn(
+                "text-4xl font-bold font-mono tracking-tight",
+                scoreColor,
+              )}
+            >
               {health_score ?? "N/A"}
             </p>
             <span
-              className={cn("mt-1.5 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-semibold ring-1", sem.bg, sem.text)}
+              className={cn(
+                "mt-1.5 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-semibold ring-1",
+                sem.bg,
+                sem.text,
+              )}
             >
               <SemIcon size={10} />
               {sem.label || semaforo_general || "Sin datos"}
@@ -298,7 +316,11 @@ export default function CfoHealthWidget() {
                 return (
                   <span
                     key={v.vendedor || v.codigo}
-                    className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-medium ring-1", vSem.bg, vSem.text)}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-medium ring-1",
+                      vSem.bg,
+                      vSem.text,
+                    )}
                   >
                     <Users size={10} />
                     {v.vendedor || v.codigo}
@@ -316,8 +338,6 @@ export default function CfoHealthWidget() {
   );
 }
 
-/* ─── Internal sub-components ─── */
-
 function KpiMini({ icon: Icon, label, value, danger }) {
   return (
     <div className="flex items-start gap-2">
@@ -331,7 +351,10 @@ function KpiMini({ icon: Icon, label, value, danger }) {
           {label}
         </p>
         <p
-          className={cn("text-sm font-bold font-mono tracking-tight", danger ? "text-rose-600" : "text-navy-800")}
+          className={cn(
+            "text-sm font-bold font-mono tracking-tight",
+            danger ? "text-rose-600" : "text-navy-800",
+          )}
         >
           {value}
         </p>
@@ -349,5 +372,7 @@ const PRIORITY_COLORS = {
 
 function PriorityDot({ priority }) {
   const color = PRIORITY_COLORS[priority] || PRIORITY_COLORS.MEDIA;
-  return <span className={cn("w-1.5 h-1.5 rounded-full mt-1.5 shrink-0", color)} />;
+  return (
+    <span className={cn("w-1.5 h-1.5 rounded-full mt-1.5 shrink-0", color)} />
+  );
 }

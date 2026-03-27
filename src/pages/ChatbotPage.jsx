@@ -1,10 +1,3 @@
-/**
- * @fileoverview DistriBot CFO Chat Page
- * Interactive chat interface with the AI-powered CFO assistant for cartera analysis.
- * Includes persistent conversation history with sidebar for session management.
- * @module pages/ChatbotPage
- */
-
 import { useState, useRef, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import {
@@ -31,10 +24,6 @@ import ChatSidebar from "../components/chatbot/ChatSidebar";
 import ChatMessage from "../components/chatbot/ChatMessage";
 import ChatInput from "../components/chatbot/ChatInput";
 
-// ============================================================================
-// CONSTANTS
-// ============================================================================
-
 const WELCOME_CONTENT =
   "Hola! Soy **DistriBot**, tu asesor CFO virtual experto en cartera. Consulto los datos en tiempo real. Puedo ayudarte con:\n\n" +
   "- **Resumen general** — cartera total, vencida vs vigente, % morosidad\n" +
@@ -52,10 +41,6 @@ const createWelcomeMessage = () => ({
   timestamp: new Date(),
 });
 
-// ============================================================================
-// SMALL INLINE COMPONENTS
-// ============================================================================
-
 const TypingIndicator = () => (
   <div className="flex gap-2.5 items-start">
     <div className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-gradient-to-br from-emerald-400 to-teal-500 text-white">
@@ -68,7 +53,9 @@ const TypingIndicator = () => (
           <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce [animation-delay:150ms]" />
           <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce [animation-delay:300ms]" />
         </div>
-        <span className="text-xs text-slate-400 ml-1">DistriBot pensando...</span>
+        <span className="text-xs text-slate-400 ml-1">
+          DistriBot pensando...
+        </span>
       </div>
     </div>
   </div>
@@ -110,10 +97,6 @@ const ScrollToBottomButton = ({ onClick, visible }) => {
   );
 };
 
-// ============================================================================
-// MAIN CHATBOT PAGE
-// ============================================================================
-
 export default function ChatbotPage() {
   const { user } = useAuth();
   const [confirmProps, confirm] = useConfirm();
@@ -147,7 +130,6 @@ export default function ChatbotPage() {
 
   const suggestions = getSuggestedQuestions();
 
-  // ─── Auto-scroll ───
   const scrollToBottom = useCallback((behavior = "smooth") => {
     messagesEndRef.current?.scrollIntoView({ behavior });
   }, []);
@@ -156,7 +138,6 @@ export default function ChatbotPage() {
     scrollToBottom();
   }, [messages, isLoading, scrollToBottom]);
 
-  // ─── Scroll detection ───
   const handleScroll = useCallback(() => {
     const container = chatContainerRef.current;
     if (!container) return;
@@ -165,30 +146,32 @@ export default function ChatbotPage() {
     setShowScrollButton(!isNearBottom);
   }, []);
 
-  // ─── Track first message per session ───
   useEffect(() => {
     const userMessageCount = messages.filter((m) => m.role === "user").length;
     isFirstMessageRef.current = userMessageCount === 0;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSession]);
 
-  // ─── Send message ───
   const handleSend = useCallback(
     async (messageText) => {
       const text = (messageText || inputValue).trim();
       if (!text || isLoading) return;
 
-      // Ensure we have an active session
-      let currentSessionId = sessionId;
+      // Ensure we have an active session — prefer activeSession.session_id over state
+      let currentSessionId = activeSession?.session_id || sessionId;
       let currentActiveSession = activeSession;
 
+      // Track the DB id for persistMessage in case activeSession hasn't updated yet
+      let sessionDbId = currentActiveSession?.id || null;
+
       if (!currentActiveSession) {
-        const newSessionId = await startNewSession();
-        if (!newSessionId) return;
-        currentSessionId = newSessionId;
-        setSessionId(newSessionId);
+        const result = await startNewSession();
+        if (!result?.sessionId) return;
+        currentSessionId = result.sessionId;
+        sessionDbId = result.dbId;
+        setSessionId(result.sessionId);
         // Store in sessionStorage for backward compat
-        sessionStorage.setItem("distribot_session_id", newSessionId);
+        sessionStorage.setItem("distribot_session_id", result.sessionId);
       }
 
       // Add user message to local state
@@ -208,13 +191,15 @@ export default function ChatbotPage() {
       if (isFirstMessageRef.current) {
         isFirstMessageRef.current = false;
         autoTitle(text).catch((error) => {
-          if (import.meta.env.DEV) console.error("[ChatbotPage] autoTitle failed:", error);
+          if (import.meta.env.DEV)
+            console.error("[ChatbotPage] autoTitle failed:", error);
         });
       }
 
-      // Persist user message (fire-and-forget)
-      persistMessage("user", text).catch((error) => {
-        if (import.meta.env.DEV) console.error("[ChatbotPage] persistMessage (user) failed:", error);
+      // Persist user message (fire-and-forget with warning)
+      // Pass sessionDbId to handle the case where activeSession state hasn't updated yet
+      persistMessage("user", text, false, sessionDbId).catch(() => {
+        sileo.warning("No se pudo guardar el mensaje en el historial");
       });
 
       try {
@@ -232,9 +217,7 @@ export default function ChatbotPage() {
               isError: true,
             },
           ]);
-          persistMessage("assistant", errorContent, true).catch((error) => {
-            if (import.meta.env.DEV) console.error("[ChatbotPage] persistMessage (error) failed:", error);
-          });
+          persistMessage("assistant", errorContent, true).catch(() => {});
           sileo.error({ title: "Error al comunicarse con DistriBot" });
         } else {
           setMessages((prev) => [
@@ -246,8 +229,8 @@ export default function ChatbotPage() {
               timestamp: new Date(),
             },
           ]);
-          persistMessage("assistant", data).catch((error) => {
-            if (import.meta.env.DEV) console.error("[ChatbotPage] persistMessage (assistant) failed:", error);
+          persistMessage("assistant", data).catch(() => {
+            sileo.warning("No se pudo guardar la respuesta en el historial");
           });
         }
       } catch (err) {
@@ -262,23 +245,28 @@ export default function ChatbotPage() {
             isError: true,
           },
         ]);
-        persistMessage("assistant", errorContent, true).catch((error) => {
-          if (import.meta.env.DEV) console.error("[ChatbotPage] persistMessage (unexpected error) failed:", error);
-        });
+        persistMessage("assistant", errorContent, true).catch(() => {});
       } finally {
         setIsLoading(false);
       }
     },
-    [inputValue, isLoading, sessionId, activeSession, startNewSession, autoTitle, persistMessage]
+    [
+      inputValue,
+      isLoading,
+      sessionId,
+      activeSession,
+      startNewSession,
+      autoTitle,
+      persistMessage,
+    ],
   );
 
-  // ─── New conversation ───
   const handleNewConversation = useCallback(async () => {
     const oldSessionId = sessionId;
-    const newId = await startNewSession();
-    if (newId) {
-      setSessionId(newId);
-      sessionStorage.setItem("distribot_session_id", newId);
+    const result = await startNewSession();
+    if (result?.sessionId) {
+      setSessionId(result.sessionId);
+      sessionStorage.setItem("distribot_session_id", result.sessionId);
       setMessages([createWelcomeMessage()]);
       setInputValue("");
       isFirstMessageRef.current = true;
@@ -287,12 +275,12 @@ export default function ChatbotPage() {
     }
     if (oldSessionId) {
       clearChatMemory(oldSessionId).catch((error) => {
-        if (import.meta.env.DEV) console.error("[ChatbotPage] clearChatMemory failed:", error);
+        if (import.meta.env.DEV)
+          console.error("[ChatbotPage] clearChatMemory failed:", error);
       });
     }
   }, [sessionId, startNewSession]);
 
-  // ─── Load existing session ───
   const handleSelectSession = useCallback(
     async (session) => {
       if (session.session_id === activeSession?.session_id) {
@@ -302,21 +290,24 @@ export default function ChatbotPage() {
       const loadedMessages = await loadSession(session);
       setSessionId(session.session_id);
       sessionStorage.setItem("distribot_session_id", session.session_id);
-      setMessages(loadedMessages.length > 0 ? loadedMessages : [createWelcomeMessage()]);
-      isFirstMessageRef.current = loadedMessages.filter((m) => m.role === "user").length === 0;
+      setMessages(
+        loadedMessages.length > 0 ? loadedMessages : [createWelcomeMessage()],
+      );
+      isFirstMessageRef.current =
+        loadedMessages.filter((m) => m.role === "user").length === 0;
       setInputValue("");
       setMobileSidebarOpen(false);
       setTimeout(() => scrollToBottom("instant"), 100);
     },
-    [activeSession, loadSession, scrollToBottom]
+    [activeSession, loadSession, scrollToBottom],
   );
 
-  // ─── Delete session ───
   const handleDeleteSession = useCallback(
     async (sessionIdToDelete) => {
       const ok = await confirm({
         title: "Eliminar conversacion",
-        message: "Esta accion eliminara la conversacion y todos sus mensajes. No se puede deshacer.",
+        message:
+          "Esta accion eliminara la conversacion y todos sus mensajes. No se puede deshacer.",
         confirmText: "Eliminar",
         cancelText: "Cancelar",
         variant: "danger",
@@ -332,10 +323,9 @@ export default function ChatbotPage() {
         sileo.success({ title: "Conversacion eliminada" });
       }
     },
-    [removeSession, sessionId, confirm]
+    [removeSession, sessionId, confirm],
   );
 
-  // ─── Retry last message ───
   const handleRetry = useCallback(() => {
     const lastUserMsg = [...messages].reverse().find((m) => m.role === "user");
     if (lastUserMsg) {
@@ -356,10 +346,11 @@ export default function ChatbotPage() {
 
   return (
     <div className="flex h-[calc(100vh-8rem)] max-h-[900px]">
-      {/* ─── Desktop Sidebar ─── */}
+      {/* Desktop Sidebar */}
       <div
-        className={cn("hidden md:flex flex-col bg-white border border-slate-200 rounded-l-xl shrink-0 transition-all duration-200 overflow-hidden",
-          sidebarOpen ? "w-72" : "w-0 border-0"
+        className={cn(
+          "hidden md:flex flex-col bg-white border border-slate-200 rounded-l-xl shrink-0 transition-all duration-200 overflow-hidden",
+          sidebarOpen ? "w-72" : "w-0 border-0",
         )}
       >
         {sidebarOpen && (
@@ -377,7 +368,7 @@ export default function ChatbotPage() {
         )}
       </div>
 
-      {/* ─── Mobile Sidebar Overlay ─── */}
+      {/* Mobile Sidebar Overlay */}
       {mobileSidebarOpen && (
         <>
           <div
@@ -386,7 +377,9 @@ export default function ChatbotPage() {
           />
           <div className="fixed inset-y-0 left-0 w-72 bg-white z-50 shadow-2xl md:hidden animate-in slide-in-from-left duration-200">
             <div className="flex items-center justify-between px-3 py-2 border-b border-slate-200">
-              <span className="text-sm font-semibold text-slate-700">Conversaciones</span>
+              <span className="text-sm font-semibold text-slate-700">
+                Conversaciones
+              </span>
               <button
                 onClick={() => setMobileSidebarOpen(false)}
                 className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400"
@@ -409,9 +402,14 @@ export default function ChatbotPage() {
         </>
       )}
 
-      {/* ─── Chat Area ─── */}
-      <div className={cn("flex-1 flex flex-col min-w-0", !sidebarOpen && "rounded-l-xl")}>
-        {/* ─── Header ─── */}
+      {/* Chat Area */}
+      <div
+        className={cn(
+          "flex-1 flex flex-col min-w-0",
+          !sidebarOpen && "rounded-l-xl",
+        )}
+      >
+        {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 bg-white border border-slate-200 rounded-tr-xl">
           <div className="flex items-center gap-3">
             {/* Sidebar toggle (desktop) */}
@@ -420,7 +418,11 @@ export default function ChatbotPage() {
               className="hidden md:flex p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
               title={sidebarOpen ? "Ocultar panel" : "Mostrar panel"}
             >
-              {sidebarOpen ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}
+              {sidebarOpen ? (
+                <PanelLeftClose size={16} />
+              ) : (
+                <PanelLeftOpen size={16} />
+              )}
             </button>
 
             {/* Mobile sidebar toggle */}
@@ -465,7 +467,7 @@ export default function ChatbotPage() {
           </div>
         </div>
 
-        {/* ─── Messages Area ─── */}
+        {/* Messages Area */}
         <div
           ref={chatContainerRef}
           onScroll={handleScroll}
@@ -474,7 +476,9 @@ export default function ChatbotPage() {
           {loadingMessages ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 size={24} className="animate-spin text-indigo-400" />
-              <span className="ml-2 text-sm text-slate-400">Cargando conversacion...</span>
+              <span className="ml-2 text-sm text-slate-400">
+                Cargando conversacion...
+              </span>
             </div>
           ) : (
             <>
@@ -499,24 +503,31 @@ export default function ChatbotPage() {
                 </div>
               )}
 
-              <ScrollToBottomButton visible={showScrollButton} onClick={() => scrollToBottom()} />
+              <ScrollToBottomButton
+                visible={showScrollButton}
+                onClick={() => scrollToBottom()}
+              />
 
               <div ref={messagesEndRef} />
             </>
           )}
         </div>
 
-        {/* ─── Suggestions (only when chat is fresh) ─── */}
+        {/* Suggestions (only when chat is fresh) */}
         {hasOnlyWelcome && !isLoading && (
           <div className="px-4 py-3 bg-slate-50/80 border-x border-slate-200">
             <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-2 text-center">
               Preguntas sugeridas
             </p>
-            <SuggestionChips suggestions={suggestions} onSelect={handleSend} disabled={isLoading} />
+            <SuggestionChips
+              suggestions={suggestions}
+              onSelect={handleSend}
+              disabled={isLoading}
+            />
           </div>
         )}
 
-        {/* ─── Input Area ─── */}
+        {/* Input Area */}
         <ChatInput
           value={inputValue}
           onChange={setInputValue}

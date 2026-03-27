@@ -1,16 +1,5 @@
-/**
- * @fileoverview PlantillasTab - Message template management (CRUD).
- * @module components/messages/PlantillasTab
- */
-
 import React, { useState } from "react";
-import {
-  FileText,
-  Plus,
-  Save,
-  Trash2,
-  Loader,
-} from "lucide-react";
+import { FileText, Plus, Save, Trash2, Loader } from "lucide-react";
 import { sileo } from "sileo";
 import { cn } from "@/lib/utils";
 import { Card } from "../dashboard/DashboardShared";
@@ -18,6 +7,7 @@ import { Card } from "../dashboard/DashboardShared";
 export default function PlantillasTab({ messaging }) {
   const [editing, setEditing] = useState(null); // null or template object
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(null);
 
   const handleSave = async () => {
     if (!editing?.nombre || !editing?.contenido) {
@@ -36,11 +26,17 @@ export default function PlantillasTab({ messaging }) {
   };
 
   const handleDelete = async (id) => {
-    const { success } = await messaging.removeTemplate(id);
-    if (success) {
-      sileo.success({ title: "Plantilla eliminada" });
-    } else {
-      sileo.error({ title: "Error eliminando plantilla" });
+    if (deleting) return;
+    setDeleting(id);
+    try {
+      const { success } = await messaging.removeTemplate(id);
+      if (success) {
+        sileo.success({ title: "Plantilla eliminada" });
+      } else {
+        sileo.error({ title: "Error eliminando plantilla" });
+      }
+    } finally {
+      setDeleting(null);
     }
   };
 
@@ -189,7 +185,7 @@ export default function PlantillasTab({ messaging }) {
                           ? "bg-blue-50 text-blue-600"
                           : t.tipo === "promocional"
                             ? "bg-purple-50 text-purple-600"
-                            : "bg-slate-100 text-slate-500"
+                            : "bg-slate-100 text-slate-500",
                       )}
                     >
                       {t.tipo}
@@ -222,7 +218,8 @@ export default function PlantillasTab({ messaging }) {
                   </button>
                   <button
                     onClick={() => handleDelete(t.id)}
-                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                    disabled={deleting === t.id}
+                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors disabled:opacity-50 disabled:pointer-events-none"
                     title="Eliminar"
                   >
                     <Trash2 size={14} />

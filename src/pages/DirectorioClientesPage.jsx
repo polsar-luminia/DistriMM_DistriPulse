@@ -1,10 +1,3 @@
-/**
- * @fileoverview Directorio de Clientes Page - Master data view.
- * Shows all imported client data with contact info, classification, geography.
- * Separate from the portfolio-based ClientsPage.
- * @module pages/DirectorioClientesPage
- */
-
 import { useState, useMemo, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import {
@@ -50,7 +43,9 @@ export default function DirectorioClientesPage() {
   const [filterMunicipio, setFilterMunicipio] = useState("ALL");
   const [expandedClient, setExpandedClient] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(PAGINATION.DEFAULT_PAGE_SIZE);
+  const [itemsPerPage, setItemsPerPage] = useState(
+    PAGINATION.DEFAULT_PAGE_SIZE,
+  );
   const [filterTelefono, setFilterTelefono] = useState("ALL");
   const [filterVendedor, setFilterVendedor] = useState("ALL");
   const [vendedoresDB, setVendedoresDB] = useState([]);
@@ -64,14 +59,19 @@ export default function DirectorioClientesPage() {
 
   const vendedorNombreMap = useMemo(() => {
     const map = {};
-    vendedoresDB.forEach((v) => { map[v.codigo] = v.nombre; });
+    vendedoresDB.forEach((v) => {
+      map[v.codigo] = v.nombre;
+    });
     return map;
   }, [vendedoresDB]);
 
   // Debounce search input by 300ms
   const debounceRef = useRef(null);
   useEffect(() => {
-    debounceRef.current = setTimeout(() => setSearchQuery(searchInput), 300);
+    debounceRef.current = setTimeout(() => {
+      setSearchQuery(searchInput);
+      setCurrentPage(1);
+    }, 300);
     return () => clearTimeout(debounceRef.current);
   }, [searchInput]);
 
@@ -97,12 +97,15 @@ export default function DirectorioClientesPage() {
 
       // Tipo persona
       if (filterTipo !== "ALL") {
-        if (filterTipo === "Juridica" && c.tipo_persona !== "Juridica") return false;
-        if (filterTipo === "Natural" && c.tipo_persona !== "Natural") return false;
+        if (filterTipo === "Juridica" && c.tipo_persona !== "Juridica")
+          return false;
+        if (filterTipo === "Natural" && c.tipo_persona !== "Natural")
+          return false;
       }
 
       // Municipio
-      if (filterMunicipio !== "ALL" && c.municipio !== filterMunicipio) return false;
+      if (filterMunicipio !== "ALL" && c.municipio !== filterMunicipio)
+        return false;
 
       // Telefono/Celular
       if (filterTelefono === "SIN_CELULAR") {
@@ -116,22 +119,27 @@ export default function DirectorioClientesPage() {
       // Vendedor
       if (filterVendedor !== "ALL") {
         if (filterVendedor === "SIN" && c.vendedor_codigo) return false;
-        if (filterVendedor !== "SIN" && c.vendedor_codigo !== filterVendedor) return false;
+        if (filterVendedor !== "SIN" && c.vendedor_codigo !== filterVendedor)
+          return false;
       }
 
       return true;
     });
-  }, [clientes, searchQuery, filterTipo, filterMunicipio, filterTelefono, filterVendedor]);
+  }, [
+    clientes,
+    searchQuery,
+    filterTipo,
+    filterMunicipio,
+    filterTelefono,
+    filterVendedor,
+  ]);
 
-  // Reset page on filter change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, filterTipo, filterMunicipio, filterTelefono, filterVendedor]);
-
-  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage));
+  // Clamp page to valid range (auto-resets when filters reduce results)
+  const effectivePage = Math.min(currentPage, totalPages);
   const paginatedClients = filtered.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage,
+    (effectivePage - 1) * itemsPerPage,
+    effectivePage * itemsPerPage,
   );
 
   // Chart data
@@ -260,7 +268,11 @@ export default function DirectorioClientesPage() {
                   type="category"
                   dataKey="name"
                   width={120}
-                  tick={{ fontSize: 10, fontWeight: 600, fill: COLORS.CHART.NEUTRAL }}
+                  tick={{
+                    fontSize: 10,
+                    fontWeight: 600,
+                    fill: COLORS.CHART.NEUTRAL,
+                  }}
                 />
                 <Tooltip />
                 <Bar dataKey="count" radius={[0, 4, 4, 0]}>
@@ -298,7 +310,10 @@ export default function DirectorioClientesPage() {
 
           <select
             value={filterTipo}
-            onChange={(e) => setFilterTipo(e.target.value)}
+            onChange={(e) => {
+              setFilterTipo(e.target.value);
+              setCurrentPage(1);
+            }}
             className="py-2 pl-3 pr-10 text-sm border border-slate-200 rounded-lg bg-slate-50 cursor-pointer"
           >
             <option value="ALL">Todos los Tipos</option>
@@ -308,7 +323,10 @@ export default function DirectorioClientesPage() {
 
           <select
             value={filterMunicipio}
-            onChange={(e) => setFilterMunicipio(e.target.value)}
+            onChange={(e) => {
+              setFilterMunicipio(e.target.value);
+              setCurrentPage(1);
+            }}
             className="py-2 pl-3 pr-10 text-sm border border-slate-200 rounded-lg bg-slate-50 cursor-pointer"
           >
             <option value="ALL">Todos los Municipios</option>
@@ -321,7 +339,10 @@ export default function DirectorioClientesPage() {
 
           <select
             value={filterVendedor}
-            onChange={(e) => setFilterVendedor(e.target.value)}
+            onChange={(e) => {
+              setFilterVendedor(e.target.value);
+              setCurrentPage(1);
+            }}
             className="py-2 pl-3 pr-10 text-sm border border-slate-200 rounded-lg bg-slate-50 cursor-pointer"
           >
             <option value="ALL">Todos los Vendedores</option>
@@ -335,7 +356,10 @@ export default function DirectorioClientesPage() {
 
           <select
             value={filterTelefono}
-            onChange={(e) => setFilterTelefono(e.target.value)}
+            onChange={(e) => {
+              setFilterTelefono(e.target.value);
+              setCurrentPage(1);
+            }}
             className="py-2 pl-3 pr-10 text-sm border border-slate-200 rounded-lg bg-slate-50 cursor-pointer"
           >
             <option value="ALL">Todos (contacto)</option>
@@ -387,30 +411,37 @@ export default function DirectorioClientesPage() {
       {totalPages > 1 && (
         <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-4 border-t border-slate-100 text-xs text-slate-500">
           <div className="flex items-center gap-2">
-            <span className="font-medium text-[10px] uppercase tracking-wide">Filas:</span>
+            <span className="font-medium text-[10px] uppercase tracking-wide">
+              Filas:
+            </span>
             <select
               value={itemsPerPage}
-              onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
               className="bg-white border border-slate-200 rounded px-2 py-1 text-xs focus:ring-1 focus:ring-indigo-300 outline-none"
             >
               {PAGINATION.PAGE_SIZE_OPTIONS.map((n) => (
-                <option key={n} value={n}>{n}</option>
+                <option key={n} value={n}>
+                  {n}
+                </option>
               ))}
             </select>
           </div>
           <div className="flex items-center gap-3">
             <button
-              disabled={currentPage === 1}
+              disabled={effectivePage === 1}
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               className="p-1.5 bg-white border border-slate-200 rounded-md hover:bg-slate-50 disabled:opacity-30 transition-colors"
             >
               <ChevronLeft size={14} />
             </button>
             <span className="font-mono text-[11px] font-medium">
-              {currentPage} / {totalPages}
+              {effectivePage} / {totalPages}
             </span>
             <button
-              disabled={currentPage >= totalPages}
+              disabled={effectivePage >= totalPages}
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               className="p-1.5 bg-white border border-slate-200 rounded-md hover:bg-slate-50 disabled:opacity-30 transition-colors"
             >
@@ -423,13 +454,15 @@ export default function DirectorioClientesPage() {
   );
 }
 
-// --- CLIENT MASTER CARD ---
 function ClientMasterCard({ client: c, isExpanded, onExpand, vendedorNombre }) {
   const isJuridica = c.tipo_persona === "Juridica";
 
   return (
     <Card
-      className={cn("overflow-hidden transition-all", isExpanded && "ring-2 ring-indigo-100")}
+      className={cn(
+        "overflow-hidden transition-all",
+        isExpanded && "ring-2 ring-indigo-100",
+      )}
     >
       <div
         className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 cursor-pointer"
@@ -437,7 +470,12 @@ function ClientMasterCard({ client: c, isExpanded, onExpand, vendedorNombre }) {
       >
         <div className="flex items-center gap-3">
           <div
-            className={cn("p-2.5 rounded-full", isJuridica ? "bg-indigo-50 text-indigo-600" : "bg-emerald-50 text-emerald-600")}
+            className={cn(
+              "p-2.5 rounded-full",
+              isJuridica
+                ? "bg-indigo-50 text-indigo-600"
+                : "bg-emerald-50 text-emerald-600",
+            )}
           >
             {isJuridica ? <Building2 size={20} /> : <User size={20} />}
           </div>
@@ -450,7 +488,12 @@ function ClientMasterCard({ client: c, isExpanded, onExpand, vendedorNombre }) {
                 NIT: {c.no_identif}
               </span>
               <span
-                className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded", isJuridica ? "bg-indigo-100 text-indigo-700" : "bg-emerald-100 text-emerald-700")}
+                className={cn(
+                  "text-[10px] font-bold px-1.5 py-0.5 rounded",
+                  isJuridica
+                    ? "bg-indigo-100 text-indigo-700"
+                    : "bg-emerald-100 text-emerald-700",
+                )}
               >
                 {c.tipo_persona || "N/A"}
               </span>
@@ -480,7 +523,8 @@ function ClientMasterCard({ client: c, isExpanded, onExpand, vendedorNombre }) {
           )}
           {c.correo_electronico && (
             <span className="text-xs text-slate-500 flex items-center gap-1 truncate max-w-[200px]">
-              <Mail size={12} className="text-blue-500" /> {c.correo_electronico}
+              <Mail size={12} className="text-blue-500" />{" "}
+              {c.correo_electronico}
             </span>
           )}
           <div className="p-1 text-slate-300">
@@ -492,7 +536,10 @@ function ClientMasterCard({ client: c, isExpanded, onExpand, vendedorNombre }) {
       {isExpanded && (
         <div className="mt-4 pt-4 border-t border-slate-100">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
-            <InfoRow label="Identificacion" value={`${c.tipo_ident}: ${c.no_identif}`} />
+            <InfoRow
+              label="Identificacion"
+              value={`${c.tipo_ident}: ${c.no_identif}`}
+            />
             <InfoRow label="Direccion" value={c.direccion} />
             <InfoRow label="Barrio" value={c.barrio} />
             <InfoRow label="Municipio" value={c.municipio} />
@@ -508,12 +555,42 @@ function ClientMasterCard({ client: c, isExpanded, onExpand, vendedorNombre }) {
             <InfoRow label="Genero" value={c.genero} />
             <InfoRow
               label="Fecha Nacimiento"
-              value={c.fecha_nacimiento ? new Date(c.fecha_nacimiento).toLocaleDateString("es-CO") : null}
+              value={
+                c.fecha_nacimiento
+                  ? new Date(c.fecha_nacimiento).toLocaleDateString("es-CO")
+                  : null
+              }
             />
-            <InfoRow label="Cupo Venta" value={c.cupo_venta > 0 ? `$${Number(c.cupo_venta).toLocaleString("es-CO")}` : null} />
-            <InfoRow label="Cupo Compra" value={c.cupo_compra > 0 ? `$${Number(c.cupo_compra).toLocaleString("es-CO")}` : null} />
-            <InfoRow label="Vendedor" value={vendedorNombre ? `${vendedorNombre} (${c.vendedor_codigo})` : c.vendedor_codigo ? `Cod. ${c.vendedor_codigo}` : null} />
-            <InfoRow label="Cobrador" value={c.cobrador_codigo ? `Cod. ${c.cobrador_codigo}` : null} />
+            <InfoRow
+              label="Cupo Venta"
+              value={
+                c.cupo_venta > 0
+                  ? `$${Number(c.cupo_venta).toLocaleString("es-CO")}`
+                  : null
+              }
+            />
+            <InfoRow
+              label="Cupo Compra"
+              value={
+                c.cupo_compra > 0
+                  ? `$${Number(c.cupo_compra).toLocaleString("es-CO")}`
+                  : null
+              }
+            />
+            <InfoRow
+              label="Vendedor"
+              value={
+                vendedorNombre
+                  ? `${vendedorNombre} (${c.vendedor_codigo})`
+                  : c.vendedor_codigo
+                    ? `Cod. ${c.vendedor_codigo}`
+                    : null
+              }
+            />
+            <InfoRow
+              label="Cobrador"
+              value={c.cobrador_codigo ? `Cod. ${c.cobrador_codigo}` : null}
+            />
             {c.comentario && (
               <div className="col-span-full">
                 <InfoRow label="Comentario" value={c.comentario} />

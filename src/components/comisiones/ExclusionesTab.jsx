@@ -1,8 +1,3 @@
-/**
- * @fileoverview Exclusiones tab — manage brand and product exclusion rules.
- * @module components/comisiones/ExclusionesTab
- */
-
 import React, { useState, useMemo } from "react";
 import {
   Search,

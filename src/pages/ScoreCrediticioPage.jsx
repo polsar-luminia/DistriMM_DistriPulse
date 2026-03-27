@@ -14,8 +14,6 @@ import ConfirmDialog from "../components/ConfirmDialog";
 import { useConfirm } from "../hooks/useConfirm";
 import { sileo } from "sileo";
 
-// ─── Defaults ────────────────────────────────────────────────────────────────
-
 const DEFAULT_PESOS = {
   mora_prom: 20,
   tendencia: 15,
@@ -85,8 +83,6 @@ const NIVEL_ROWS = [
   { key: "alto_riesgo", label: "Alto riesgo", dot: "bg-rose-500", text: "text-rose-600" },
 ];
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
 const moraBadgeClass = (dias) => {
   if (dias === 0) return "bg-emerald-50 text-emerald-700 border-emerald-200";
   if (dias <= 30) return "bg-amber-50 text-amber-700 border-amber-200";
@@ -95,8 +91,6 @@ const moraBadgeClass = (dias) => {
 };
 
 const sumPesos = (p) => Object.values(p).reduce((a, b) => a + b, 0);
-
-// ─── Sub-components ──────────────────────────────────────────────────────────
 
 function WeightSlider({ label, value, onChange }) {
   return (
@@ -117,8 +111,6 @@ function WeightSlider({ label, value, onChange }) {
     </div>
   );
 }
-
-// ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function ScoreCrediticioPage() {
   const context = useOutletContext();
@@ -143,7 +135,6 @@ export default function ScoreCrediticioPage() {
   const [confirmProps, confirm] = useConfirm();
   const { clientes, loading: clientesLoading } = useClientAnalytics();
 
-  // ── Load config on mount ──
   useEffect(() => {
     (async () => {
       try {
@@ -172,7 +163,6 @@ export default function ScoreCrediticioPage() {
     clearTimeout(configSaveRef.current);
   }, []);
 
-  // ── Auto-save score config (debounced 800ms) ──
   const saveScoreConfig = useCallback(
     (newPesos, newUmbrales, newPlazos, newTecho, newPeriodo) => {
       clearTimeout(configSaveRef.current);
@@ -261,7 +251,6 @@ export default function ScoreCrediticioPage() {
     if (!error) sileo.success("Configuración restaurada");
   };
 
-  // ── Cartera lookup ──
   const carteraMap = useMemo(() => {
     const map = {};
     (data.aggregatedClients ?? []).forEach((c) => {
@@ -295,7 +284,7 @@ export default function ScoreCrediticioPage() {
 
   return (
     <div className="flex flex-col md:flex-row h-[calc(100vh-128px)] overflow-hidden -mx-4 sm:-mx-6 lg:-mx-10 -my-6">
-      {/* ── Left Panel: Client List ── */}
+      {/* Left Panel: Client List */}
       <div className="flex flex-col w-full md:w-72 lg:w-80 border-r border-slate-200 bg-white shrink-0 overflow-hidden">
         <div className="px-4 pt-4 pb-3 border-b border-slate-100 shrink-0">
           <div className="flex items-center gap-2 mb-3">
@@ -395,7 +384,7 @@ export default function ScoreCrediticioPage() {
         </div>
       </div>
 
-      {/* ── Right Panel ── */}
+      {/* Right Panel */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Tab strip */}
         <div className="flex shrink-0 border-b border-slate-200 bg-white px-4 sm:px-6 gap-0">
@@ -425,7 +414,7 @@ export default function ScoreCrediticioPage() {
 
         {/* Tab content */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-          {/* ── SCORE TAB ── */}
+          {/* Score Tab */}
           {activeTab === "score" && (
             <>
               {selectedNit ? (
@@ -457,10 +446,10 @@ export default function ScoreCrediticioPage() {
             </>
           )}
 
-          {/* ── CONFIG TAB ── */}
+          {/* Config Tab */}
           {activeTab === "config" && configLoaded && (
             <div className="max-w-4xl mx-auto space-y-5">
-              {/* ─── Section 1: Plazo máximo ─── */}
+              {/* Plazo maximo */}
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
                 <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-[0.06em] mb-4">
                   Plazo máximo de crédito
@@ -507,7 +496,7 @@ export default function ScoreCrediticioPage() {
                 </div>
               </div>
 
-              {/* ─── Section 2: Pesos de evaluación ─── */}
+              {/* Pesos de evaluacion */}
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-5">
                 <div className="flex items-center justify-between">
                   <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-[0.06em]">
@@ -558,7 +547,7 @@ export default function ScoreCrediticioPage() {
                 </div>
               </div>
 
-              {/* ─── Section 3: Umbrales de nivel ─── */}
+              {/* Umbrales de nivel */}
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-4">
                 <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-[0.06em]">
                   Umbrales de nivel y plazos sugeridos
@@ -626,7 +615,7 @@ export default function ScoreCrediticioPage() {
                 </div>
               </div>
 
-              {/* ─── Section 4: Parámetros avanzados ─── */}
+              {/* Parametros avanzados */}
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-4">
                 <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-[0.06em]">
                   Parámetros avanzados
@@ -666,7 +655,7 @@ export default function ScoreCrediticioPage() {
                 </div>
               </div>
 
-              {/* ─── Section 5: Reset ─── */}
+              {/* Reset */}
               <div className="flex justify-end">
                 <button
                   onClick={handleReset}

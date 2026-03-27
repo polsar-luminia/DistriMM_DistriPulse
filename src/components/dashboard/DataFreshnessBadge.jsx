@@ -2,12 +2,6 @@ import React from "react";
 import { cn } from "@/lib/utils";
 import { Clock } from "lucide-react";
 
-/**
- * Small inline badge showing data recency.
- * @param {Object} props
- * @param {string|null} props.lastLoadDate - Date string of the most recent load
- * @returns {JSX.Element|null}
- */
 export default function DataFreshnessBadge({ lastLoadDate }) {
   if (!lastLoadDate) return null;
 

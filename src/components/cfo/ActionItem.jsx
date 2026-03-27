@@ -1,9 +1,3 @@
-/**
- * Single action plan item with priority badge, detail, and impact info.
- * Used within the Plan de Accion section of the CFO dashboard.
- * @module components/cfo/ActionItem
- */
-
 import { cn } from "@/lib/utils";
 import { Target } from "lucide-react";
 
@@ -14,9 +8,6 @@ const PRIORITY_COLORS = {
   BAJA: "bg-slate-100 text-slate-600 border-slate-200",
 };
 
-/**
- * @param {{ item: { accion?: string, titulo?: string, prioridad?: string, detalle?: string, impacto_esperado?: string, responsable?: string }, index: number }} props
- */
 export default function ActionItem({ item, index }) {
   const pColor = PRIORITY_COLORS[item.prioridad] || PRIORITY_COLORS.MEDIA;
 

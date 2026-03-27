@@ -1,9 +1,61 @@
-/**
- * @fileoverview Excel ETL utilities — parsing, type detection, and row normalization.
- * Pure functions with no React or Supabase dependencies.
- */
 import { parse, isValid } from "date-fns";
 import { es } from "date-fns/locale";
+
+// --- SHARED ETL HELPERS ---
+
+/** Normaliza un header de Excel: trim + colapsar espacios + minúsculas */
+export function normalizeHeader(value) {
+  return String(value || "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+}
+
+/**
+ * Busca un valor en una fila de Excel con múltiples aliases.
+ * Primero intenta match exacto, luego normalizado (case-insensitive + trim).
+ */
+export function col(row, ...aliases) {
+  if (!row || typeof row !== "object") return undefined;
+  for (const a of aliases) {
+    if (row[a] !== undefined) return row[a];
+  }
+  for (const key of Object.keys(row)) {
+    const nk = normalizeHeader(key);
+    for (const a of aliases) {
+      if (nk === normalizeHeader(a)) return row[key];
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Parsea valores numéricos tolerando formato colombiano (1.234.567,89).
+ * Si el valor tiene coma Y puntos, trata los puntos como separadores de miles.
+ */
+export function parseNumeric(value) {
+  if (value === null || value === undefined || value === "") return 0;
+  let s = String(value).trim();
+  if (s.includes(",") && s.includes(".")) {
+    s = s.replace(/\./g, "").replace(",", ".");
+  } else {
+    s = s.replace(",", ".");
+  }
+  const parsed = Number.parseFloat(s);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+/**
+ * Valida que un workbook de xlsx tenga al menos una hoja con datos.
+ * Retorna la primera hoja (worksheet) o lanza error.
+ */
+export function validateWorkbook(wb) {
+  if (!wb.SheetNames?.length)
+    throw new Error("El archivo Excel no contiene hojas.");
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  if (!ws) throw new Error("La primera hoja del archivo está vacía.");
+  return ws;
+}
 
 // --- FILE TYPE DETECTION ---
 export const UPLOAD_TYPES = {
@@ -20,7 +72,9 @@ export const parseFlexibleDate = (rawDate) => {
     const excelEpoch = new Date(1899, 11, 30);
     const date = new Date(excelEpoch.getTime() + rawDate * 86400000);
     // Adjust fortimezone offset to prevent date shifting
-    const adjustedDate = new Date(date.valueOf() + date.getTimezoneOffset() * 60000);
+    const adjustedDate = new Date(
+      date.valueOf() + date.getTimezoneOffset() * 60000,
+    );
     return isValid(adjustedDate) ? adjustedDate : null;
   }
 
@@ -31,7 +85,7 @@ export const parseFlexibleDate = (rawDate) => {
     // Attempt multiple formats
     const formatsToTry = [
       "dd/MM/yyyy", // Colombian Standard
-      "d/M/yyyy",   // Single digits
+      "d/M/yyyy", // Single digits
       "yyyy-MM-dd", // ISO
       "MM/dd/yyyy", // US (Fallback)
       "dd-MM-yyyy",
@@ -39,7 +93,11 @@ export const parseFlexibleDate = (rawDate) => {
 
     for (const fmt of formatsToTry) {
       const parsedDate = parse(cleanDate, fmt, new Date(), { locale: es });
-      if (isValid(parsedDate) && parsedDate.getFullYear() > 2000 && parsedDate.getFullYear() < 2100) {
+      if (
+        isValid(parsedDate) &&
+        parsedDate.getFullYear() > 2000 &&
+        parsedDate.getFullYear() < 2100
+      ) {
         return parsedDate;
       }
     }
@@ -52,11 +110,23 @@ export const detectFileType = (headers) => {
   const headerSet = new Set(headers.map((h) => h?.toLowerCase()?.trim()));
 
   // Clientes file has these distinctive columns
-  const clienteMarkers = ["primer nombre", "primer apellido", "no identif", "tipo ident", "genero"];
+  const clienteMarkers = [
+    "primer nombre",
+    "primer apellido",
+    "no identif",
+    "tipo ident",
+    "genero",
+  ];
   const clienteMatch = clienteMarkers.filter((m) => headerSet.has(m)).length;
 
   // Cartera file has these distinctive columns
-  const carteraMarkers = ["nombre tercero", "dias mora", "valor saldo", "vence", "documento"];
+  const carteraMarkers = [
+    "nombre tercero",
+    "dias mora",
+    "valor saldo",
+    "vence",
+    "documento",
+  ];
   const carteraMatch = carteraMarkers.filter((m) => headerSet.has(m)).length;
 
   if (clienteMatch >= 3) return UPLOAD_TYPES.CLIENTES;
@@ -86,24 +156,31 @@ export const processCarteraData = (jsonData) => {
         fecha_emision: fechaEmision,
         rawVence,
         fecha_vencimiento: fechaVencimiento,
-        dias_mora: parseInt(
-          row["Días Mora"] || row["Dias Mora"] || row["Mora"] || 0,
-        ),
-        valor_saldo: parseFloat(
-          row["Valor Saldo"] || row["Saldo"] || row["Total"] || 0,
-        ),
+        dias_mora: (() => {
+          const raw = row["Días Mora"] || row["Dias Mora"] || row["Mora"] || 0;
+          const parsed = parseInt(raw, 10);
+          return Number.isNaN(parsed) ? 0 : parsed;
+        })(),
+        valor_saldo: (() => {
+          const raw = row["Valor Saldo"] || row["Saldo"] || row["Total"] || 0;
+          const cleaned = typeof raw === "string" ? raw.replace(/,/g, "") : raw;
+          const parsed = parseFloat(cleaned);
+          return Number.isNaN(parsed) ? 0 : parsed;
+        })(),
         estado: row["Estado"] || row["Est"],
         // New fields from enriched Excel
-        vendedor_codigo: String(row["Vend"] || row["Vendedor"] || "").trim() || null,
-        tercero_nit: String(row["Tercero"] || row["NIT"] || row["Nit"] || "").trim() || null,
+        vendedor_codigo:
+          String(row["Vend"] || row["Vendedor"] || "").trim() || null,
+        tercero_nit:
+          String(row["Tercero"] || row["NIT"] || row["Nit"] || "").trim() ||
+          null,
         cuenta_contable: String(row["Cuenta"] || "").trim() || null,
         nombre_cuenta: String(row["Nombre"] || "").trim() || null,
         cuota: String(row["Cuota"] || "").trim() || null,
       };
     })
     .filter(
-      (item) =>
-        item.cliente_nombre !== "Desconocido" && item.valor_saldo !== 0,
+      (item) => item.cliente_nombre !== "Desconocido" && item.valor_saldo !== 0,
     );
 };
 
@@ -125,7 +202,9 @@ export const processClientesData = (jsonData) => {
 
       return {
         originalIndex: index,
-        no_identif: String(row["No Identif"] || row["NIT"] || row["Nit"] || "").trim(),
+        no_identif: String(
+          row["No Identif"] || row["NIT"] || row["Nit"] || "",
+        ).trim(),
         tipo_ident: row["Tipo Ident"] || "NIT",
         tipo_persona: row["Tipo Persona"] || null,
         primer_nombre: row["Primer Nombre"] || null,
@@ -139,14 +218,25 @@ export const processClientesData = (jsonData) => {
         direccion: row["Direccion"] || null,
         telefono_1: String(row["Telefono 1"] || "").trim() || null,
         telefono_2: String(row["Telefono 2"] || "").trim() || null,
-        celular: String(row["Num. Celular"] || row["Celular"] || "").trim() || null,
+        celular:
+          String(row["Num. Celular"] || row["Celular"] || "").trim() || null,
         correo_electronico: row["Correo Electronico"] || null,
         pagina_web: row["Página Web"] || row["Pagina Web"] || null,
         clasificacion_iva: row["Clasificacion Iva"] || null,
         profesion: row["Profesion"] || null,
         actividad: row["Actividad"] || null,
-        cupo_venta: parseFloat(row["Vr Cupo Venta"] || 0),
-        cupo_compra: parseFloat(row["Vr Cupo Compra"] || 0),
+        cupo_venta: (() => {
+          const raw = row["Vr Cupo Venta"] || 0;
+          const cleaned = typeof raw === "string" ? raw.replace(/,/g, "") : raw;
+          const parsed = parseFloat(cleaned);
+          return Number.isNaN(parsed) ? 0 : parsed;
+        })(),
+        cupo_compra: (() => {
+          const raw = row["Vr Cupo Compra"] || 0;
+          const cleaned = typeof raw === "string" ? raw.replace(/,/g, "") : raw;
+          const parsed = parseFloat(cleaned);
+          return Number.isNaN(parsed) ? 0 : parsed;
+        })(),
         comentario: row["Comentario"] || null,
         barrio: row["Barrio"] || null,
         municipio: row["Municipio"] || null,

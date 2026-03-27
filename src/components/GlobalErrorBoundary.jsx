@@ -1,6 +1,7 @@
 import React from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import PropTypes from "prop-types";
+import { captureError } from "../lib/sentry";
 
 function ErrorFallback({ error, resetErrorBoundary }) {
   return (
@@ -38,6 +39,12 @@ export const GlobalErrorBoundary = ({ children }) => {
   return (
     <ErrorBoundary
       FallbackComponent={ErrorFallback}
+      onError={(error, errorInfo) => {
+        captureError(error, {
+          componentStack: errorInfo?.componentStack,
+          boundary: "global",
+        });
+      }}
       onReset={() => {
         // Reset the state of your app so the error doesn't happen again
         window.location.reload();

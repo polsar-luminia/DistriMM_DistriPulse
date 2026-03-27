@@ -1,10 +1,3 @@
-/**
- * @fileoverview Historical Evolution Component
- * Shared between Dashboard and CFO Analysis pages.
- * Shows KPI comparison across cargas, charts, and aging tables.
- * @module components/dashboard/HistoricalEvolution
- */
-
 import React, { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import {
@@ -32,12 +25,8 @@ import {
 import { COLORS } from "../../utils/constants";
 import { formatFullCurrency } from "../../utils/formatters";
 
-// ============================================================================
-// HELPERS
-// ============================================================================
-
-/** Parse "$474.803.006" or "46.7%" or 474803006 into a number.
- *  Currency ($): dots are thousands separators. Non-currency: dot is decimal. */
+// Parse "$474.803.006" or "46.7%" or 474803006 into a number.
+// Currency ($): dots are thousands separators. Non-currency: dot is decimal.
 function parseNumericValue(val) {
   if (val == null) return 0;
   if (typeof val === "number") return val;
@@ -55,7 +44,6 @@ function fullCurrency(val) {
   return formatFullCurrency(n);
 }
 
-/** Custom tooltip for Recharts */
 function HistTooltip({ active, payload, label }) {
   if (!active || !payload || payload.length === 0) return null;
   return (
@@ -76,7 +64,6 @@ function HistTooltip({ active, payload, label }) {
   );
 }
 
-/** Delta badge: shows +/- change between two values */
 function DeltaBadge({ current, previous, suffix = "", inverse = false, format = "number" }) {
   if (previous == null || current == null) return null;
   const diff = current - previous;
@@ -100,10 +87,6 @@ function DeltaBadge({ current, previous, suffix = "", inverse = false, format = 
     </span>
   );
 }
-
-// ============================================================================
-// COLLAPSIBLE WRAPPER
-// ============================================================================
 
 function CollapsibleCard({ title, icon: Icon, children, defaultOpen = true }) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
@@ -131,17 +114,6 @@ function CollapsibleCard({ title, icon: Icon, children, defaultOpen = true }) {
   );
 }
 
-// ============================================================================
-// MAIN COMPONENT
-// ============================================================================
-
-/**
- * HistoricalEvolution - standalone component that fetches & displays
- * historical KPI comparison between cargas.
- *
- * Can be used self-contained (it fetches its own data) or you can pass
- * `historico` prop to provide pre-fetched data.
- */
 export default function HistoricalEvolution({ historico: externalHistorico }) {
   const hasExternal = !!(externalHistorico && externalHistorico.length > 0);
   const [fetchedHistorico, setFetchedHistorico] = useState([]);

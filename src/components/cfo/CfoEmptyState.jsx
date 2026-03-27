@@ -1,9 +1,3 @@
-/**
- * Empty state displayed when no CFO analysis has been generated yet.
- * Shows a CTA to trigger the first analysis and feature tags.
- * @module components/cfo/CfoEmptyState
- */
-
 import { Brain, Zap, AlertTriangle } from "lucide-react";
 import { Card } from "../dashboard/DashboardShared";
 
@@ -15,9 +9,6 @@ const FEATURE_TAGS = [
   "Analisis Vendedores",
 ];
 
-/**
- * @param {{ onRun: () => void, error?: string|null }} props
- */
 export default function CfoEmptyState({ onRun, error }) {
   return (
     <Card className="py-16">

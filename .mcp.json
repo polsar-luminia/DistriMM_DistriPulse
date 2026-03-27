@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "distrimm-analytics": {
+      "type": "streamable-http",
+      "url": "https://distrimm.luminiatech.digital/mcp"
+    }
+  }
+}

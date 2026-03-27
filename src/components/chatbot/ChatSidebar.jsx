@@ -1,9 +1,3 @@
-/**
- * @fileoverview Chat sidebar — session list with search, new chat, and delete.
- * Extracted from ChatbotPage for readability.
- * @module components/chatbot/ChatSidebar
- */
-
 import { Search, MessageSquare, Plus, Trash2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TIME_UNITS_MS } from "../../constants/thresholds";
@@ -25,18 +19,6 @@ function formatRelativeTime(date) {
   return d.toLocaleDateString("es-CO", { day: "numeric", month: "short" });
 }
 
-/**
- * @param {object} props
- * @param {Array} props.sessions - All chat sessions
- * @param {object|null} props.activeSession - Currently active session
- * @param {string} props.searchQuery - Current search query
- * @param {function} props.setSearchQuery - Search query setter
- * @param {Array|null} props.searchResults - Filtered sessions (null = show all)
- * @param {function} props.onSelectSession - (session) => void
- * @param {function} props.onNewSession - () => void
- * @param {function} props.onDeleteSession - (sessionId) => void
- * @param {boolean} props.loading - Whether sessions are loading
- */
 export default function ChatSidebar({
   sessions,
   activeSession,

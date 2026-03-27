@@ -1,44 +1,9 @@
-/**
- * @fileoverview DistriBot CFO Chatbot Service
- * Handles communication with the n8n AI Agent webhook for the CFO chat assistant.
- *
- * NOTA DE ARQUITECTURA: Este servicio llama directamente a n8n (sin Edge Function proxy)
- * porque el AI Agent puede tardar 40-70s en responder (múltiples consultas SQL + LLM),
- * lo cual excede el límite de 60s de Supabase Edge Functions en el plan Free.
- * El chatbot es solo lectura (consulta datos), no envía mensajes ni modifica nada,
- * por lo que el riesgo de exposición es aceptable.
- *
- * Los servicios de WhatsApp y CFO SÍ usan Edge Functions porque:
- * - WhatsApp: envía mensajes (alto riesgo), necesita rate limiting server-side
- * - CFO: responde en <15s (cabe en el límite de 60s)
- *
- * @module services/chatbotService
- */
+import { supabase } from "@/lib/supabase";
 
-const N8N_CHAT_URL = import.meta.env.VITE_N8N_CHAT_URL;
-const N8N_AUTH_KEY = import.meta.env.VITE_N8N_AUTH_KEY || "";
-
-if (!N8N_CHAT_URL && import.meta.env.DEV) {
-  console.error("VITE_N8N_CHAT_URL no esta configurada en .env");
-}
-
-// ============================================================================
-// SESSION MANAGEMENT
-// ============================================================================
-
-/**
- * Generates a unique session ID for the chat.
- * @returns {string} UUID v4 session ID
- */
 export function generateSessionId() {
   return crypto.randomUUID();
 }
 
-/**
- * Gets or creates a session ID from sessionStorage.
- * Persists across page navigations but resets on tab close.
- * @returns {string} Session ID
- */
 export function getOrCreateSessionId() {
   const STORAGE_KEY = "distribot_session_id";
   try {
@@ -54,10 +19,6 @@ export function getOrCreateSessionId() {
   }
 }
 
-/**
- * Resets the chat session by generating a new session ID.
- * @returns {string} New session ID
- */
 export function resetSession() {
   const STORAGE_KEY = "distribot_session_id";
   const newSessionId = generateSessionId();
@@ -69,52 +30,23 @@ export function resetSession() {
   return newSessionId;
 }
 
-// ============================================================================
-// CHAT COMMUNICATION
-// ============================================================================
+// Edge Function has a 100s timeout; supabase.functions.invoke does not support
+// AbortSignal, so the Edge Function timeout is the effective limit.
 
-/**
- * Sends a message to the DistriBot CFO and returns the response.
- * Direct call to n8n webhook (90s timeout to accommodate multi-step AI Agent).
- *
- * @param {string} sessionId - Chat session ID for memory continuity
- * @param {string} message - User's message/question
- * @returns {Promise<{ data: string|null, error: string|null }>}
- */
 export async function sendChatMessage(sessionId, message) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 90_000);
-
   try {
-    const response = await fetch(N8N_CHAT_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(N8N_AUTH_KEY ? { "x-n8n-auth": N8N_AUTH_KEY } : {}),
+    const { data: result, error } = await supabase.functions.invoke(
+      "proxy-n8n-chatbot",
+      {
+        body: {
+          action: "sendMessage",
+          sessionId,
+          chatInput: message,
+        },
       },
-      body: JSON.stringify({
-        action: "sendMessage",
-        sessionId,
-        chatInput: message,
-        ...(N8N_AUTH_KEY ? { authKey: N8N_AUTH_KEY } : {}),
-      }),
-      signal: controller.signal,
-    });
+    );
 
-    if (!response.ok) {
-      const text = await response.text();
-      if (import.meta.env.DEV) console.error("[chatbotService] HTTP error:", response.status, text);
-      throw new Error(
-        `Error ${response.status}: ${text.substring(0, 200)}`,
-      );
-    }
-
-    let result;
-    try {
-      result = await response.json();
-    } catch {
-      throw new Error("El servidor respondió con datos inválidos");
-    }
+    if (error) throw error;
 
     // n8n Chat Trigger returns { output: "..." } after the code node
     const output = result?.output || result?.text || result?.response || "";
@@ -130,39 +62,18 @@ export async function sendChatMessage(sessionId, message) {
     return { data: output, error: null };
   } catch (err) {
     if (import.meta.env.DEV) console.error("[chatbotService] Error sending message:", err);
-    if (err.name === "AbortError") {
-      return { data: null, error: "El servidor está tardando demasiado. Intenta de nuevo." };
-    }
     return { data: null, error: "No se pudo conectar con el servidor. Verifica tu conexión." };
-  } finally {
-    clearTimeout(timeout);
   }
 }
 
-// ============================================================================
-// MEMORY MANAGEMENT
-// ============================================================================
+// Memory is stored on n8n's Postgres (not Supabase), so we can't delete it
+// directly. Resetting the session ID starts a fresh conversation since n8n
+// indexes memory by session ID.
 
-/**
- * Clears the chat memory for a given session.
- * Memory is stored on the n8n server's Postgres (not Supabase), so we can't
- * delete it directly. Instead, resetting the session ID effectively starts
- * a fresh conversation since n8n indexes memory by session ID.
- * @param {string} _sessionId - Session to clear (unused, kept for API compat)
- * @returns {Promise<{ success: boolean, error: string|null }>}
- */
 export async function clearChatMemory(_sessionId) {
   return { success: true, error: null };
 }
 
-// ============================================================================
-// SUGGESTED QUESTIONS
-// ============================================================================
-
-/**
- * Returns a list of suggested quick questions for the chat.
- * @returns {Array<{ label: string, message: string }>}
- */
 export function getSuggestedQuestions() {
   return [
     {

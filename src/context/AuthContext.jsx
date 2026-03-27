@@ -1,5 +1,12 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useState, useEffect, useContext } from "react";
+import React, {
+  createContext,
+  useState,
+  useEffect,
+  useContext,
+  useCallback,
+  useMemo,
+} from "react";
 import { supabase } from "../lib/supabase";
 import { sileo } from "sileo";
 
@@ -43,14 +50,14 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
 
       if (event === "SIGNED_OUT") {
-        // Optional: Clear any local app state if needed
+        sessionStorage.removeItem("distribot_session_id");
       }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  const signIn = async (email, password) => {
+  const signIn = useCallback(async (email, password) => {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -63,9 +70,9 @@ export const AuthProvider = ({ children }) => {
       if (import.meta.env.DEV) console.error("Sign in error:", error);
       return { data: null, error };
     }
-  };
+  }, []);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
@@ -73,15 +80,18 @@ export const AuthProvider = ({ children }) => {
     } catch {
       sileo.error({ title: "Error al cerrar sesión" });
     }
-  };
+  }, []);
 
-  const value = {
-    user,
-    session,
-    loading,
-    signIn,
-    signOut,
-  };
+  const value = useMemo(
+    () => ({
+      user,
+      session,
+      loading,
+      signIn,
+      signOut,
+    }),
+    [user, session, loading, signIn, signOut],
+  );
 
   return (
     <AuthContext.Provider value={value}>

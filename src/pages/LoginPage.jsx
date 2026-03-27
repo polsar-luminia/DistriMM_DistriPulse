@@ -23,7 +23,7 @@ export default function LoginPage() {
       if (error) {
         sileo.error({ title: "Credenciales inválidas" });
       } else {
-        sileo.success({ title: "Bienvenido a DistriPulse" });
+        sileo.success({ title: "Bienvenido a DistriMM" });
       }
     } catch {
       sileo.error({ title: "Error al iniciar sesión" });
@@ -125,7 +125,9 @@ export default function LoginPage() {
               LuminIA
             </a>
           </p>
-          <p className="text-[10px] text-slate-600">Todos los derechos reservados</p>
+          <p className="text-[10px] text-slate-600">
+            Todos los derechos reservados
+          </p>
         </div>
       </div>
     </div>
