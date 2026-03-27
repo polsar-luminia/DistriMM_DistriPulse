@@ -96,17 +96,20 @@ export default function RecaudoTab({ hook }) {
       const exclMarca = Number(r.valor_excluido_marca || 0);
       const iva = Number(r.valor_iva || 0);
       map[cod].totalRecaudado += val;
+      // Exclusiones de marca se contabilizan siempre (independiente de mora)
+      if (exclMarca > 0) {
+        map[cod].excluidoMarca += exclMarca;
+        map[cod].countMarca += 1;
+      }
       if (!r.aplica_comision) {
-        // Excluido (por mora o por match desconocido)
-        map[cod].totalExcluido += val;
+        // Excluido por mora — el valor completo sale de comisionable
         map[cod].excluidoMora += val;
         map[cod].countMora += 1;
+        map[cod].totalExcluido += val;
       } else {
         // Comisionable (parcial o total) — descontar exclusiones de marca + IVA
         map[cod].totalComisionable += val - exclMarca - iva;
-        map[cod].excluidoMarca += exclMarca;
         map[cod].excluidoIva += iva;
-        if (exclMarca > 0) map[cod].countMarca += 1;
         map[cod].totalExcluido += exclMarca + iva;
       }
       map[cod].items.push(r);
@@ -130,14 +133,17 @@ export default function RecaudoTab({ hook }) {
       const exclMarca = Number(r.valor_excluido_marca || 0);
       const iva = Number(r.valor_iva || 0);
       totalRecaudado += val;
+      // Exclusiones de marca se contabilizan siempre
+      if (exclMarca > 0) {
+        totalExcluidoMarca += exclMarca;
+        countMarca += 1;
+      }
       if (!r.aplica_comision) {
         totalExcluidoMora += val;
         countMora += 1;
       } else {
         totalComisionable += val - exclMarca - iva;
-        totalExcluidoMarca += exclMarca;
         totalExcluidoIva += iva;
-        if (exclMarca > 0) countMarca += 1;
       }
     });
     const totalExcluido =
