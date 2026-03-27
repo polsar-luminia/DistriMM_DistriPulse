@@ -377,16 +377,19 @@ export const getClientPhones = async (nits) => {
   if (!nits || nits.length === 0) return { data: {}, error: null };
 
   try {
-    const { data, error } = await supabase
-      .from("distrimm_clientes")
-      .select("no_identif, celular, telefono_1, nombre_completo, municipio")
-      .in("no_identif", nits);
+    const BATCH = 200;
+    const allData = [];
+    for (let i = 0; i < nits.length; i += BATCH) {
+      const { data, error } = await supabase
+        .from("distrimm_clientes")
+        .select("no_identif, celular, telefono_1, nombre_completo, municipio")
+        .in("no_identif", nits.slice(i, i + BATCH));
+      if (error) throw error;
+      if (data) allData.push(...data);
+    }
 
-    if (error) throw error;
-
-    // Build lookup map
     const phoneMap = {};
-    (data || []).forEach((c) => {
+    allData.forEach((c) => {
       phoneMap[c.no_identif] = c;
     });
 

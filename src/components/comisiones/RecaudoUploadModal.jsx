@@ -191,16 +191,24 @@ async function enrichRecaudoExclusions(rows) {
  */
 async function batchIN(table, selectCols, field, ids, orderCol) {
   const BATCH = 200;
+  const PAGE = 1000;
   const all = [];
   for (let i = 0; i < ids.length; i += BATCH) {
-    let q = supabase
-      .from(table)
-      .select(selectCols)
-      .in(field, ids.slice(i, i + BATCH));
-    if (orderCol) q = q.order(orderCol, { ascending: true });
-    const { data, error } = await q;
-    if (error) throw error;
-    if (data) all.push(...data);
+    const chunk = ids.slice(i, i + BATCH);
+    let from = 0;
+    while (true) {
+      let q = supabase
+        .from(table)
+        .select(selectCols)
+        .in(field, chunk)
+        .range(from, from + PAGE - 1);
+      if (orderCol) q = q.order(orderCol, { ascending: true });
+      const { data, error } = await q;
+      if (error) throw error;
+      if (data) all.push(...data);
+      if (!data || data.length < PAGE) break;
+      from += PAGE;
+    }
   }
   return all;
 }

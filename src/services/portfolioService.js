@@ -309,13 +309,17 @@ export const getClientCreditScoreV2 = async (nit) => {
 export const getInvoicesByIds = async (ids) => {
   if (!ids || ids.length === 0) return { data: [], error: null };
   try {
-    const { data, error } = await supabase
-      .from("cartera_items")
-      .select("*")
-      .in("id", ids);
-
-    if (error) throw error;
-    return { data, error: null };
+    const BATCH = 200;
+    const allData = [];
+    for (let i = 0; i < ids.length; i += BATCH) {
+      const { data, error } = await supabase
+        .from("cartera_items")
+        .select("*")
+        .in("id", ids.slice(i, i + BATCH));
+      if (error) throw error;
+      if (data) allData.push(...data);
+    }
+    return { data: allData, error: null };
   } catch (error) {
     if (import.meta.env.DEV)
       console.error(
