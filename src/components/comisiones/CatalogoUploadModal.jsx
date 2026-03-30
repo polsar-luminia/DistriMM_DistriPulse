@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { sileo } from "sileo";
+import { logAudit } from "../../services/auditService";
 import { cn } from "@/lib/utils";
 import { normalizeBrand } from "../../utils/brandNormalization";
 
@@ -156,6 +157,9 @@ export default function CatalogoUploadModal({ isOpen, onClose, onSuccess }) {
       setProgress(100);
       setStep("success");
       sileo.success(`${fullData.length} productos procesados`);
+      logAudit("UPLOAD_CATALOGO", "distrimm_productos_catalogo", null, {
+        registros: fullData.length,
+      });
       setTimeout(() => {
         onSuccess();
         handleClose();

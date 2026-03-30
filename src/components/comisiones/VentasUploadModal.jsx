@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { sileo } from "sileo";
+import { logAudit } from "../../services/auditService";
 import { cn } from "@/lib/utils";
 import { formatFullCurrency } from "../../utils/formatters";
 import ConfirmDialog from "../ConfirmDialog";
@@ -184,6 +185,13 @@ export default function VentasUploadModal({ isOpen, onClose, onSuccess }) {
       setProgress(100);
       setStep("success");
       sileo.success("Ventas cargadas exitosamente");
+      logAudit("UPLOAD_VENTAS", "distrimm_comisiones_ventas", null, {
+        archivo: file?.name,
+        registros: fullData.length,
+        total_ventas: totalVentas,
+        total_costo: totalCosto,
+        fecha_ventas: fechaVentas,
+      });
       setTimeout(() => {
         onSuccess();
         handleClose();

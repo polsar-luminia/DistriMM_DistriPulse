@@ -3,6 +3,7 @@ import {
   getComisionesCargas,
   deleteComisionesCarga,
 } from "../../services/comisionesService";
+import { logAudit } from "../../services/auditService";
 
 export function useComisionesCargas() {
   const [cargas, setCargas] = useState([]);
@@ -69,6 +70,7 @@ export function useComisionesCargas() {
     async (id) => {
       const { success } = await deleteComisionesCarga(id);
       if (success) {
+        logAudit("ELIMINAR_CARGA", "distrimm_comisiones_cargas", id);
         // Limpiar selección ANTES de refetch para que fetchCargas auto-seleccione el primero
         if (id === currentCargaRef.current) {
           setSelectedCargaId(null);

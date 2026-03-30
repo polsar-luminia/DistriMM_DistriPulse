@@ -5,6 +5,7 @@ import {
   removeExclusion as removeExclusionSvc,
   toggleExclusion as toggleExclusionSvc,
 } from "../../services/comisionesService";
+import { logAudit } from "../../services/auditService";
 
 export function useComisionesExclusiones() {
   const [exclusiones, setExclusiones] = useState([]);
@@ -65,6 +66,15 @@ export function useComisionesExclusiones() {
         const { data, error } = await addExclusionSvc(exclusion);
         if (!error) {
           await fetchExclusiones();
+          logAudit(
+            "AGREGAR_EXCLUSION",
+            "distrimm_comisiones_exclusiones",
+            data?.id,
+            {
+              tipo: exclusion.tipo,
+              valor: exclusion.valor,
+            },
+          );
         }
         return { data, error };
       } finally {
@@ -82,6 +92,7 @@ export function useComisionesExclusiones() {
         const { success } = await removeExclusionSvc(id);
         if (success) {
           await fetchExclusiones();
+          logAudit("ELIMINAR_EXCLUSION", "distrimm_comisiones_exclusiones", id);
         }
         return success;
       } finally {

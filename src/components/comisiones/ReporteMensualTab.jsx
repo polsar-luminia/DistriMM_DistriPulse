@@ -19,6 +19,7 @@ import {
   Info,
 } from "lucide-react";
 import { sileo } from "sileo";
+import { logAudit } from "../../services/auditService";
 import { cn } from "@/lib/utils";
 import {
   formatCurrency,
@@ -230,6 +231,16 @@ export default function ReporteMensualTab({ hook }) {
         liquidacion: filteredLiquidacion,
       });
       sileo.success("PDF exportado");
+      logAudit(
+        "EXPORT_PDF_LIQUIDACION",
+        "distrimm_comisiones_snapshots",
+        null,
+        {
+          periodo: `${selectedYear}-${String(selectedMonth).padStart(2, "0")}`,
+          vendedores: filteredLiquidacion.length,
+          filtro: filtroVendedorId,
+        },
+      );
     } catch (err) {
       sileo.error("Error al generar PDF");
       if (import.meta.env.DEV)
@@ -260,6 +271,15 @@ export default function ReporteMensualTab({ hook }) {
         selectedYear,
       });
       sileo.success("Reporte mensual exportado");
+      logAudit(
+        "EXPORT_EXCEL_LIQUIDACION",
+        "distrimm_comisiones_snapshots",
+        null,
+        {
+          periodo: `${selectedYear}-${String(selectedMonth).padStart(2, "0")}`,
+          vendedores: vendedorData.length,
+        },
+      );
     } catch (err) {
       sileo.error("Error al exportar Excel");
       if (import.meta.env.DEV)

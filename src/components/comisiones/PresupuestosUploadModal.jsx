@@ -11,6 +11,7 @@ import {
   User,
 } from "lucide-react";
 import { sileo } from "sileo";
+import { logAudit } from "../../services/auditService";
 import { cn } from "@/lib/utils";
 import { formatFullCurrency } from "../../utils/formatters";
 import { getVendedores } from "../../services/portfolioService";
@@ -158,6 +159,16 @@ export default function PresupuestosUploadModal({
     } else {
       setStep("success");
       sileo.success("Presupuestos importados exitosamente");
+      logAudit(
+        "UPLOAD_PRESUPUESTOS",
+        "distrimm_comisiones_presupuestos",
+        null,
+        {
+          vendedores: parsedVendors.length,
+          total_marcas: parsedVendors.reduce((s, v) => s + v.marcas.length, 0),
+          periodo: `${selectedYear}-${String(selectedMonth).padStart(2, "0")}`,
+        },
+      );
       setTimeout(() => handleClose(), 1500);
     }
   };

@@ -13,6 +13,7 @@ import {
   buildInputHash,
 } from "../../services/comisionesService";
 import { buildExclusionLookups, getExclusionInfo } from "./utils";
+import { logAudit } from "../../services/auditService";
 import { buildReporteMensualState } from "./reportingUtils";
 
 export function useComisionesCalculo(selectedCargaId, catalogo, exclusiones) {
@@ -244,6 +245,22 @@ export function useComisionesCalculo(selectedCargaId, catalogo, exclusiones) {
             snapErr,
           );
         }
+
+        logAudit(
+          forceRecalc ? "RECALCULAR_LIQUIDACION" : "GENERAR_LIQUIDACION",
+          "distrimm_comisiones_snapshots",
+          `${year}-${String(month).padStart(2, "0")}`,
+          {
+            periodo: `${year}-${String(month).padStart(2, "0")}`,
+            vendedores: liquidacion.length,
+            total_comision: resumen.totalComision,
+            total_comision_ventas: resumen.totalComisionVentas,
+            total_comision_recaudo: resumen.totalComisionRecaudo,
+            cargas: ids.length,
+            ventas: ventasMes.length,
+            recaudos: recaudosMes.length,
+          },
+        );
 
         setReporteMensual(
           buildReporteMensualState({

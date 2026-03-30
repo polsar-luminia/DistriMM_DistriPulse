@@ -30,6 +30,7 @@ import {
   enrichRecaudoExclusions,
   enrichFromDB,
 } from "../../utils/recaudoEnrichment";
+import { logAudit } from "../../services/auditService";
 
 const { DIAS_MORA_LIMITE } = RECAUDO_THRESHOLDS;
 
@@ -293,6 +294,14 @@ export default function RecaudoUploadModal({ isOpen, onClose, onSuccess }) {
       setProgress(100);
       setStep("success");
       sileo.success("Recaudos cargados exitosamente");
+      logAudit("UPLOAD_RECAUDO", "distrimm_comisiones_recaudos", null, {
+        archivo: fileName,
+        registros: fullData.length,
+        total_recaudado: totalRecaudado,
+        total_comisionable: totalComisionable,
+        excluidos_mora: excluidos,
+        fecha_periodo: fechaPeriodo,
+      });
       setTimeout(() => {
         onSuccess();
         handleClose();
