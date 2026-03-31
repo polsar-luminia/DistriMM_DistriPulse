@@ -224,13 +224,22 @@ export default function WhatsAppTab() {
           typeof event.data === "string" ? JSON.parse(event.data) : event.data;
         if (data.type !== "WA_EMBEDDED_SIGNUP") return;
 
-        if (data.event === "FINISH") {
+        if (
+          data.event === "FINISH" ||
+          data.event === "FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING"
+        ) {
           const { phone_number_id, waba_id } = data.data || {};
-          signupDataRef.current = { phone_number_id, waba_id };
+          signupDataRef.current = {
+            phone_number_id: phone_number_id || null,
+            waba_id,
+            coexistence:
+              data.event === "FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING",
+          };
           if (import.meta.env.DEV) {
             console.log("[WhatsAppTab] Embedded Signup FINISH:", {
               phone_number_id,
               waba_id,
+              coexistence: signupDataRef.current.coexistence,
             });
           }
         } else if (data.event === "CANCEL") {
@@ -317,7 +326,7 @@ export default function WhatsAppTab() {
             });
 
           const signupData = await waitForSignupData();
-          if (!signupData?.waba_id || !signupData?.phone_number_id) {
+          if (!signupData?.waba_id) {
             sileo.error(
               "No se recibio la informacion de WhatsApp Business. Intenta de nuevo.",
             );
@@ -332,7 +341,8 @@ export default function WhatsAppTab() {
               body: {
                 code,
                 waba_id: signupData.waba_id,
-                phone_number_id: signupData.phone_number_id,
+                phone_number_id: signupData.phone_number_id || null,
+                coexistence: signupData.coexistence || false,
               },
             },
           );

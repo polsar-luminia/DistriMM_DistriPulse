@@ -112,3 +112,65 @@ META_APP_SECRET    — Facebook App Secret (NEVER in frontend)
 
 Edge Functions: `proxy-n8n-whatsapp` (messaging with lazy token refresh), `proxy-n8n-cfo` (CFO analysis), `proxy-n8n-chatbot` (AI agent chat, 100s timeout), `proxy-embedded-signup` (WhatsApp Embedded Signup onboarding).
 Other server-side secrets (Meta access token per instance) live in `distrimm_whatsapp_credentials`.
+
+## VPS y Deploy
+
+**El código se edita localmente y se deploya manualmente al VPS.**
+
+- VPS: `ssh admin@161.97.111.39`
+- Dominio: https://distrimm.luminiatech.digital
+- Código en VPS: `/var/www/distrimm-agro/`
+- Supabase URL: `https://xzhqhmjfhnvqxndxayxs.supabase.co`
+- PM2 procesos: `distrimm-api` (puerto 3103), `distrimm-mcp` (puerto 3102), `luminia-monitor`
+- Nginx sirve frontend desde: `/var/www/distrimm-agro/` (SPA con `try_files`)
+- SSL: Certbot (Let's Encrypt) auto-renovación
+
+### Estructura en VPS
+```
+/var/www/distrimm-agro/
+├── index.html              # Frontend build (React SPA)
+├── assets/                 # JS/CSS bundles
+├── distrimm-api/           # Express API (puerto 3103)
+│   ├── src/index.js        # Entry point
+│   ├── src/routes/         # vendedores, ventas, recaudo, comisiones, cartera, catalogo, analisis
+│   └── .env                # SUPABASE_URL, SUPABASE_SERVICE_KEY, API_KEY, PORT
+└── mcp-server/             # MCP Server (puerto 3102)
+    ├── src/index.js         # StreamableHTTP MCP
+    ├── src/tools/           # cartera, ventas, comisiones, recaudo, maestros, audit, analisis
+    └── .env                 # SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, PORT
+```
+
+### Nginx
+```
+distrimm.luminiatech.digital
+├── /api/   → proxy_pass localhost:3103  (Express API)
+├── /mcp    → proxy_pass localhost:3102  (MCP Server, StreamableHTTP)
+└── /       → try_files (React SPA)
+```
+
+### Proceso de deploy
+
+**Frontend:**
+```bash
+# Build local
+pnpm build
+# Subir dist al VPS
+tar -cf - -C dist . | ssh admin@161.97.111.39 'cd /var/www/distrimm-agro && rm -rf assets && tar -xf -'
+```
+
+**API (backend):**
+```bash
+# Copiar archivo modificado
+cat distrimm-api/src/routes/ARCHIVO.js | ssh admin@161.97.111.39 'cat > /var/www/distrimm-agro/distrimm-api/src/routes/ARCHIVO.js'
+# Reiniciar
+ssh admin@161.97.111.39 'pm2 restart distrimm-api'
+```
+
+**MCP Server:**
+```bash
+cat mcp-server/src/tools/ARCHIVO.js | ssh admin@161.97.111.39 'cat > /var/www/distrimm-agro/mcp-server/src/tools/ARCHIVO.js'
+ssh admin@161.97.111.39 'pm2 restart distrimm-mcp'
+```
+
+### MCP Server URL
+`https://distrimm.luminiatech.digital/mcp` — StreamableHTTP, usado desde Claude.ai para consultar datos de Supabase.
