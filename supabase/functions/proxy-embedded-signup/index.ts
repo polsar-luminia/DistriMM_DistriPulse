@@ -91,18 +91,19 @@ Deno.serve(async (req: Request) => {
   const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
   // --- 2. Validar payload ---
-  let body: { code?: string; waba_id?: string; phone_number_id?: string };
+  let body: { code?: string; waba_id?: string; phone_number_id?: string | null; coexistence?: boolean };
   try {
     body = await req.json();
   } catch {
     return errorResponse("Body JSON inválido", 400, undefined, req);
   }
 
-  const { code, waba_id, phone_number_id } = body;
+  const { code, waba_id, coexistence } = body;
+  let { phone_number_id } = body;
 
-  if (!code || !waba_id || !phone_number_id) {
+  if (!code || !waba_id) {
     return errorResponse(
-      "Campos requeridos: code, waba_id, phone_number_id",
+      "Campos requeridos: code, waba_id",
       400,
       undefined,
       req,
@@ -172,6 +173,21 @@ Deno.serve(async (req: Request) => {
     }
 
     // --- 5. Obtener info de WABA y phone number ---
+
+    // Si no viene phone_number_id (flujo coexistencia), obtenerlo de la WABA
+    if (!phone_number_id) {
+      console.log(`[proxy-embedded-signup] phone_number_id no recibido, obteniendo de WABA=${waba_id}`);
+      const phonesData = await metaGraphFetch(
+        `${META_GRAPH_URL}/${waba_id}/phone_numbers?access_token=${encodeURIComponent(longLivedToken)}`,
+      );
+      const phones = (phonesData.data as Array<Record<string, unknown>>) || [];
+      if (phones.length === 0) {
+        return errorResponse("No se encontraron números de teléfono en el WABA", 502, undefined, req);
+      }
+      phone_number_id = phones[0].id as string;
+      console.log(`[proxy-embedded-signup] phone_number_id obtenido: ${phone_number_id}`);
+    }
+
     console.log(
       `[proxy-embedded-signup] Obteniendo info de WABA=${waba_id}, phone=${phone_number_id}`,
     );
