@@ -95,7 +95,7 @@ export default function WhatsAppTab() {
   const [instance, setInstance] = useState(null);
   const [loadingInstance, setLoadingInstance] = useState(true);
   const [connecting, setConnecting] = useState(false);
-  const [disconnecting, setDisconnecting] = useState(false);
+  const [_disconnecting, setDisconnecting] = useState(false);
   const [sdkReady, setSdkReady] = useState(false);
 
   // Ref to store signup data from message listener
@@ -370,7 +370,7 @@ export default function WhatsAppTab() {
   // ────────────────────────────────────────────────────────────────────────
   // Disconnect instance
   // ────────────────────────────────────────────────────────────────────────
-  const handleDisconnect = useCallback(async () => {
+  const _handleDisconnect = useCallback(async () => {
     if (!instance?.id) return;
 
     setDisconnecting(true);
@@ -518,19 +518,6 @@ export default function WhatsAppTab() {
                       className={loadingInstance ? "animate-spin" : ""}
                     />
                     Actualizar
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={handleDisconnect}
-                    disabled={disconnecting}
-                  >
-                    {disconnecting ? (
-                      <Loader size={14} className="animate-spin" />
-                    ) : (
-                      <Unlink size={14} />
-                    )}
-                    Desconectar
                   </Button>
                 </div>
               </div>

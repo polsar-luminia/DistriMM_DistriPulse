@@ -118,6 +118,7 @@ export const renderTemplate = (template, variables = {}) => {
 };
 
 export const buildInvoiceDetail = (items = []) => {
+  const META_PARAM_LIMIT = 900;
   const formatter = new Intl.NumberFormat("es-CO", {
     style: "currency",
     currency: "COP",
@@ -129,14 +130,29 @@ export const buildInvoiceDetail = (items = []) => {
     0,
   );
 
-  const detalle = items
-    .map((inv) => {
-      const val = formatter.format(inv.valor_saldo || 0);
-      const doc = inv.nro_factura || inv.documento_id || "S/N";
-      const vence = inv.fecha_vencimiento || "N/A";
-      return `• *Factura ${doc}* | Vence: ${vence} | ${val}`;
-    })
-    .join("\n");
+  // Meta Cloud API prohíbe \n y \t en parámetros de template.
+  // Usamos " | " como separador entre facturas.
+  const lines = items.map((inv) => {
+    const val = formatter.format(inv.valor_saldo || 0);
+    const doc = inv.nro_factura || inv.documento_id || "S/N";
+    const vence = inv.fecha_vencimiento || "N/A";
+    return `Fact. ${doc} - ${vence} - ${val}`;
+  });
+
+  const SEP = " | ";
+  let detalle = "";
+  let included = 0;
+  for (const line of lines) {
+    const remaining = lines.length - included - 1;
+    const suffix = remaining > 0 ? `${SEP}+${remaining} mas` : "";
+    const candidate = detalle ? detalle + SEP + line : line;
+    if (detalle && (candidate + suffix).length > META_PARAM_LIMIT) {
+      detalle += `${SEP}+${lines.length - included} mas`;
+      break;
+    }
+    detalle = candidate;
+    included++;
+  }
 
   return {
     detalle_facturas: detalle || "Sin facturas pendientes.",
@@ -451,6 +467,14 @@ export async function createLote(lote, destinatarios = []) {
       mensaje_personalizado: d.mensaje_personalizado,
       estado_envio: "pendiente",
       facturas_ids: d.facturas_ids || [],
+      template_params:
+        d.template_var2 != null
+          ? [
+              d.cliente_nombre || "Cliente",
+              d.template_var2,
+              d.template_var3 || "",
+            ]
+          : null,
     }));
 
     // Batch insert to avoid PostgREST request size limits
@@ -570,7 +594,6 @@ export async function triggerLoteProcessing(
       };
     }
 
-    // Build the array of items that n8n will iterate with Split in Batches
     const items = destinatarios.map((d) => ({
       phone: d.telefono,
       message: d.mensaje_personalizado,
@@ -579,6 +602,8 @@ export async function triggerLoteProcessing(
       detalle_id: d.detalle_id || null,
       lote_id: loteId,
       instance_id: resolvedInstanceId,
+      template_var2: d.template_var2 ?? d.template_params?.[1] ?? null,
+      template_var3: d.template_var3 ?? d.template_params?.[2] ?? null,
     }));
 
     const { data, error } = await supabase.functions.invoke(
@@ -603,7 +628,7 @@ export async function retryLoteFailed(loteId) {
     const { data: failedRows, error: fetchError } = await supabase
       .from("distrimm_recordatorios_detalle")
       .select(
-        "id, cliente_nombre, cliente_nit, telefono, mensaje_personalizado",
+        "id, cliente_nombre, cliente_nit, telefono, mensaje_personalizado, template_params",
       )
       .eq("lote_id", loteId)
       .eq("estado_envio", "fallido");
@@ -630,13 +655,13 @@ export async function retryLoteFailed(loteId) {
 
     if (loteError) throw loteError;
 
-    // Send the failed rows as array to n8n for retry
     const destinatarios = failedRows.map((r) => ({
       cliente_nombre: r.cliente_nombre,
       cliente_nit: r.cliente_nit,
       telefono: r.telefono,
       mensaje_personalizado: r.mensaje_personalizado,
       detalle_id: r.id,
+      template_params: r.template_params || null,
     }));
 
     const triggerResult = await triggerLoteProcessing(loteId, destinatarios);

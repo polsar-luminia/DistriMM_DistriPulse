@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Search,
   Filter,
@@ -134,41 +134,43 @@ export default function NuevoLoteTab({ currentLoadId, messaging }) {
   // Get selected template
   const selectedTemplate = templates.find((t) => t.id === selectedTemplateId);
 
-  // Render message for a client
-  const renderMessageForClient = useCallback(
-    (client) => {
-      if (!selectedTemplate) return "";
-      // RPC returns facturas_detalle as jsonb array
-      const invoiceItems = (client.facturas_detalle || []).map((f) => ({
-        documento_id: f.documento_id,
-        nro_factura: f.nro_factura,
-        fecha_vencimiento: f.fecha_vencimiento,
-        dias_mora: f.dias_mora,
-        valor_saldo: f.valor_saldo,
-      }));
-      const { detalle_facturas, total } = buildInvoiceDetail(invoiceItems);
-      return renderTemplate(selectedTemplate.contenido, {
-        cliente: client.cliente_nombre || "Cliente",
-        detalle_facturas,
-        total,
-        municipio: client.municipio || "",
-      });
-    },
-    [selectedTemplate, buildInvoiceDetail, renderTemplate],
-  );
-
   // Build recipients for selected clients
   const selectedRecipients = useMemo(() => {
     return filteredClients
       .filter((c) => selectedNits.has(c.cliente_nit) && c.phone?.valid)
-      .map((c) => ({
-        cliente_nombre: c.cliente_nombre,
-        cliente_nit: c.cliente_nit,
-        telefono: c.phone.phone,
-        mensaje_personalizado: renderMessageForClient(c),
-        facturas_ids: (c.facturas_ids || []).map(String),
-      }));
-  }, [filteredClients, selectedNits, renderMessageForClient]);
+      .map((c) => {
+        const invoiceItems = (c.facturas_detalle || []).map((f) => ({
+          documento_id: f.documento_id,
+          nro_factura: f.nro_factura,
+          fecha_vencimiento: f.fecha_vencimiento,
+          dias_mora: f.dias_mora,
+          valor_saldo: f.valor_saldo,
+        }));
+        const { detalle_facturas, total } = buildInvoiceDetail(invoiceItems);
+        return {
+          cliente_nombre: c.cliente_nombre,
+          cliente_nit: c.cliente_nit,
+          telefono: c.phone.phone,
+          mensaje_personalizado: selectedTemplate
+            ? renderTemplate(selectedTemplate.contenido, {
+                cliente: c.cliente_nombre || "Cliente",
+                detalle_facturas,
+                total,
+                municipio: c.municipio || "",
+              })
+            : "",
+          template_var2: detalle_facturas,
+          template_var3: total,
+          facturas_ids: (c.facturas_ids || []).map(String),
+        };
+      });
+  }, [
+    filteredClients,
+    selectedNits,
+    selectedTemplate,
+    buildInvoiceDetail,
+    renderTemplate,
+  ]);
 
   // Confirm and send lote
   const handleCreateLote = async () => {
