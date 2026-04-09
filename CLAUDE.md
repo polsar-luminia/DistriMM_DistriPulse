@@ -41,9 +41,11 @@ Each service has a single responsibility and communicates with exactly one backe
 - `chatbotService.js` — AI agent chat (via Edge Function proxy)
 - `cfoService.js` — CFO analysis (via Edge Function proxy)
 
-Hybrid n8n architecture:
-- **All n8n calls** (WhatsApp, CFO, Chatbot) are proxied through Supabase Edge Functions (`proxy-n8n-whatsapp`, `proxy-n8n-cfo`, `proxy-n8n-chatbot`). Frontend uses `supabase.functions.invoke()`. Secrets (`N8N_WHATSAPP_URL`, `N8N_WEBHOOK_URL`, `N8N_CHAT_URL`, `N8N_AUTH_KEY`) live in Supabase Edge Function secrets.
-- **Chatbot**: The AI Agent workflow can take 40-70s. The Edge Function has a 100s timeout to accommodate this. Client-side keeps a 90s AbortController as safety net.
+Edge Function architecture (sin n8n):
+- **WhatsApp** (`proxy-n8n-whatsapp`): llama directo a Meta Graph API v21.0. Lazy token refresh, loop secuencial por destinatario.
+- **CFO** (`proxy-n8n-cfo`): llama RPC `fn_cfo_distrimm_dashboard` → GPT-4o (`response_format: json_object`) → guarda en `distrimm_cfo_analyses`. Timeout 90s.
+- **Chatbot** (`proxy-n8n-chatbot`): AI agent GPT-4.1-mini con tool-calling nativo. Tool `consulta_sql_cartera` → RPC `fn_distribot_consulta_cartera`. Historial desde `distrimm_chat_messages`. Timeout 100s, máx 25 iteraciones.
+- Todos usan `supabase.functions.invoke()` con auth JWT del usuario (verificada con ANON_KEY + header). Requiere `OPENAI_API_KEY` en secrets.
 
 ### Supabase Tables
 Legacy tables (no prefix): `historial_cargas`, `cartera_items`
@@ -67,27 +69,9 @@ Use `sileo` (not `sonner`). Import: `import { toast } from "sileo"`. The `<Toast
 - WhatsApp send restriction: 7am–9pm Colombia time (`COLOMBIA_OFFSET = -5`)
 - Phone format for Meta Cloud API: `57XXXXXXXXXX` (country code + 10 digits, no `+`)
 
-## WhatsApp: Meta Cloud API (completed migration)
+## WhatsApp: Meta Cloud API
 
-**Status:** Conexión directa con Meta Cloud API. Sin intermediarios. WhatsApp tab muestra status de la API y estadísticas de envío.
-
-### n8n Workflows
-| ID | Name | Status |
-|---|---|---|
-| `nRnNxKPGcCeHzWCy` | DistriMM - WhatsApp Mensajes | ✅ Active (Meta Cloud API) |
-| `2HcZs2TTuqIwRP1e` | DistriBot CFO - Chat Cartera | ✅ Active (chatbot con gráficas) |
-| `5mCEZIKSECOF4qoT` | DistriMM CFO Analyst | ✅ Active |
-
-### Mensajes Workflow: What's Configured
-- `META_PHONE_NUMBER_ID` is set to the real value in the `Buscar Instancia DB` Code node
-- `Meta Cloud API` credential (id: `eB4lNUs2oRbMh5BV`) is configured with the Bearer token
-- Currently in **sandbox mode**: `Preparar Mensaje` node has `SANDBOX_OVERRIDE_PHONE` that redirects all messages to a test number. Remove this override for production.
-
-## n8n Code Node Constraints
-
-- `fetch` is NOT available in n8n Code nodes (VM2 sandbox). Use HTTP Request nodes for all HTTP calls.
-- Empty array responses from Supabase REST API (`[]`) produce 0 items — downstream nodes don't execute. Use RPC functions that return a single JSON object instead.
-- IF node (1 output path) + Merge node in "append" mode = deadlock. Connect both IF branches directly to the next node.
+**Status:** Conexión directa con Meta Cloud API vía Edge Function `proxy-n8n-whatsapp`. Sin intermediarios.
 
 ## Environment Variables
 
@@ -102,10 +86,7 @@ VITE_META_SOLUTION_ID                     — Solution ID (optional)
 
 Supabase Edge Function secrets (Dashboard → Edge Functions → Secrets):
 ```
-N8N_WHATSAPP_URL   — n8n messaging webhook URL
-N8N_WEBHOOK_URL    — n8n CFO analysis webhook URL
-N8N_CHAT_URL       — n8n chatbot webhook URL
-N8N_AUTH_KEY       — Shared secret for n8n calls
+OPENAI_API_KEY     — Para proxy-n8n-cfo (GPT-4o) y proxy-n8n-chatbot (GPT-4.1-mini)
 META_APP_ID        — Facebook App ID (for token exchange)
 META_APP_SECRET    — Facebook App Secret (NEVER in frontend)
 ```
@@ -174,3 +155,29 @@ ssh admin@161.97.111.39 'pm2 restart distrimm-mcp'
 
 ### MCP Server URL
 `https://distrimm.luminiatech.digital/mcp` — StreamableHTTP, usado desde Claude.ai para consultar datos de Supabase.
+
+## Health Stack
+
+- typecheck: tsc --noEmit
+- lint: eslint .
+- test: vitest run
+
+## Skill routing
+
+When the user's request matches an available skill, ALWAYS invoke it using the Skill
+tool as your FIRST action. Do NOT answer directly, do NOT use other tools first.
+The skill has specialized workflows that produce better results than ad-hoc answers.
+
+Key routing rules:
+- Product ideas, "is this worth building", brainstorming → invoke office-hours
+- Bugs, errors, "why is this broken", 500 errors → invoke investigate
+- Ship, deploy, push, create PR → invoke ship
+- QA, test the site, find bugs → invoke qa
+- Code review, check my diff → invoke review
+- Update docs after shipping → invoke document-release
+- Weekly retro → invoke retro
+- Design system, brand → invoke design-consultation
+- Visual audit, design polish → invoke design-review
+- Architecture review → invoke plan-eng-review
+- Save progress, checkpoint, resume → invoke checkpoint
+- Code quality, health check → invoke health
