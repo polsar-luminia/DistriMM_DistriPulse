@@ -98,7 +98,7 @@ Other server-side secrets (Meta access token per instance) live in `distrimm_wha
 
 **El código se edita localmente y se deploya manualmente al VPS.**
 
-- VPS: `ssh admin@161.97.111.39`
+- VPS: `ssh admin@161.97.111.39` (clave `~/.ssh/id_ed25519`, sin contraseña)
 - Dominio: https://distrimm.luminiatech.digital
 - Código en VPS: `/var/www/distrimm-agro/`
 - Supabase URL: `https://xzhqhmjfhnvqxndxayxs.supabase.co`
@@ -152,6 +152,13 @@ ssh admin@161.97.111.39 'pm2 restart distrimm-api'
 cat mcp-server/src/tools/ARCHIVO.js | ssh admin@161.97.111.39 'cat > /var/www/distrimm-agro/mcp-server/src/tools/ARCHIVO.js'
 ssh admin@161.97.111.39 'pm2 restart distrimm-mcp'
 ```
+
+### Si SSH no responde
+
+El servidor tiene fail2ban. Si hay timeout:
+1. Ir a panel Contabo → firewall `distripolsar-fw` → verificar reglas 22/80/443
+2. Mi IP está en whitelist de fail2ban — no debería banearse
+3. Si sigue sin responder: Rescue System en Contabo → montar `/dev/sda1` en `/mnt/real` → arreglar SSH
 
 ### MCP Server URL
 `https://distrimm.luminiatech.digital/mcp` — StreamableHTTP, usado desde Claude.ai para consultar datos de Supabase.
