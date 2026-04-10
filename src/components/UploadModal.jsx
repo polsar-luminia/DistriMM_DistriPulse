@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { getColombiaTodayISO } from "../utils/formatters";
 import ConfirmDialog from "./ConfirmDialog";
 import { useConfirm } from "../hooks/useConfirm";
 import {
@@ -14,7 +15,6 @@ import {
   Users,
   FileText,
 } from "lucide-react";
-import * as XLSX from "xlsx";
 import { supabase } from "../lib/supabase";
 import { sileo } from "sileo";
 import { cn } from "@/lib/utils";
@@ -30,9 +30,7 @@ import {
 export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
   const [confirmProps, confirm] = useConfirm();
   const [file, setFile] = useState(null);
-  const [cutOffDate, setCutOffDate] = useState(
-    new Date().toISOString().split("T")[0],
-  );
+  const [cutOffDate, setCutOffDate] = useState(getColombiaTodayISO);
 
   // States for new flow
   const [step, setStep] = useState("select"); // 'select', 'preview', 'uploading', 'success'
@@ -41,8 +39,14 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState(null);
   const [detectedType, setDetectedType] = useState(null); // 'cartera' | 'clientes'
+  const successTimeoutRef = useRef(null);
+  const pendingDeleteRef = useRef(null); // ID de carga vieja a borrar DESPUÉS del insert exitoso
 
   const resetState = () => {
+    if (successTimeoutRef.current) {
+      clearTimeout(successTimeoutRef.current);
+      successTimeoutRef.current = null;
+    }
     setFile(null);
     setStep("select");
     setPreviewData([]);
@@ -50,7 +54,15 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
     setError(null);
     setProgress(0);
     setDetectedType(null);
+    pendingDeleteRef.current = null;
   };
+
+  // Cleanup success timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (successTimeoutRef.current) clearTimeout(successTimeoutRef.current);
+    };
+  }, []);
 
   // --- CONNECTION DIAGNOSTIC ---
   useEffect(() => {
@@ -62,7 +74,8 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
         .select("count", { count: "exact", head: true });
 
       if (connError) {
-        if (import.meta.env.DEV) console.error("Connection Check Failed:", connError);
+        if (import.meta.env.DEV)
+          console.error("Connection Check Failed:", connError);
         if (connError.message === "FetchError: Failed to fetch") {
           setError(
             "Error de conexion: No se pudo contactar con Supabase. Revisa tu internet o la URL del proyecto.",
@@ -91,9 +104,15 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
     onClose();
   };
 
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
     if (selectedFile) {
+      if (selectedFile.size > MAX_FILE_SIZE) {
+        setError("El archivo excede el tamaño máximo permitido (10MB)");
+        return;
+      }
       setFile(selectedFile);
       setError(null);
     }
@@ -106,15 +125,22 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
     // Validate magic bytes before processing
     const { valid } = await validateExcelMIME(file);
     if (!valid) {
-      sileo.error({ title: "Archivo invalido", description: "El archivo no es un Excel valido (.xlsx o .xls). Verifica que no sea un archivo renombrado." });
-      setError("El archivo no tiene un formato Excel valido. Solo se aceptan archivos .xlsx y .xls reales.");
+      sileo.error({
+        title: "Archivo invalido",
+        description:
+          "El archivo no es un Excel valido (.xlsx o .xls). Verifica que no sea un archivo renombrado.",
+      });
+      setError(
+        "El archivo no tiene un formato Excel valido. Solo se aceptan archivos .xlsx y .xls reales.",
+      );
       return;
     }
 
     try {
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         try {
+          const XLSX = await import("xlsx-js-style");
           const data = new Uint8Array(e.target.result);
           const workbook = XLSX.read(data, { type: "array", cellDates: false });
           const firstSheetName = workbook.SheetNames[0];
@@ -143,7 +169,9 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
           }
 
           if (!fileType) {
-            setError("No se pudo determinar el tipo de archivo. Verifique que sea un Excel de Cartera o Clientes.");
+            setError(
+              "No se pudo determinar el tipo de archivo. Verifique que sea un Excel de Cartera o Clientes.",
+            );
             return;
           }
 
@@ -160,7 +188,9 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
           }
 
           if (processed.length === 0)
-            throw new Error("No se encontraron registros validos en el archivo.");
+            throw new Error(
+              "No se encontraron registros validos en el archivo.",
+            );
 
           setFullData(processed);
           setPreviewData(processed.slice(0, 5));
@@ -207,15 +237,18 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
       setProgress(30);
 
       // 2. Extract unique vendedores and upsert
-      const vendedorCodes = [...new Set(fullData.map(i => i.vendedor_codigo).filter(Boolean))];
+      const vendedorCodes = [
+        ...new Set(fullData.map((i) => i.vendedor_codigo).filter(Boolean)),
+      ];
       if (vendedorCodes.length > 0) {
-        const vendedorRows = vendedorCodes.map(code => ({
+        const vendedorRows = vendedorCodes.map((code) => ({
           codigo: code,
           nombre: `Vendedor ${code}`,
         }));
-        await supabase
-          .from("distrimm_vendedores")
-          .upsert(vendedorRows, { onConflict: "codigo", ignoreDuplicates: true });
+        await supabase.from("distrimm_vendedores").upsert(vendedorRows, {
+          onConflict: "codigo",
+          ignoreDuplicates: true,
+        });
       }
 
       // 3. Prepare Final Batch
@@ -250,16 +283,27 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
         setProgress(currentProgress);
       }
 
+      // Insert exitoso — borrar la carga vieja si había duplicado
+      if (pendingDeleteRef.current) {
+        await supabase
+          .from("historial_cargas")
+          .delete()
+          .eq("id", pendingDeleteRef.current);
+        pendingDeleteRef.current = null;
+      }
+
       setStep("success");
-      setTimeout(() => {
+      successTimeoutRef.current = setTimeout(() => {
         onUploadSuccess();
         handleClose();
       }, 2000);
     } catch (err) {
       if (import.meta.env.DEV) console.error("Upload Error (Raw):", err);
+      pendingDeleteRef.current = null; // No borrar la vieja si el insert falla
 
       if (createdLoadId) {
-        if (import.meta.env.DEV) console.warn("Rolling back load:", createdLoadId);
+        if (import.meta.env.DEV)
+          console.warn("Rolling back load:", createdLoadId);
         await supabase
           .from("historial_cargas")
           .delete()
@@ -304,42 +348,53 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
           .select("no_identif")
           .in("no_identif", batch);
         if (prefetchError) throw prefetchError;
-        if (batchRows) prefetchedNits.push(...batchRows.map((r) => r.no_identif));
+        if (batchRows)
+          prefetchedNits.push(...batchRows.map((r) => r.no_identif));
       }
       preExistingNits = new Set(prefetchedNits);
 
       for (let i = 0; i < fullData.length; i += batchSize) {
         const batch = fullData.slice(i, i + batchSize);
 
-        const rowsToUpsert = batch.map((item) => ({
-          no_identif: item.no_identif,
-          tipo_ident: item.tipo_ident,
-          tipo_persona: item.tipo_persona,
-          primer_nombre: item.primer_nombre,
-          segundo_nombre: item.segundo_nombre,
-          primer_apellido: item.primer_apellido,
-          segundo_apellido: item.segundo_apellido,
-          fecha_nacimiento: item.fecha_nacimiento,
-          genero: item.genero,
-          estado_civil: item.estado_civil,
-          direccion: item.direccion,
-          telefono_1: item.telefono_1,
-          telefono_2: item.telefono_2,
-          celular: item.celular,
-          correo_electronico: item.correo_electronico,
-          pagina_web: item.pagina_web,
-          clasificacion_iva: item.clasificacion_iva,
-          profesion: item.profesion,
-          actividad: item.actividad,
-          cupo_venta: item.cupo_venta,
-          cupo_compra: item.cupo_compra,
-          comentario: item.comentario,
-          barrio: item.barrio,
-          municipio: item.municipio,
-          vendedor_codigo: item.vendedor_codigo,
-          cobrador_codigo: item.cobrador_codigo,
-          updated_at: new Date().toISOString(),
-        }));
+        // Solo enviar campos con valor — omitir NULLs para no sobreescribir datos maestros existentes
+        const rowsToUpsert = batch.map((item) => {
+          const row = {
+            no_identif: item.no_identif,
+            updated_at: new Date().toISOString(),
+          };
+          const fields = [
+            "tipo_ident",
+            "tipo_persona",
+            "primer_nombre",
+            "segundo_nombre",
+            "primer_apellido",
+            "segundo_apellido",
+            "fecha_nacimiento",
+            "genero",
+            "estado_civil",
+            "direccion",
+            "telefono_1",
+            "telefono_2",
+            "celular",
+            "correo_electronico",
+            "pagina_web",
+            "clasificacion_iva",
+            "profesion",
+            "actividad",
+            "comentario",
+            "barrio",
+            "municipio",
+            "vendedor_codigo",
+            "cobrador_codigo",
+          ];
+          fields.forEach((f) => {
+            if (item[f] != null && item[f] !== "") row[f] = item[f];
+          });
+          // Numéricos: incluir aunque sean 0
+          if (item.cupo_venta != null) row.cupo_venta = item.cupo_venta;
+          if (item.cupo_compra != null) row.cupo_compra = item.cupo_compra;
+          return row;
+        });
 
         const { error: batchError } = await supabase
           .from("distrimm_clientes")
@@ -377,7 +432,7 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
 
       setProgress(100);
       setStep("success");
-      setTimeout(() => {
+      successTimeoutRef.current = setTimeout(() => {
         onUploadSuccess();
         handleClose();
       }, 2000);
@@ -385,9 +440,19 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
       if (import.meta.env.DEV) console.error("Upload Clientes Error:", err);
 
       // Rollback: delete only NEW records introduced by this upload (protect pre-existing)
-      const newNitsToRollback = processedNits.filter((nit) => !preExistingNits.has(nit));
-      if (newNitsToRollback.length > 0) {
-        if (import.meta.env.DEV) console.warn(`Rolling back ${newNitsToRollback.length} client records`);
+      const newNitsToRollback = processedNits.filter(
+        (nit) => !preExistingNits.has(nit),
+      );
+      const updatedExistingNits = processedNits.filter((nit) =>
+        preExistingNits.has(nit),
+      );
+      if (newNitsToRollback.length > 0 || updatedExistingNits.length > 0) {
+        if (import.meta.env.DEV) {
+          console.warn(
+            `Rolling back ${newNitsToRollback.length} new client records. ${updatedExistingNits.length} existing records may have been partially updated.`,
+            updatedExistingNits,
+          );
+        }
         // Delete in batches to avoid query size limits
         for (let i = 0; i < newNitsToRollback.length; i += 100) {
           const nitBatch = newNitsToRollback.slice(i, i + 100);
@@ -398,7 +463,7 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
         }
         sileo.error({
           title: "Error en carga",
-          description: "Todos los datos parciales fueron eliminados",
+          description: `Se eliminaron ${newNitsToRollback.length} registros nuevos.${updatedExistingNits.length > 0 ? ` ${updatedExistingNits.length} registros existentes pudieron haber sido actualizados parcialmente.` : ""}`,
         });
       }
 
@@ -427,8 +492,12 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
         .limit(1);
 
       if (existing && existing.length > 0) {
-        const displayDate = new Date(cutOffDate + "T12:00:00").toLocaleDateString("es-CO", {
-          day: "2-digit", month: "2-digit", year: "numeric",
+        const displayDate = new Date(
+          cutOffDate + "T12:00:00",
+        ).toLocaleDateString("es-CO", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
         });
         const ok = await confirm({
           title: "Carga duplicada",
@@ -439,11 +508,8 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
         });
         if (!ok) return;
 
-        // Delete the old load (CASCADE deletes cartera_items)
-        await supabase
-          .from("historial_cargas")
-          .delete()
-          .eq("id", existing[0].id);
+        // Guardar ID de la carga vieja — se borra DESPUÉS del insert exitoso
+        pendingDeleteRef.current = existing[0].id;
       }
     } catch (err) {
       if (import.meta.env.DEV) console.error("Error checking duplicates:", err);
@@ -492,15 +558,20 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
                   <div className="flex items-center gap-2">
                     <FileText size={16} className="text-indigo-500" />
-                    <span><strong>Cartera</strong> - Cuentas por cobrar</span>
+                    <span>
+                      <strong>Cartera</strong> - Cuentas por cobrar
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Users size={16} className="text-indigo-500" />
-                    <span><strong>Clientes</strong> - Maestro de terceros</span>
+                    <span>
+                      <strong>Clientes</strong> - Maestro de terceros
+                    </span>
                   </div>
                 </div>
                 <p className="text-xs text-indigo-500 mt-2">
-                  El tipo se detecta automaticamente por las columnas del archivo.
+                  El tipo se detecta automaticamente por las columnas del
+                  archivo.
                 </p>
               </div>
 
@@ -532,7 +603,12 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
                   Archivo Excel
                 </label>
                 <div
-                  className={cn("border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-all duration-200 group", file ? "border-indigo-500 bg-indigo-50/50" : "border-slate-300 hover:border-indigo-400 hover:bg-slate-50")}
+                  className={cn(
+                    "border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-all duration-200 group",
+                    file
+                      ? "border-indigo-500 bg-indigo-50/50"
+                      : "border-slate-300 hover:border-indigo-400 hover:bg-slate-50",
+                  )}
                 >
                   <input
                     type="file"
@@ -593,19 +669,40 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
           {step === "preview" && (
             <div className="space-y-6 animate-in slide-in-from-right-4">
               {/* Type Badge */}
-              <div className={cn("rounded-lg p-4 flex gap-3", detectedType === UPLOAD_TYPES.CLIENTES ? "bg-blue-50 border border-blue-200" : "bg-amber-50 border border-amber-200")}>
+              <div
+                className={cn(
+                  "rounded-lg p-4 flex gap-3",
+                  detectedType === UPLOAD_TYPES.CLIENTES
+                    ? "bg-blue-50 border border-blue-200"
+                    : "bg-amber-50 border border-amber-200",
+                )}
+              >
                 {detectedType === UPLOAD_TYPES.CLIENTES ? (
                   <Users className="text-blue-600 shrink-0" size={24} />
                 ) : (
                   <ShieldAlert className="text-amber-600 shrink-0" size={24} />
                 )}
                 <div>
-                  <h4 className={cn("font-bold text-sm uppercase tracking-wide mb-1", detectedType === UPLOAD_TYPES.CLIENTES ? "text-blue-800" : "text-amber-800")}>
+                  <h4
+                    className={cn(
+                      "font-bold text-sm uppercase tracking-wide mb-1",
+                      detectedType === UPLOAD_TYPES.CLIENTES
+                        ? "text-blue-800"
+                        : "text-amber-800",
+                    )}
+                  >
                     {detectedType === UPLOAD_TYPES.CLIENTES
                       ? "Maestro de Clientes Detectado"
                       : "Archivo de Cartera Detectado"}
                   </h4>
-                  <p className={cn("text-sm leading-relaxed", detectedType === UPLOAD_TYPES.CLIENTES ? "text-blue-700" : "text-amber-700")}>
+                  <p
+                    className={cn(
+                      "text-sm leading-relaxed",
+                      detectedType === UPLOAD_TYPES.CLIENTES
+                        ? "text-blue-700"
+                        : "text-amber-700",
+                    )}
+                  >
                     {detectedType === UPLOAD_TYPES.CLIENTES
                       ? `Se encontraron ${fullData.length} clientes. Los existentes se actualizaran automaticamente.`
                       : `Se encontraron ${fullData.length} registros de cartera. Verifica las fechas antes de guardar.`}
@@ -645,7 +742,14 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
                               {row.nombreCompleto}
                             </td>
                             <td className="px-4 py-2">
-                              <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", row.tipo_persona === "Juridica" ? "bg-indigo-100 text-indigo-700" : "bg-slate-100 text-slate-600")}>
+                              <span
+                                className={cn(
+                                  "text-[10px] font-bold px-2 py-0.5 rounded-full",
+                                  row.tipo_persona === "Juridica"
+                                    ? "bg-indigo-100 text-indigo-700"
+                                    : "bg-slate-100 text-slate-600",
+                                )}
+                              >
                                 {row.tipo_persona || "N/A"}
                               </span>
                             </td>
@@ -683,11 +787,14 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }) {
                             </td>
                             <td className="px-4 py-2 font-bold text-slate-800">
                               {row.fecha_emision
-                                ? row.fecha_emision.toLocaleDateString("es-CO", {
-                                  day: "numeric",
-                                  month: "long",
-                                  year: "numeric",
-                                })
+                                ? row.fecha_emision.toLocaleDateString(
+                                    "es-CO",
+                                    {
+                                      day: "numeric",
+                                      month: "long",
+                                      year: "numeric",
+                                    },
+                                  )
                                 : "-"}
                             </td>
                             <td className="px-4 py-2 text-xs text-slate-500">

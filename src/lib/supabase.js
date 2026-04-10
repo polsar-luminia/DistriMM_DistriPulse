@@ -4,24 +4,12 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  if (import.meta.env.DEV) console.warn("Supabase URL or Key is missing. Check your .env file.");
+  throw new Error(
+    "VITE_SUPABASE_URL y VITE_SUPABASE_KEY son requeridas. Revisa tu archivo .env.",
+  );
 }
 
-if (
-  !supabaseUrl ||
-  !supabaseAnonKey ||
-  supabaseUrl === "https://placeholder.supabase.co"
-) {
-  if (import.meta.env.DEV)
-    console.error(
-      "ERROR CRÍTICO: Las variables de entorno VITE_SUPABASE_URL o VITE_SUPABASE_KEY no están configuradas correctamente.",
-    );
-}
-
-export const supabase = createClient(
-  supabaseUrl || "https://placeholder.supabase.co",
-  supabaseAnonKey || "placeholder",
-);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 /**
  * Fetches all rows from a Supabase query, paginating past the 1000-row default limit.

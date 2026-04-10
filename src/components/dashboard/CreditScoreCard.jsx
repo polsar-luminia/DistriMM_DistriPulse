@@ -5,10 +5,6 @@ import { getClientCreditScoreV2, getClientCreditScore } from "../../services/por
 import { HealthGauge, formatFullCurrency } from "./DashboardShared";
 import { formatDateUTC } from "../../utils/formatters";
 
-// ============================================================================
-// CONSTANTS
-// ============================================================================
-
 const NIVEL_COLORS = {
   Excelente: { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200" },
   Bueno: { bg: "bg-sky-50", text: "text-sky-700", border: "border-sky-200" },
@@ -36,10 +32,6 @@ const VARIABLE_LABELS = {
 };
 
 const OVERDUE_ROWS_LIMIT = 5;
-
-// ============================================================================
-// HELPERS
-// ============================================================================
 
 const getBarColor = (value) => {
   if (value >= 80) return "bg-emerald-400";
@@ -93,10 +85,6 @@ const formatRawValue = (key, raw) => {
       return String(raw);
   }
 };
-
-// ============================================================================
-// SUB-COMPONENTS
-// ============================================================================
 
 const LoadingSkeleton = () => (
   <div className="animate-pulse space-y-3 py-2">
@@ -218,10 +206,6 @@ const DimensionCard = ({ dimKey, dimData }) => {
     </div>
   );
 };
-
-// ============================================================================
-// MAIN COMPONENT
-// ============================================================================
 
 const CreditScoreCard = ({ nit, onClose, maxPlazo = 45, wide = false, refreshToken }) => {
   const [loading, setLoading] = useState(() => !!nit);

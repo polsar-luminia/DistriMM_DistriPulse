@@ -1,14 +1,9 @@
-/**
- * @fileoverview Hook for managing recaudos (collections) and presupuestos (budgets).
- * Owns recaudoCargas, selectedRecaudoCargaId, recaudos, and presupuesto state.
- * @module hooks/comisiones/useComisionesRecaudos
- */
-
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
   getRecaudoCargas,
   deleteRecaudoCarga as deleteRecaudoCargaSvc,
   getRecaudosByCarga,
+  getRecaudosByPeriodo,
   getPresupuestosRecaudo,
   upsertPresupuestoRecaudo,
   deletePresupuestoRecaudo as deletePresupuestoRecaudoSvc,
@@ -17,19 +12,8 @@ import {
   deletePresupuestoMarca as deletePresupuestoMarcaSvc,
   copiarPresupuestosMes,
 } from "../../services/comisionesService";
+import { dedupeRecaudosByCargaId } from "./reportingUtils";
 
-/**
- * Gestiona recaudos (cargas de recaudo, detalle) y presupuestos de recaudo/marca.
- * @returns {{ recaudoCargas: Array, selectedRecaudoCargaId: string|null,
- *   selectedRecaudoCarga: Object|null, loadingRecaudoCargas: boolean,
- *   recaudos: Array, loadingRecaudos: boolean, selectRecaudoCarga: Function,
- *   deleteRecaudoCarga: Function, refreshRecaudos: Function,
- *   presupuestosRecaudo: Array, presupuestosMarca: Array,
- *   loadingPresupuestos: boolean, fetchPresupuestos: Function,
- *   savePresupuestoRecaudo: Function, savePresupuestoMarca: Function,
- *   removePresupuestoRecaudo: Function, removePresupuestoMarca: Function,
- *   copiarPresupuestos: Function }}
- */
 export function useComisionesRecaudos() {
   const [recaudoCargas, setRecaudoCargas] = useState([]);
   const [selectedRecaudoCargaId, setSelectedRecaudoCargaId] = useState(null);
@@ -58,10 +42,15 @@ export function useComisionesRecaudos() {
       }
     } catch (err) {
       if (requestId !== fetchRequestIdRef.current) return;
-      if (import.meta.env.DEV) console.error("[useComisionesRecaudos] Error fetching recaudo cargas:", err);
+      if (import.meta.env.DEV)
+        console.error(
+          "[useComisionesRecaudos] Error fetching recaudo cargas:",
+          err,
+        );
       setRecaudoCargas([]);
     } finally {
-      if (requestId === fetchRequestIdRef.current) setLoadingRecaudoCargas(false);
+      if (requestId === fetchRequestIdRef.current)
+        setLoadingRecaudoCargas(false);
     }
   }, []);
 
@@ -79,46 +68,92 @@ export function useComisionesRecaudos() {
       })
       .catch((err) => {
         if (!cancelled) {
-          if (import.meta.env.DEV) console.error("[useComisionesRecaudos] Error fetching recaudo cargas:", err);
+          if (import.meta.env.DEV)
+            console.error(
+              "[useComisionesRecaudos] Error fetching recaudo cargas:",
+              err,
+            );
           setRecaudoCargas([]);
         }
       })
-      .finally(() => { if (!cancelled) setLoadingRecaudoCargas(false); });
-    return () => { cancelled = true; };
+      .finally(() => {
+        if (!cancelled) setLoadingRecaudoCargas(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Fetch recaudos when selection changes
   useEffect(() => {
-    if (!selectedRecaudoCargaId) { setRecaudos([]); return; }
+    if (!selectedRecaudoCargaId) {
+      setRecaudos([]);
+      return;
+    }
     let cancelled = false;
     setLoadingRecaudos(true);
     getRecaudosByCarga(selectedRecaudoCargaId)
-      .then(({ data }) => { if (!cancelled) setRecaudos(data || []); })
+      .then(({ data }) => {
+        if (!cancelled) setRecaudos(data || []);
+      })
       .catch((err) => {
         if (!cancelled) {
-          if (import.meta.env.DEV) console.error(`[useComisionesRecaudos] Error fetching recaudos for ${selectedRecaudoCargaId}:`, err);
+          if (import.meta.env.DEV)
+            console.error(
+              `[useComisionesRecaudos] Error fetching recaudos for ${selectedRecaudoCargaId}:`,
+              err,
+            );
           setRecaudos([]);
         }
       })
-      .finally(() => { if (!cancelled) setLoadingRecaudos(false); });
-    return () => { cancelled = true; };
+      .finally(() => {
+        if (!cancelled) setLoadingRecaudos(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [selectedRecaudoCargaId]);
 
-  const selectRecaudoCarga = useCallback((id) => setSelectedRecaudoCargaId(id), []);
+  const selectRecaudoCarga = useCallback(
+    (id) => setSelectedRecaudoCargaId(id),
+    [],
+  );
 
-  const deleteRecaudoCarga = useCallback(async (id) => {
-    const { success } = await deleteRecaudoCargaSvc(id);
-    if (success) {
-      await fetchRecaudoCargas();
-      if (id === selectedRecaudoCargaId) {
-        setSelectedRecaudoCargaId(null);
-        setRecaudos([]);
+  const deleteRecaudoCarga = useCallback(
+    async (id) => {
+      const { success } = await deleteRecaudoCargaSvc(id);
+      if (success) {
+        // Reset auto-select flag para que fetchRecaudoCargas seleccione el primero
+        if (selectedRecaudoCargaId === id) {
+          setSelectedRecaudoCargaId(null);
+          autoSelectedRef.current = false;
+        }
+        await fetchRecaudoCargas();
       }
-    }
-    return success;
-  }, [fetchRecaudoCargas, selectedRecaudoCargaId]);
+      return success;
+    },
+    [fetchRecaudoCargas, selectedRecaudoCargaId],
+  );
 
-  const refreshRecaudos = useCallback(() => fetchRecaudoCargas(), [fetchRecaudoCargas]);
+  // Fetch ALL recaudos for a given month (across all cargas), deduplicated
+  const fetchRecaudosPeriodo = useCallback(async (year, month) => {
+    setLoadingRecaudos(true);
+    try {
+      const { data } = await getRecaudosByPeriodo(year, month);
+      setRecaudos(dedupeRecaudosByCargaId(data));
+    } catch (err) {
+      if (import.meta.env.DEV)
+        console.error("[useComisionesRecaudos] Error fetching periodo:", err);
+      setRecaudos([]);
+    } finally {
+      setLoadingRecaudos(false);
+    }
+  }, []);
+
+  const refreshRecaudos = useCallback(
+    () => fetchRecaudoCargas(),
+    [fetchRecaudoCargas],
+  );
 
   // ── Presupuesto callbacks (lazy — NOT called on mount) ──
   const fetchPresupuestos = useCallback(async (year, month) => {
@@ -131,7 +166,11 @@ export function useComisionesRecaudos() {
       setPresupuestosRecaudo(recRes.data || []);
       setPresupuestosMarca(marcaRes.data || []);
     } catch (err) {
-      if (import.meta.env.DEV) console.error("[useComisionesRecaudos] Error fetching presupuestos:", err);
+      if (import.meta.env.DEV)
+        console.error(
+          "[useComisionesRecaudos] Error fetching presupuestos:",
+          err,
+        );
       setPresupuestosRecaudo([]);
       setPresupuestosMarca([]);
     }
@@ -165,13 +204,15 @@ export function useComisionesRecaudos() {
   return {
     recaudoCargas,
     selectedRecaudoCargaId,
-    selectedRecaudoCarga: recaudoCargas.find((c) => c.id === selectedRecaudoCargaId) || null,
+    selectedRecaudoCarga:
+      recaudoCargas.find((c) => c.id === selectedRecaudoCargaId) || null,
     loadingRecaudoCargas,
     recaudos,
     loadingRecaudos,
     selectRecaudoCarga,
     deleteRecaudoCarga,
     refreshRecaudos,
+    fetchRecaudosPeriodo,
     presupuestosRecaudo,
     presupuestosMarca,
     loadingPresupuestos,

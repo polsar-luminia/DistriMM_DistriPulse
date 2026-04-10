@@ -16,8 +16,7 @@ const Footer = () => {
           </a>
         </div>
         <div className="text-xs text-slate-400 font-medium">
-          &copy; {new Date().getFullYear()} DistriPulse Analytics. All rights
-          reserved.
+          &copy; {new Date().getFullYear()} DistriMM. Powered by LuminIA.
         </div>
       </div>
     </footer>
@@ -25,4 +24,3 @@ const Footer = () => {
 };
 
 export default Footer;
-

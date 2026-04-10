@@ -1,26 +1,13 @@
-/**
- * @fileoverview CFO Analysis Service
- * Handles communication with n8n webhook (via Supabase Edge Function proxy)
- * and Supabase cache for CFO analyses.
- * @module services/cfoService
- */
-
 import { supabase } from "../lib/supabase";
 
-// ============================================================================
-// TRIGGER CFO ANALYSIS (via n8n webhook)
-// ============================================================================
-
-/**
- * Triggers a new CFO analysis via the n8n webhook.
- * @param {{ carga_id?: string, mes: number, anio: number }} payload
- * @returns {{ data: object|null, error: string|null }}
- */
 export const triggerCfoAnalysis = async (payload) => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 90_000);
+
   try {
     const { data: result, error } = await supabase.functions.invoke(
       "proxy-n8n-cfo",
-      { body: payload },
+      { body: payload, signal: controller.signal },
     );
 
     if (error) throw error;
@@ -30,20 +17,19 @@ export const triggerCfoAnalysis = async (payload) => {
 
     return { data: analysisData, error: null };
   } catch (err) {
-    if (import.meta.env.DEV) console.error("[cfoService] Error triggering CFO analysis:", err);
-    return { data: null, error: "No se pudo conectar con el servidor. Verifica tu conexión." };
+    if (import.meta.env.DEV)
+      console.error("[cfoService] Error triggering CFO analysis:", err);
+    const message =
+      err?.name === "AbortError"
+        ? "El análisis tardó demasiado (90s). Intenta de nuevo."
+        : err?.message ||
+          "No se pudo conectar con el servidor. Verifica tu conexión.";
+    return { data: null, error: message };
+  } finally {
+    clearTimeout(timeoutId);
   }
 };
 
-// ============================================================================
-// GET CACHED CFO ANALYSES (from Supabase)
-// ============================================================================
-
-/**
- * Fetches cached CFO analyses from Supabase.
- * @param {string} [cargaId] - Optional load ID to filter by
- * @returns {{ data: object[]|null, error: object|null }}
- */
 export const getCfoAnalyses = async (cargaId) => {
   try {
     let query = supabase
@@ -70,27 +56,20 @@ export const getCfoAnalyses = async (cargaId) => {
 
     return { data: normalized, error: null };
   } catch (err) {
-    if (import.meta.env.DEV) console.error("[cfoService] Error fetching CFO analyses:", err);
+    if (import.meta.env.DEV)
+      console.error("[cfoService] Error fetching CFO analyses:", err);
     return { data: null, error: err };
   }
 };
 
-// ============================================================================
-// HISTORICAL KPI EVOLUTION (across all cargas)
-// ============================================================================
-
-/**
- * Fetches historical KPI data for all cargas, ordered by fecha_corte ASC.
- * Returns an array of snapshots with cartera, aging, mora metrics per carga.
- * @returns {{ data: object[]|null, error: string|null }}
- */
 export const getHistoricoCartera = async () => {
   try {
     const { data, error } = await supabase.rpc("fn_cfo_historico_cartera");
     if (error) throw error;
     return { data: data || [], error: null };
   } catch (err) {
-    if (import.meta.env.DEV) console.error("[cfoService] Error fetching historico:", err);
-    return { data: null, error: err.message };
+    if (import.meta.env.DEV)
+      console.error("[cfoService] Error fetching historico:", err);
+    return { data: null, error: err };
   }
 };

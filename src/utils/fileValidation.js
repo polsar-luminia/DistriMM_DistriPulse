@@ -1,20 +1,8 @@
-/**
- * @fileoverview File validation utilities for upload security.
- * Validates file magic bytes to prevent malicious file uploads.
- * @module utils/fileValidation
- */
-
 // XLSX/DOCX (ZIP container): PK\x03\x04
 const ZIP_MAGIC = [0x50, 0x4b, 0x03, 0x04];
 // XLS (OLE2 Compound Document): \xD0\xCF\x11\xE0
 const OLE2_MAGIC = [0xd0, 0xcf, 0x11, 0xe0];
 
-/**
- * Validates that a file has valid Excel magic bytes (XLSX or XLS).
- * Reads the first 4 bytes and checks against known signatures.
- * @param {File} file - The file to validate
- * @returns {Promise<{ valid: boolean, format: string|null }>}
- */
 export async function validateExcelMIME(file) {
   return new Promise((resolve) => {
     const reader = new FileReader();

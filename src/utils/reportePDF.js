@@ -1,9 +1,3 @@
-/**
- * @fileoverview Professional PDF report generation for the Comisiones module.
- * Uses jsPDF + jspdf-autotable for landscape, multi-page commission reports.
- * @module utils/reportePDF
- */
-
 // -- Color palette --
 const INDIGO = [79, 70, 229];
 const EMERALD = [16, 185, 129];
@@ -19,8 +13,18 @@ const INDIGO_50 = [238, 242, 255];
 const INDIGO_100 = [224, 231, 255];
 
 const MESES = [
-  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+  "Enero",
+  "Febrero",
+  "Marzo",
+  "Abril",
+  "Mayo",
+  "Junio",
+  "Julio",
+  "Agosto",
+  "Septiembre",
+  "Octubre",
+  "Noviembre",
+  "Diciembre",
 ];
 
 const formatCOP = (value) =>
@@ -53,16 +57,6 @@ function drawSectionTitle(doc, text, y, color = SLATE_900) {
   return y + 10;
 }
 
-/**
- * Draws a key/value info box row inside a rounded rect section.
- * @param {jsPDF} doc
- * @param {string} label
- * @param {string} value
- * @param {number} x
- * @param {number} y
- * @param {Array} [valueColor=SLATE_900]
- * @returns {number} Next y position
- */
 function drawInfoRow(doc, label, value, x, y, valueColor = SLATE_900) {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
@@ -75,17 +69,6 @@ function drawInfoRow(doc, label, value, x, y, valueColor = SLATE_900) {
   return y + 6;
 }
 
-/**
- * Generates a professional PDF commission report.
- * @param {Object} params
- * @param {Array} params.vendedores - Grouped vendor data (from vendedorData memo)
- * @param {{ year: number, month: number }} params.periodo - Report period
- * @param {Array} params.cargas - Loads included in the period
- * @param {Object|null} params.filtroVendedor - Single vendor object if filtered, null for all
- * @param {Object} params.totals - Grand totals { totalVentas, ventasExcluidas, ventasComisionables, margenComisionable, margenPct }
- * @param {number} params.daysInMonth - Total days in the month
- * @param {Array|null} [params.liquidacion] - Commission liquidation results from calcularComisionesCompletas()
- */
 export async function generarReportePDF({
   vendedores,
   periodo,
@@ -102,16 +85,12 @@ export async function generarReportePDF({
   const pageH = doc.internal.pageSize.getHeight();
   const mesNombre = MESES[periodo.month - 1];
 
-  // �.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.�
-  // PAGE 1 - COVER
-  // �.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.�
-
   // Title block - centered
   const cx = pageW / 2;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(28);
   doc.setTextColor(...INDIGO);
-  doc.text("DistriPulse", cx, 40, { align: "center" });
+  doc.text("DistriMM", cx, 40, { align: "center" });
 
   // Accent line
   doc.setDrawColor(...INDIGO);
@@ -159,13 +138,24 @@ export async function generarReportePDF({
 
   // 4 metrics in 2x2 grid
   const metrics = [
-    { label: "Total Ventas", value: formatCOP(totals.totalVentas), color: SLATE_900 },
-    { label: "Comisionables", value: formatCOP(totals.ventasComisionables), color: EMERALD },
-    { label: "Excluidas", value: formatCOP(totals.ventasExcluidas), color: ROSE },
-    { label: "Margen %", value: `${(totals.margenPct || 0).toFixed(1)}%`, color: SLATE_900 },
+    {
+      label: "Total Ventas",
+      value: formatCOP(totals.totalVentas),
+      color: SLATE_900,
+    },
+    {
+      label: "Comisionables",
+      value: formatCOP(totals.ventasComisionables),
+      color: EMERALD,
+    },
+    {
+      label: "Sin comisión",
+      value: formatCOP(totals.ventasExcluidas),
+      color: ROSE,
+    },
   ];
 
-  const colW = boxW / 4;
+  const colW = boxW / 3;
   metrics.forEach((m, i) => {
     const mx = boxX + colW * i + colW / 2;
     const my = boxY + boxH / 2 - 4;
@@ -189,7 +179,10 @@ export async function generarReportePDF({
     });
   });
 
-  const totalFacturas = vendedores.reduce((s, v) => s + (v.numFacturas || v.facturasComisionables?.size || 0), 0);
+  const totalFacturas = vendedores.reduce(
+    (s, v) => s + (v.numFacturas || v.facturasComisionables?.size || 0),
+    0,
+  );
 
   const infoY = boxY + boxH + 14;
   const infoLines = [
@@ -219,10 +212,6 @@ export async function generarReportePDF({
   doc.setTextColor(...SLATE_300);
   doc.text(`Generado: ${genDate}`, cx, pageH - 20, { align: "center" });
 
-  // �.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.�
-  // PAGE 2 - VENDOR SUMMARY TABLE (only if "Todos")
-  // �.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.�
-
   if (!filtroVendedor && vendedores.length > 0) {
     doc.addPage();
     let y = 20;
@@ -234,8 +223,6 @@ export async function generarReportePDF({
       formatCOP(v.totalVentas),
       formatCOP(v.ventasExcluidas),
       formatCOP(v.ventasComisionables),
-      formatCOP(v.margenComisionable),
-      `${(v.margenPct || 0).toFixed(1)}%`,
       v.numFacturas ?? 0,
     ]);
 
@@ -245,18 +232,35 @@ export async function generarReportePDF({
       formatCOP(totals.totalVentas),
       formatCOP(totals.ventasExcluidas),
       formatCOP(totals.ventasComisionables),
-      formatCOP(totals.margenComisionable),
-      `${(totals.margenPct || 0).toFixed(1)}%`,
       "",
     ];
 
     autoTable(doc, {
       startY: y,
-      head: [["Vendedor", "Dias", "Ventas Totales", "Excluidas", "Comisionables", "Margen $", "Margen %", "Facturas"]],
+      head: [
+        [
+          "Vendedor",
+          "Dias",
+          "Ventas Totales",
+          "Sin comisión",
+          "Comisionables",
+          "Facturas",
+        ],
+      ],
       body: bodyRows,
       foot: [footRow],
-      headStyles: { fillColor: INDIGO, textColor: 255, fontSize: 8, fontStyle: "bold" },
-      footStyles: { fillColor: INDIGO_100, textColor: SLATE_900, fontSize: 8, fontStyle: "bold" },
+      headStyles: {
+        fillColor: INDIGO,
+        textColor: 255,
+        fontSize: 8,
+        fontStyle: "bold",
+      },
+      footStyles: {
+        fillColor: INDIGO_100,
+        textColor: SLATE_900,
+        fontSize: 8,
+        fontStyle: "bold",
+      },
       bodyStyles: { fontSize: 7.5 },
       alternateRowStyles: { fillColor: SLATE_50 },
       columnStyles: {
@@ -265,20 +269,8 @@ export async function generarReportePDF({
         4: { fontStyle: "bold", textColor: EMERALD },
       },
       margin: { left: 15, right: 15 },
-      didParseCell(data) {
-        if (data.column.index === 6 && data.section === "body") {
-          const val = parseFloat(data.cell.raw);
-          if (val >= 20) data.cell.styles.textColor = EMERALD;
-          else if (val >= 10) data.cell.styles.textColor = AMBER;
-          else data.cell.styles.textColor = ROSE;
-        }
-      },
     });
   }
-
-  // �.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.�
-  // PAGES 3+ - VENDOR DETAIL
-  // �.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.�
 
   vendedores.forEach((vend) => {
     doc.addPage();
@@ -300,7 +292,7 @@ export async function generarReportePDF({
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(...SLATE_500);
-    const summaryLine = `Comisionable: ${formatCOP(vend.ventasComisionables)}  |  Excluido: ${formatCOP(vend.ventasExcluidas)}  |  Margen: ${(vend.margenPct || 0).toFixed(1)}%  |  Dias: ${vend.diasTrabajados}`;
+    const summaryLine = `Comisionable: ${formatCOP(vend.ventasComisionables)}  |  Sin comisión: ${formatCOP(vend.ventasExcluidas)}  |  Dias: ${vend.diasTrabajados}`;
     doc.text(summaryLine, 20, y + 13);
 
     y += 22;
@@ -338,7 +330,9 @@ export async function generarReportePDF({
       (a.fecha || "").localeCompare(b.fecha || ""),
     );
 
-    const facturasComisionables = facturas.filter((f) => f.comisionable.length > 0);
+    const facturasComisionables = facturas.filter(
+      (f) => f.comisionable.length > 0,
+    );
     const itemsExcluidos = (vend.ventas || []).filter((v) => v.excluded);
 
     // -- Commissionable invoices table --
@@ -349,27 +343,24 @@ export async function generarReportePDF({
     y += 4;
 
     if (facturasComisionables.length > 0) {
-      const comRows = facturasComisionables.map((f) => {
-        const margen =
-          f.totalComisionable > 0
-            ? ((f.totalComisionable - f.costoComisionable) / f.totalComisionable) * 100
-            : 0;
-        return [
-          formatDate(f.fecha),
-          f.factura || "-",
-          (f.cliente || "").substring(0, 35),
-          f.comisionable.length,
-          formatCOP(f.totalComisionable),
-          formatCOP(f.costoComisionable),
-          `${margen.toFixed(1)}%`,
-        ];
-      });
+      const comRows = facturasComisionables.map((f) => [
+        formatDate(f.fecha),
+        f.factura || "-",
+        (f.cliente || "").substring(0, 35),
+        f.comisionable.length,
+        formatCOP(f.totalComisionable),
+      ]);
 
       autoTable(doc, {
         startY: y,
-        head: [["Fecha", "Factura", "Cliente", "Productos", "Valor Total", "Costo", "Margen %"]],
+        head: [["Fecha", "Factura", "Cliente", "Productos", "Valor Total"]],
         body: comRows,
-        headStyles: { fillColor: EMERALD, textColor: 255, fontSize: 8, fontStyle: "bold" },
+        headStyles: {
+          fillColor: EMERALD,
+          textColor: 255,
+          fontSize: 8,
+          fontStyle: "bold",
+        },
         bodyStyles: { fontSize: 7.5 },
         alternateRowStyles: { fillColor: [240, 253, 244] }, // emerald-50
         columnStyles: {
@@ -377,14 +368,6 @@ export async function generarReportePDF({
           4: { fontStyle: "bold" },
         },
         margin: { left: 15, right: 15 },
-        didParseCell(data) {
-          if (data.column.index === 6 && data.section === "body") {
-            const val = parseFloat(data.cell.raw);
-            if (val >= 20) data.cell.styles.textColor = EMERALD;
-            else if (val >= 10) data.cell.styles.textColor = AMBER;
-            else data.cell.styles.textColor = ROSE;
-          }
-        },
       });
 
       y = doc.lastAutoTable.finalY + 8;
@@ -413,7 +396,7 @@ export async function generarReportePDF({
       doc.setFontSize(9);
       doc.setTextColor(...SLATE_400);
       doc.text(
-        `Productos Excluidos (${itemsExcluidos.length} items - ${formatCOP(totalExcluido)})`,
+        `Productos Sin Comisión (${itemsExcluidos.length} items - ${formatCOP(totalExcluido)})`,
         15,
         y,
       );
@@ -448,18 +431,20 @@ export async function generarReportePDF({
     }
   });
 
-  // �.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.�
-  // LIQUIDATION PAGES - Commission calculation results
-  // �.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.�
-
-  const liqData = Array.isArray(liquidacion) && liquidacion.length > 0 ? liquidacion : null;
+  const liqData =
+    Array.isArray(liquidacion) && liquidacion.length > 0 ? liquidacion : null;
 
   if (liqData) {
     // -- Liquidation Summary (only when showing all vendors) --
     if (!filtroVendedor && liqData.length > 1) {
       doc.addPage();
       let y = 20;
-      y = drawSectionTitle(doc, "Liquidación de Comisiones - Resumen", y, INDIGO);
+      y = drawSectionTitle(
+        doc,
+        "Liquidación de Comisiones - Resumen",
+        y,
+        INDIGO,
+      );
 
       const liqRows = liqData.map((l) => [
         `${l.vendedor_nombre || "Sin nombre"} (#${l.vendedor_codigo})`,
@@ -468,17 +453,45 @@ export async function generarReportePDF({
         formatCOP(l.totalComision),
       ]);
 
-      const grandComVentas = liqData.reduce((s, l) => s + (l.comisionVentas?.totalComisionVentas || 0), 0);
-      const grandComRecaudo = liqData.reduce((s, l) => s + (l.comisionRecaudo?.comisionRecaudo || 0), 0);
-      const grandTotal = liqData.reduce((s, l) => s + (l.totalComision || 0), 0);
+      const grandComVentas = liqData.reduce(
+        (s, l) => s + (l.comisionVentas?.totalComisionVentas || 0),
+        0,
+      );
+      const grandComRecaudo = liqData.reduce(
+        (s, l) => s + (l.comisionRecaudo?.comisionRecaudo || 0),
+        0,
+      );
+      const grandTotal = liqData.reduce(
+        (s, l) => s + (l.totalComision || 0),
+        0,
+      );
 
       autoTable(doc, {
         startY: y,
-        head: [["Vendedor", "Comisión Ventas", "Comisión Recaudo", "Comisión Total"]],
+        head: [
+          ["Vendedor", "Comisión Ventas", "Comisión Recaudo", "Comisión Total"],
+        ],
         body: liqRows,
-        foot: [["TOTALES", formatCOP(grandComVentas), formatCOP(grandComRecaudo), formatCOP(grandTotal)]],
-        headStyles: { fillColor: INDIGO, textColor: 255, fontSize: 8, fontStyle: "bold" },
-        footStyles: { fillColor: INDIGO_100, textColor: SLATE_900, fontSize: 8, fontStyle: "bold" },
+        foot: [
+          [
+            "TOTALES",
+            formatCOP(grandComVentas),
+            formatCOP(grandComRecaudo),
+            formatCOP(grandTotal),
+          ],
+        ],
+        headStyles: {
+          fillColor: INDIGO,
+          textColor: 255,
+          fontSize: 8,
+          fontStyle: "bold",
+        },
+        footStyles: {
+          fillColor: INDIGO_100,
+          textColor: SLATE_900,
+          fontSize: 8,
+          fontStyle: "bold",
+        },
         bodyStyles: { fontSize: 8 },
         alternateRowStyles: { fillColor: SLATE_50 },
         columnStyles: {
@@ -523,12 +536,10 @@ export async function generarReportePDF({
       if (marcas.length > 0) {
         const marcaRows = marcas.map((dm) => [
           dm.marca,
-          formatCOP(dm.totalCosto),
+          formatCOP(dm.totalVenta),
           dm.metaVentas > 0 ? formatCOP(dm.metaVentas) : "-",
           dm.tienePresupuesto ? (dm.cumpleMeta ? "Sí" : "No") : "-",
           dm.pctComision > 0 ? `${(dm.pctComision * 100).toFixed(1)}%` : "-",
-          dm.comisionPct > 0 ? formatCOP(dm.comisionPct) : "-",
-          dm.bonoFijo > 0 ? formatCOP(dm.bonoFijo) : "-",
           formatCOP(dm.comision),
         ]);
 
@@ -536,11 +547,25 @@ export async function generarReportePDF({
 
         autoTable(doc, {
           startY: y,
-          head: [["Marca", "Costo Total", "Meta", "Cumple", "% Com.", "Comisión", "Bono", "Total Marca"]],
+          head: [
+            ["Marca", "Valor Vendido", "Meta", "Cumple", "% Com.", "Comisión"],
+          ],
           body: marcaRows,
-          foot: [["SUBTOTAL VENTAS", "", "", "", "", "", "", formatCOP(totalComVentas)]],
-          headStyles: { fillColor: INDIGO, textColor: 255, fontSize: 7.5, fontStyle: "bold" },
-          footStyles: { fillColor: INDIGO_100, textColor: SLATE_900, fontSize: 7.5, fontStyle: "bold" },
+          foot: [
+            ["SUBTOTAL VENTAS", "", "", "", "", formatCOP(totalComVentas)],
+          ],
+          headStyles: {
+            fillColor: INDIGO,
+            textColor: 255,
+            fontSize: 7.5,
+            fontStyle: "bold",
+          },
+          footStyles: {
+            fillColor: INDIGO_100,
+            textColor: SLATE_900,
+            fontSize: 7.5,
+            fontStyle: "bold",
+          },
           bodyStyles: { fontSize: 7.5 },
           alternateRowStyles: { fillColor: SLATE_50 },
           columnStyles: {
@@ -549,9 +574,7 @@ export async function generarReportePDF({
             2: { halign: "right" },
             3: { halign: "center" },
             4: { halign: "right" },
-            5: { halign: "right" },
-            6: { halign: "right" },
-            7: { halign: "right", fontStyle: "bold" },
+            5: { halign: "right", fontStyle: "bold" },
           },
           margin: { left: 15, right: 15 },
           didParseCell(data) {
@@ -596,22 +619,74 @@ export async function generarReportePDF({
         doc.roundedRect(15, boxStartY, pageW - 30, recBoxH, 2, 2, "FD");
 
         let ry = boxStartY + 8;
-        ry = drawInfoRow(doc, "Meta Recaudo:", formatCOP(rec.metaRecaudo), 20, ry);
-        ry = drawInfoRow(doc, "Total Comisionable:", formatCOP(rec.totalComisionable), 20, ry, EMERALD);
-        drawInfoRow(doc, "% Cumplimiento:", `${(rec.pctCumplimiento || 0).toFixed(2)}%`, 20, ry);
+        ry = drawInfoRow(
+          doc,
+          "Meta Recaudo:",
+          formatCOP(rec.metaRecaudo),
+          20,
+          ry,
+        );
+        if (rec.totalIva > 0) {
+          ry = drawInfoRow(
+            doc,
+            "IVA Descontado:",
+            formatCOP(rec.totalIva),
+            20,
+            ry,
+            [217, 119, 6], // amber-600
+          );
+        }
+        ry = drawInfoRow(
+          doc,
+          "Total Comisionable:",
+          formatCOP(rec.totalComisionable),
+          20,
+          ry,
+          EMERALD,
+        );
+        drawInfoRow(
+          doc,
+          "% Cumplimiento:",
+          `${(rec.pctCumplimiento || 0).toFixed(2)}%`,
+          20,
+          ry,
+        );
 
         // Right column
         let ry2 = boxStartY + 8;
-        ry2 = drawInfoRow(doc, "Tramo Aplicado:", rec.tramoAplicado || "N/A", pageW / 2, ry2);
-        ry2 = drawInfoRow(doc, "% Comisión:", rec.pctComision > 0 ? `${(rec.pctComision * 100).toFixed(2)}%` : "0%", pageW / 2, ry2);
-        drawInfoRow(doc, "Comisión Recaudo:", formatCOP(rec.comisionRecaudo), pageW / 2, ry2, EMERALD);
+        ry2 = drawInfoRow(
+          doc,
+          "Tramo Aplicado:",
+          rec.tramoAplicado || "N/A",
+          pageW / 2,
+          ry2,
+        );
+        ry2 = drawInfoRow(
+          doc,
+          "% Comisión:",
+          rec.pctComision > 0 ? `${(rec.pctComision * 100).toFixed(2)}%` : "0%",
+          pageW / 2,
+          ry2,
+        );
+        drawInfoRow(
+          doc,
+          "Comisión Recaudo:",
+          formatCOP(rec.comisionRecaudo),
+          pageW / 2,
+          ry2,
+          EMERALD,
+        );
 
         y = boxStartY + recBoxH + 10;
       } else {
         doc.setFont("helvetica", "normal");
         doc.setFontSize(8);
         doc.setTextColor(...SLATE_400);
-        doc.text("Sin presupuesto de recaudo configurado para este vendedor", 15, y + 2);
+        doc.text(
+          "Sin presupuesto de recaudo configurado para este vendedor",
+          15,
+          y + 2,
+        );
         y += 12;
       }
 
@@ -641,13 +716,14 @@ export async function generarReportePDF({
       // Grand total value
       doc.setFont("helvetica", "bold");
       doc.setFontSize(16);
-      doc.text(formatCOP(liq.totalComision), pageW - 25, totalBoxY + totalBoxH / 2 + 2, { align: "right" });
+      doc.text(
+        formatCOP(liq.totalComision),
+        pageW - 25,
+        totalBoxY + totalBoxH / 2 + 2,
+        { align: "right" },
+      );
     });
   }
-
-  // �.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.�
-  // FOOTER - Page numbers on all pages
-  // �.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.��.�
 
   const totalPages = doc.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
@@ -655,7 +731,7 @@ export async function generarReportePDF({
     doc.setFontSize(7);
     doc.setTextColor(...SLATE_400);
     doc.text(
-      `DistriPulse \u00B7 Reporte de Comisiones \u00B7 P\u00E1gina ${i} de ${totalPages}`,
+      `DistriMM \u00B7 Reporte de Comisiones \u00B7 P\u00E1gina ${i} de ${totalPages}`,
       pageW / 2,
       pageH - 8,
       { align: "center" },
@@ -669,4 +745,3 @@ export async function generarReportePDF({
   }
   doc.save(`${filename}.pdf`);
 }
-

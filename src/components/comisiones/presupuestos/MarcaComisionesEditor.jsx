@@ -1,21 +1,6 @@
-/**
- * @fileoverview Brand commissions editor table — per-vendor marca rows.
- * Extracted from PresupuestosTab for readability.
- * @module components/comisiones/presupuestos/MarcaComisionesEditor
- */
-
 import { Plus, Trash2 } from "lucide-react";
+import CurrencyInput from "./CurrencyInput";
 
-/**
- * @param {object} props
- * @param {Array} props.marcasRows - Marca rows for this vendor (with _globalIdx)
- * @param {Array} props.marcasNormalizadas - Normalized brand list for dropdown
- * @param {function} props.onUpdateRow - (globalIdx, field, value) => void
- * @param {function} props.onDeleteMarca - (row, globalIdx) => void
- * @param {function} props.onAddMarca - () => void
- * @param {string} props.baseInput - Tailwind class string for text inputs
- * @param {string} props.numInput - Tailwind class string for number inputs
- */
 export default function MarcaComisionesEditor({
   marcasRows,
   marcasNormalizadas,
@@ -31,17 +16,25 @@ export default function MarcaComisionesEditor({
         <table className="w-full text-sm">
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">Marca</th>
-              <th className="px-4 py-3 text-right text-xs font-bold text-slate-600 uppercase">Meta Ventas $</th>
-              <th className="px-4 py-3 text-right text-xs font-bold text-slate-600 uppercase">% Comision</th>
-              <th className="px-4 py-3 text-right text-xs font-bold text-slate-600 uppercase">Bono Fijo $</th>
+              <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase">
+                Marca
+              </th>
+              <th className="px-4 py-3 text-right text-xs font-bold text-slate-600 uppercase">
+                Meta Ventas $
+              </th>
+              <th className="px-4 py-3 text-right text-xs font-bold text-slate-600 uppercase">
+                % Comision
+              </th>
               <th className="px-4 py-3 w-14"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {marcasRows.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-sm text-slate-400 italic">
+                <td
+                  colSpan={4}
+                  className="px-4 py-8 text-center text-sm text-slate-400 italic"
+                >
                   Sin marcas configuradas
                 </td>
               </tr>
@@ -49,38 +42,54 @@ export default function MarcaComisionesEditor({
               marcasRows.map((row) => (
                 <tr
                   key={row.id || `new-m-${row._globalIdx}`}
-                  className={row._isNew ? "bg-indigo-50/30" : "hover:bg-slate-50"}
+                  className={
+                    row._isNew ? "bg-indigo-50/30" : "hover:bg-slate-50"
+                  }
                 >
                   <td className="px-4 py-3">
                     {marcasNormalizadas.length > 0 ? (
                       <select
                         className={baseInput}
                         value={row.marca}
-                        onChange={(e) => onUpdateRow(row._globalIdx, "marca", e.target.value)}
+                        onChange={(e) =>
+                          onUpdateRow(row._globalIdx, "marca", e.target.value)
+                        }
                       >
                         <option value="">— Seleccionar Marca —</option>
-                        {row.marca && !marcasNormalizadas.includes(row.marca) && (
-                          <option value={row.marca}>{row.marca} (no en catalogo)</option>
-                        )}
+                        {row.marca &&
+                          !marcasNormalizadas.includes(row.marca) && (
+                            <option value={row.marca}>
+                              {row.marca} (no en catalogo)
+                            </option>
+                          )}
                         {marcasNormalizadas.map((m) => (
-                          <option key={m} value={m}>{m}</option>
+                          <option key={m} value={m}>
+                            {m}
+                          </option>
                         ))}
                       </select>
                     ) : (
                       <input
                         className={baseInput}
                         value={row.marca}
-                        onChange={(e) => onUpdateRow(row._globalIdx, "marca", e.target.value)}
+                        onChange={(e) =>
+                          onUpdateRow(row._globalIdx, "marca", e.target.value)
+                        }
                         placeholder="Nombre de marca"
                       />
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    <input
-                      type="number"
+                    <CurrencyInput
                       className={numInput}
                       value={row.meta_ventas}
-                      onChange={(e) => onUpdateRow(row._globalIdx, "meta_ventas", e.target.value)}
+                      onChange={(e) =>
+                        onUpdateRow(
+                          row._globalIdx,
+                          "meta_ventas",
+                          e.target.value,
+                        )
+                      }
                       placeholder="0"
                     />
                   </td>
@@ -88,19 +97,18 @@ export default function MarcaComisionesEditor({
                     <input
                       type="number"
                       className={numInput}
-                      value={row.pct_comision ? (row.pct_comision * 100) : ""}
-                      onChange={(e) => onUpdateRow(row._globalIdx, "pct_comision", Number(e.target.value) / 100)}
+                      value={
+                        row.pct_comision != null ? row.pct_comision * 100 : ""
+                      }
+                      onChange={(e) =>
+                        onUpdateRow(
+                          row._globalIdx,
+                          "pct_comision",
+                          Number(e.target.value) / 100,
+                        )
+                      }
                       step="0.1"
                       placeholder="2.0"
-                    />
-                  </td>
-                  <td className="px-4 py-3">
-                    <input
-                      type="number"
-                      className={numInput}
-                      value={row.bono_fijo ?? 0}
-                      onChange={(e) => onUpdateRow(row._globalIdx, "bono_fijo", e.target.value)}
-                      placeholder="0"
                     />
                   </td>
                   <td className="px-4 py-3">

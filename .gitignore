@@ -58,6 +58,7 @@ wf_*.json
 
 # SQL migration files (expose table structure)
 *.sql
+!sql/**/*.sql
 !src/**/*.sql
 
 # Business/strategy documents
@@ -81,6 +82,9 @@ nodes_list*.txt
 update_response.txt
 clean_update_response.txt
 
+# Supabase CLI temp files
+supabase/.temp/
+
 # n8n skills (internal reference)
 n8n-skills/
 
@@ -94,3 +98,12 @@ Ejemplo Excel/
 _dev/
 .claude/
 .playwright-mcp/
+
+# Archivos de ejemplo (no versionar datos de cliente)
+Ejemplos de Archivos para Subir/
+
+# Playwright E2E
+e2e/helpers/.auth-state.json
+e2e/test-results/
+e2e/playwright-report/
+e2e/blob-report/

@@ -21,7 +21,6 @@ import {
 import { formatFullCurrency } from "../../utils/formatters";
 import { SectionTitle, COLORS } from "./DashboardWidgets";
 
-/** Risk color based on dias_mora */
 function getRiskColor(diasMora) {
   if (diasMora <= 0) return COLORS.emerald;
   if (diasMora <= 60) return COLORS.amber;

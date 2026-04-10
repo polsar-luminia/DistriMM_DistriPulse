@@ -65,7 +65,10 @@ export default function FilesPage() {
     try {
       // 1. Check Auth Session
       addLog("Verificando sesión de usuario...");
-      const { data: { session }, error: authError } = await supabase.auth.getSession();
+      const {
+        data: { session },
+        error: authError,
+      } = await supabase.auth.getSession();
 
       if (authError) throw new Error("Error de Auth: " + authError.message);
       if (!session) {
@@ -76,14 +79,22 @@ export default function FilesPage() {
 
       // 2. Check Loads Table (RLS)
       addLog("Verificando tabla 'historial_cargas'...");
-      const { data: loads, error: loadsError, count: loadsCount } = await supabase
+      const {
+        data: loads,
+        error: loadsError,
+        count: loadsCount,
+      } = await supabase
         .from("historial_cargas")
         .select("*", { count: "exact", head: false })
         .limit(1);
 
       if (loadsError) {
-        addLog(`Error leyendo Cargas: ${loadsError.message} (${loadsError.code})`, false);
-        if (loadsError.code === "42501") addLog("TIP: RLS bloquea lectura. Revisa políticas SELECT.", false);
+        addLog(
+          `Error leyendo Cargas: ${loadsError.message} (${loadsError.code})`,
+          false,
+        );
+        if (loadsError.code === "42501")
+          addLog("TIP: RLS bloquea lectura. Revisa políticas SELECT.", false);
       } else {
         addLog(`Lectura Cargas OK. Total registros: ${loadsCount || 0}`);
         if (loads && loads.length > 0) addLog(`Muestra ID: ${loads[0].id}`);
@@ -97,25 +108,34 @@ export default function FilesPage() {
         .limit(1);
 
       if (itemsError) {
-        addLog(`Error leyendo Items: ${itemsError.message} (${itemsError.code})`, false);
-        if (itemsError.code === "42501") addLog("TIP: RLS bloquea lectura. Revisa políticas SELECT.", false);
+        addLog(
+          `Error leyendo Items: ${itemsError.message} (${itemsError.code})`,
+          false,
+        );
+        if (itemsError.code === "42501")
+          addLog("TIP: RLS bloquea lectura. Revisa políticas SELECT.", false);
       } else {
         addLog(`Lectura Items OK. Total registros: ${itemsCount || 0}`);
       }
 
       // Final Status
-      const hasErrors = report.some(r => !r.success);
+      const hasErrors = report.some((r) => !r.success);
       setDbStatus({
         success: !hasErrors,
-        message: hasErrors ? "Se encontraron problemas." : "Todos los sistemas operativos.",
-        details: report
+        message: hasErrors
+          ? "Se encontraron problemas."
+          : "Todos los sistemas operativos.",
+        details: report,
       });
 
       if (!hasErrors) sileo.success({ title: "Diagnóstico Exitoso" });
       else sileo.error({ title: "Diagnóstico con Errores" });
-
     } catch (e) {
-      setDbStatus({ success: false, message: `Error Crítico: ${e.message}`, details: report });
+      setDbStatus({
+        success: false,
+        message: `Error Crítico: ${e.message}`,
+        details: report,
+      });
       sileo.error({ title: "Error crítico en diagnóstico" });
     } finally {
       setIsTesting(false);
@@ -136,14 +156,20 @@ export default function FilesPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <button
-            onClick={runDiagnostics}
-            disabled={isTesting}
-            className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-bold text-sm hover:bg-slate-200 transition-all flex items-center gap-2"
-          >
-            {isTesting ? <Clock size={18} className="animate-spin" /> : <Activity size={18} />}
-            {isTesting ? "Comprobando..." : "Diagnosticar"}
-          </button>
+          {import.meta.env.DEV && (
+            <button
+              onClick={runDiagnostics}
+              disabled={isTesting}
+              className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-bold text-sm hover:bg-slate-200 transition-all flex items-center gap-2"
+            >
+              {isTesting ? (
+                <Clock size={18} className="animate-spin" />
+              ) : (
+                <Activity size={18} />
+              )}
+              {isTesting ? "Comprobando..." : "Diagnosticar"}
+            </button>
+          )}
           <button
             onClick={onUploadClick}
             className="group px-6 py-2.5 bg-indigo-600 text-white rounded-lg font-black text-sm hover:bg-indigo-500 transition-all flex items-center gap-2 shadow-lg shadow-indigo-900/10 hover:shadow-indigo-900/20 active:scale-95"
@@ -154,29 +180,48 @@ export default function FilesPage() {
       </div>
 
       {/* Error / Diagnostic Status */}
-      {(loadError || dbStatus) && (
-        <div className={cn("p-4 rounded-lg border flex items-start gap-3", (loadError || dbStatus?.success === false)
-          ? "bg-rose-50 border-rose-200 text-rose-700"
-          : "bg-emerald-50 border-emerald-200 text-indigo-700"
-          )}>
+      {(loadError || (import.meta.env.DEV && dbStatus)) && (
+        <div
+          className={cn(
+            "p-4 rounded-lg border flex items-start gap-3",
+            loadError || (import.meta.env.DEV && dbStatus?.success === false)
+              ? "bg-rose-50 border-rose-200 text-rose-700"
+              : "bg-emerald-50 border-emerald-200 text-indigo-700",
+          )}
+        >
           {/* Icon */}
-          {(loadError || dbStatus?.success === false) ? <AlertOctagon size={20} /> : <CheckCircle size={20} />}
+          {loadError || (import.meta.env.DEV && dbStatus?.success === false) ? (
+            <AlertOctagon size={20} />
+          ) : (
+            <CheckCircle size={20} />
+          )}
 
           <div className="flex-1">
             <h4 className="font-bold text-sm">Estado del Sistema</h4>
             {loadError && (
               <p className="text-xs mt-1">
-                <strong>Error de Carga:</strong> {typeof loadError === 'object' ? JSON.stringify(loadError) : loadError}
+                <strong>Error de Carga:</strong>{" "}
+                {typeof loadError === "object"
+                  ? JSON.stringify(loadError)
+                  : loadError}
               </p>
             )}
-            {dbStatus && (
+            {import.meta.env.DEV && dbStatus && (
               <p className="text-xs mt-1">
                 <strong>Diagnóstico DB:</strong> {dbStatus.message}
                 {dbStatus.details && (
                   <ul className="mt-2 space-y-1 bg-white/50 p-2 rounded max-h-40 overflow-y-auto">
                     {dbStatus.details.map((log, idx) => (
-                      <li key={idx} className={cn("text-[10px]", log.success ? 'text-indigo-700' : 'text-rose-700 font-bold')}>
-                        {log.success ? '✓' : '✕'} {log.msg}
+                      <li
+                        key={idx}
+                        className={cn(
+                          "text-[10px]",
+                          log.success
+                            ? "text-indigo-700"
+                            : "text-rose-700 font-bold",
+                        )}
+                      >
+                        {log.success ? "✓" : "✕"} {log.msg}
                       </li>
                     ))}
                   </ul>
@@ -196,12 +241,22 @@ export default function FilesPage() {
             return (
               <Card
                 key={load.id}
-                className={cn("group transition-all duration-300 cursor-pointer overflow-hidden border-2 h-full flex flex-col", isActive ? "border-indigo-500 bg-indigo-50/20 shadow-xl scale-[1.02] z-10" : "border-transparent hover:border-slate-200 hover:shadow-md")}
+                className={cn(
+                  "group transition-all duration-300 cursor-pointer overflow-hidden border-2 h-full flex flex-col",
+                  isActive
+                    ? "border-indigo-500 bg-indigo-50/20 shadow-xl scale-[1.02] z-10"
+                    : "border-transparent hover:border-slate-200 hover:shadow-md",
+                )}
                 onClick={() => onLoadChange?.(load.id)}
               >
                 <div className="flex items-start justify-between mb-6">
                   <div
-                    className={cn("p-4 rounded-xl transition-colors", isActive ? "bg-indigo-500 text-white shadow-lg shadow-indigo-500/20" : "bg-slate-100 text-slate-400 group-hover:bg-slate-200 group-hover:text-slate-600")}
+                    className={cn(
+                      "p-4 rounded-xl transition-colors",
+                      isActive
+                        ? "bg-indigo-500 text-white shadow-lg shadow-indigo-500/20"
+                        : "bg-slate-100 text-slate-400 group-hover:bg-slate-200 group-hover:text-slate-600",
+                    )}
                   >
                     <FileText size={28} />
                   </div>
@@ -249,13 +304,19 @@ export default function FilesPage() {
 
                     {load.total_valor_cartera && (
                       <div
-                        className={cn("mt-4 pt-4 border-t", isActive ? "border-indigo-100" : "border-slate-100")}
+                        className={cn(
+                          "mt-4 pt-4 border-t",
+                          isActive ? "border-indigo-100" : "border-slate-100",
+                        )}
                       >
                         <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-1">
                           Volumen Procesado
                         </p>
                         <p
-                          className={cn("text-2xl font-black", isActive ? "text-indigo-700" : "text-slate-800")}
+                          className={cn(
+                            "text-2xl font-black",
+                            isActive ? "text-indigo-700" : "text-slate-800",
+                          )}
                         >
                           {formatMoney(load.total_valor_cartera)}
                         </p>
@@ -266,7 +327,12 @@ export default function FilesPage() {
 
                 {/* Actions */}
                 <div
-                  className={cn("mt-6 pt-4 border-t flex items-center justify-between", isActive ? "border-indigo-100" : "border-slate-100 opacity-60 group-hover:opacity-100")}
+                  className={cn(
+                    "mt-6 pt-4 border-t flex items-center justify-between",
+                    isActive
+                      ? "border-indigo-100"
+                      : "border-slate-100 opacity-60 group-hover:opacity-100",
+                  )}
                 >
                   <span className="text-[10px] font-bold text-slate-400 uppercase italic">
                     ID: {load.id.substring(0, 8)}
@@ -276,7 +342,8 @@ export default function FilesPage() {
                       e.stopPropagation();
                       const ok = await confirm({
                         title: "Eliminar carga",
-                        message: "Se eliminaran todos los registros de esta carga. Esta accion no se puede deshacer.",
+                        message:
+                          "Se eliminaran todos los registros de esta carga. Esta accion no se puede deshacer.",
                         confirmText: "Eliminar",
                         cancelText: "Cancelar",
                         variant: "danger",
@@ -284,13 +351,19 @@ export default function FilesPage() {
                       if (ok) {
                         const deleteOp = (async () => {
                           const result = await onDeleteLoad?.(load.id);
-                          if (!result?.success) throw new Error(result?.error?.message || "Desconocido");
+                          if (!result?.success)
+                            throw new Error(
+                              result?.error?.message || "Desconocido",
+                            );
                           return result;
                         })();
                         sileo.promise(deleteOp, {
                           loading: { title: "Eliminando carga..." },
                           success: { title: "Carga eliminada correctamente" },
-                          error: (err) => ({ title: "Error eliminando carga", description: err.message }),
+                          error: (err) => ({
+                            title: "Error eliminando carga",
+                            description: err.message,
+                          }),
                         });
                       }
                     }}

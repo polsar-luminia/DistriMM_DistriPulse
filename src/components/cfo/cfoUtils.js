@@ -1,9 +1,3 @@
-/**
- * Shared utility functions and constants for CFO dashboard components.
- * Handles parsing and formatting of GPT-returned values (strings or numbers).
- * @module components/cfo/cfoUtils
- */
-
 import {
   CheckCircle,
   Shield,
@@ -43,8 +37,8 @@ export const SEMAPHORE_CONFIG = {
 export const getSemaphore = (key) =>
   SEMAPHORE_CONFIG[key] || SEMAPHORE_CONFIG.EN_RIESGO;
 
-/** Parse "$474.803.006" or "46.7%" or 474803006 into a number.
- *  Currency ($): dots are thousands separators. Non-currency: dot is decimal. */
+// Parse "$474.803.006" or "46.7%" or 474803006 into a number.
+// Currency ($): dots are thousands separators. Non-currency: dot is decimal.
 export function parseNumericValue(val) {
   if (val == null) return 0;
   if (typeof val === "number") return val;
@@ -59,21 +53,21 @@ export function parseNumericValue(val) {
   return isNaN(n) ? 0 : n;
 }
 
-/** Display a value: if already a formatted string like "$474.803.006", show as-is; else format */
+// If already a formatted string like "$474.803.006", show as-is; else format
 export function displayCurrency(val) {
   if (val == null) return "$0";
   if (typeof val === "string" && val.startsWith("$")) return val;
   return formatCurrency(parseNumericValue(val));
 }
 
-/** Display percentage: if string "46.7%", show as-is; if number, append % */
+// If string "46.7%", show as-is; if number, append %
 export function displayPct(val) {
   if (val == null) return "0%";
   if (typeof val === "string" && val.includes("%")) return val;
   return `${val}%`;
 }
 
-/** Flatten plan_accion from nested object to flat array with priorities */
+// Flatten plan_accion from nested object to flat array with priorities
 export function flattenPlanAccion(plan) {
   if (!plan) return [];
   if (Array.isArray(plan)) return plan;
@@ -107,7 +101,7 @@ export function flattenPlanAccion(plan) {
   return items;
 }
 
-/** Normalize insights_clave from string[] or object[] */
+// Normalize insights_clave from string[] or object[]
 export function normalizeInsights(insights) {
   if (!insights || !Array.isArray(insights)) return [];
   return insights.map((ins) => {

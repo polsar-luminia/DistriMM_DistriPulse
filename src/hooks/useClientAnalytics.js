@@ -1,26 +1,6 @@
-/**
- * @fileoverview Client Analytics Hook
- * Provides enriched client data by joining master data with portfolio items.
- * @module hooks/useClientAnalytics
- */
-
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { getClientes } from "../services/portfolioService";
 
-/**
- * Hook for client master data analytics.
- * Fetches client records, builds lookup maps, and computes distribution stats.
- *
- * @returns {{
- *   clientes: Array,
- *   clienteMap: Object.<string, Object>,
- *   stats: { total: number, juridicas: number, naturales: number, conCorreo: number, conCelular: number, coberturaCelular: string, coberturaCorreo: string, topMunicipios: Array, ivaDistribution: Array, vendedorDistribution: Array },
- *   loading: boolean,
- *   error: string|null,
- *   refresh: () => Promise<void>,
- *   enrichItemsWithMasterData: (items: Array) => Array,
- * }}
- */
 export function useClientAnalytics() {
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -110,10 +90,6 @@ export function useClientAnalytics() {
     };
   }, [clientes]);
 
-  /**
-   * Enriches portfolio items with master data.
-   * Call this with items from usePortfolioAnalytics.
-   */
   const enrichItemsWithMasterData = useCallback(
     (items) => {
       if (!items || clientes.length === 0) return items;

@@ -1,9 +1,3 @@
-/**
- * @fileoverview Vendedores Page - Sales rep performance dashboard.
- * Shows portfolio distribution, aging, and performance per vendedor.
- * @module pages/VendedoresPage
- */
-
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useOutletContext } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -21,6 +15,7 @@ import {
   Check,
   X,
   FileText,
+  Loader2,
 } from "lucide-react";
 import {
   Card,
@@ -43,8 +38,11 @@ import {
 } from "recharts";
 import { COLORS } from "../utils/constants";
 import { HEALTH_SCORE_TIERS, AGING_BUCKETS } from "../constants/thresholds";
-import { getVendedores, updateVendedorName } from "../services/portfolioService";
-import { supabase } from "../lib/supabase";
+import {
+  getVendedores,
+  updateVendedorName,
+} from "../services/portfolioService";
+import { supabase, fetchAllRows } from "../lib/supabase";
 import { sileo } from "sileo";
 import ReportCarteraModal from "../components/cartera/ReportCarteraModal";
 
@@ -61,50 +59,84 @@ export default function VendedoresPage() {
   const [nitVendedorMap, setNitVendedorMap] = useState({});
   const [showReportModal, setShowReportModal] = useState(false);
   const [clientesDataMap, setClientesDataMap] = useState({});
+  const [loadingVendedores, setLoadingVendedores] = useState(true);
 
   useEffect(() => {
-    getVendedores().then(({ data }) => {
-      if (data) setVendedoresDB(data);
-    });
-    // Build NIT→vendedor map from clientes + ventas (two lightweight queries)
+    let cancelled = false;
+    setLoadingVendedores(true);
+    getVendedores()
+      .then(({ data }) => {
+        if (!cancelled && data) setVendedoresDB(data);
+      })
+      .catch(() => {});
+    // Build NIT→vendedor map from clientes + ventas (paginado para >1000 rows)
     Promise.all([
-      supabase
-        .from("distrimm_clientes")
-        .select("no_identif, vendedor_codigo")
-        .not("vendedor_codigo", "is", null),
-      supabase
-        .from("distrimm_comisiones_ventas")
-        .select("cliente_nit, vendedor_codigo")
-        .not("vendedor_codigo", "is", null),
-    ]).then(([clientesRes, ventasRes]) => {
-      const map = {};
-      // Ventas first (lower priority), clientes overwrites (higher priority)
-      if (ventasRes.data) {
-        ventasRes.data.forEach((v) => { map[v.cliente_nit] = v.vendedor_codigo; });
-      }
-      if (clientesRes.data) {
-        clientesRes.data.forEach((c) => { map[c.no_identif] = c.vendedor_codigo; });
-      }
-      setNitVendedorMap(map);
-    });
+      fetchAllRows((from, to) =>
+        supabase
+          .from("distrimm_clientes")
+          .select("no_identif, vendedor_codigo")
+          .not("vendedor_codigo", "is", null)
+          .range(from, to),
+      ),
+      fetchAllRows((from, to) =>
+        supabase
+          .from("distrimm_comisiones_ventas")
+          .select("cliente_nit, vendedor_codigo")
+          .not("vendedor_codigo", "is", null)
+          .range(from, to),
+      ),
+    ])
+      .then(([clientesData, ventasData]) => {
+        if (cancelled) return;
+        const map = {};
+        // Ventas first (lower priority), clientes overwrites (higher priority)
+        ventasData.forEach((v) => {
+          map[v.cliente_nit] = v.vendedor_codigo;
+        });
+        clientesData.forEach((c) => {
+          map[c.no_identif] = c.vendedor_codigo;
+        });
+        setNitVendedorMap(map);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoadingVendedores(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
-    supabase
-      .from("distrimm_clientes")
-      .select("no_identif, nombre_completo, celular, telefono_1, direccion, barrio, municipio, vendedor_codigo")
-      .then(({ data }) => {
-        if (data) {
+    let cancelled = false;
+    fetchAllRows((from, to) =>
+      supabase
+        .from("distrimm_clientes")
+        .select(
+          "no_identif, nombre_completo, celular, telefono_1, direccion, barrio, municipio, vendedor_codigo",
+        )
+        .range(from, to),
+    )
+      .then((data) => {
+        if (!cancelled && data) {
           const map = {};
-          data.forEach((c) => { map[c.no_identif] = c; });
+          data.forEach((c) => {
+            map[c.no_identif] = c;
+          });
           setClientesDataMap(map);
         }
-      });
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const nombreMap = useMemo(() => {
     const map = {};
-    vendedoresDB.forEach((v) => { map[v.codigo] = v.nombre; });
+    vendedoresDB.forEach((v) => {
+      map[v.codigo] = v.nombre;
+    });
     return map;
   }, [vendedoresDB]);
 
@@ -126,9 +158,10 @@ export default function VendedoresPage() {
     const map = {};
 
     items.forEach((item) => {
-      const codigo = item.vendedor_codigo
-        || nitVendedorMap[item.tercero_nit]
-        || "Sin Asignar";
+      const codigo =
+        item.vendedor_codigo ||
+        nitVendedorMap[item.tercero_nit] ||
+        "Sin Asignar";
 
       if (!map[codigo]) {
         map[codigo] = {
@@ -182,16 +215,21 @@ export default function VendedoresPage() {
     return Object.values(map)
       .map((v) => {
         // A vendor has a "real name" if it comes from DB and isn't just "Vendedor X"
-        const hasRealName = v.codigo !== "Sin Asignar"
-          && nombreMap[v.codigo]
-          && !/^Vendedor\s+\d+$/i.test(nombreMap[v.codigo]);
+        const hasRealName =
+          v.codigo !== "Sin Asignar" &&
+          nombreMap[v.codigo] &&
+          !/^Vendedor\s+\d+$/i.test(nombreMap[v.codigo]);
         return {
           ...v,
           hasRealName,
           clientesCount: v.clientes.size,
           clientesVencidosCount: v.clientesVencidos.size,
-          pctVencida: v.totalCartera > 0 ? (v.totalVencida / v.totalCartera) * 100 : 0,
-          healthScore: v.totalCartera > 0 ? 100 - ((v.totalVencida / v.totalCartera) * 100) : 100,
+          pctVencida:
+            v.totalCartera > 0 ? (v.totalVencida / v.totalCartera) * 100 : 0,
+          healthScore:
+            v.totalCartera > 0
+              ? 100 - (v.totalVencida / v.totalCartera) * 100
+              : 100,
           clientes: undefined,
           clientesVencidos: undefined,
         };
@@ -236,13 +274,29 @@ export default function VendedoresPage() {
   // Global KPIs
   const totalCartera = vendedoresData.reduce((s, v) => s + v.totalCartera, 0);
   const totalVencida = vendedoresData.reduce((s, v) => s + v.totalVencida, 0);
-  const vendedoresActivos = vendedoresData.filter((v) => v.codigo !== "Sin Asignar").length;
+  const vendedoresActivos = vendedoresData.filter(
+    (v) => v.codigo !== "Sin Asignar",
+  ).length;
   const vendedorConMasRiesgo = vendedoresData.reduce(
-    (max, v) => (v.pctVencida > (max?.pctVencida || 0) && v.codigo !== "Sin Asignar" ? v : max),
+    (max, v) =>
+      v.pctVencida > (max?.pctVencida || 0) && v.codigo !== "Sin Asignar"
+        ? v
+        : max,
     null,
   );
 
   const fmt = showExactNumbers ? formatFullCurrency : formatCurrency;
+
+  if (loadingVendedores) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 size={32} className="text-indigo-600 animate-spin" />
+        <span className="ml-3 text-sm text-slate-500 font-medium">
+          Cargando vendedores...
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -302,7 +356,11 @@ export default function VendedoresPage() {
           value={vendedorConMasRiesgo ? vendedorConMasRiesgo.nombre : "-"}
           icon={TrendingUp}
           type="warning"
-          subtext={vendedorConMasRiesgo ? `${vendedorConMasRiesgo.pctVencida.toFixed(1)}% vencida` : ""}
+          subtext={
+            vendedorConMasRiesgo
+              ? `${vendedorConMasRiesgo.pctVencida.toFixed(1)}% vencida`
+              : ""
+          }
         />
       </div>
 
@@ -320,7 +378,11 @@ export default function VendedoresPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
                 <XAxis
                   dataKey="name"
-                  tick={{ fontSize: 11, fontWeight: 700, fill: COLORS.CHART.NEUTRAL }}
+                  tick={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    fill: COLORS.CHART.NEUTRAL,
+                  }}
                 />
                 <YAxis
                   tickFormatter={(v) => formatCurrency(v)}
@@ -335,8 +397,18 @@ export default function VendedoresPage() {
                     border: "1px solid #E2E8F0",
                   }}
                 />
-                <Bar dataKey="Al Dia" fill={COLORS.CHART.PRIMARY} radius={[4, 4, 0, 0]} stackId="stack" />
-                <Bar dataKey="Vencida" fill={COLORS.CHART.DANGER} radius={[4, 4, 0, 0]} stackId="stack" />
+                <Bar
+                  dataKey="Al Dia"
+                  fill={COLORS.CHART.PRIMARY}
+                  radius={[4, 4, 0, 0]}
+                  stackId="stack"
+                />
+                <Bar
+                  dataKey="Vencida"
+                  fill={COLORS.CHART.DANGER}
+                  radius={[4, 4, 0, 0]}
+                  stackId="stack"
+                />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -458,7 +530,6 @@ export default function VendedoresPage() {
   );
 }
 
-// --- VENDEDOR CARD COMPONENT ---
 function VendedorCard({ vendedor: v, isExpanded, onExpand, fmt, onNameSave }) {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState("");
@@ -531,7 +602,10 @@ function VendedorCard({ vendedor: v, isExpanded, onExpand, fmt, onNameSave }) {
 
   return (
     <Card
-      className={cn("overflow-hidden transition-all", isExpanded && "ring-2 ring-indigo-100")}
+      className={cn(
+        "overflow-hidden transition-all",
+        isExpanded && "ring-2 ring-indigo-100",
+      )}
     >
       {/* Header */}
       <div
@@ -539,9 +613,7 @@ function VendedorCard({ vendedor: v, isExpanded, onExpand, fmt, onNameSave }) {
         onClick={onExpand}
       >
         <div className="flex items-center gap-4">
-          <div
-            className={cn("p-3 rounded-full", healthIconClass)}
-          >
+          <div className={cn("p-3 rounded-full", healthIconClass)}>
             <Briefcase size={24} />
           </div>
           <div>
@@ -560,10 +632,18 @@ function VendedorCard({ vendedor: v, isExpanded, onExpand, fmt, onNameSave }) {
                     className="text-lg font-bold text-slate-900 border border-indigo-300 rounded px-2 py-0.5 focus:ring-2 focus:ring-indigo-500 outline-none"
                     autoFocus
                   />
-                  <button onClick={saveEdit} className="p-1 text-emerald-600 hover:bg-emerald-50 rounded" title="Guardar">
+                  <button
+                    onClick={saveEdit}
+                    className="p-1 text-emerald-600 hover:bg-emerald-50 rounded"
+                    title="Guardar"
+                  >
                     <Check size={16} />
                   </button>
-                  <button onClick={cancelEdit} className="p-1 text-slate-400 hover:bg-slate-100 rounded" title="Cancelar">
+                  <button
+                    onClick={cancelEdit}
+                    className="p-1 text-slate-400 hover:bg-slate-100 rounded"
+                    title="Cancelar"
+                  >
                     <X size={16} />
                   </button>
                 </>
@@ -572,8 +652,14 @@ function VendedorCard({ vendedor: v, isExpanded, onExpand, fmt, onNameSave }) {
                   <h3 className="font-bold text-slate-900 text-lg">
                     {v.nombre}
                   </h3>
-                  <span className="text-xs text-slate-400 font-mono">({v.codigo})</span>
-                  <button onClick={startEdit} className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors" title="Editar nombre">
+                  <span className="text-xs text-slate-400 font-mono">
+                    ({v.codigo})
+                  </span>
+                  <button
+                    onClick={startEdit}
+                    className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+                    title="Editar nombre"
+                  >
                     <Edit3 size={14} />
                   </button>
                 </>
@@ -587,7 +673,10 @@ function VendedorCard({ vendedor: v, isExpanded, onExpand, fmt, onNameSave }) {
                 {v.facturas} facturas
               </span>
               <span
-                className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", healthBadgeClass)}
+                className={cn(
+                  "text-[10px] font-bold px-2 py-0.5 rounded-full",
+                  healthBadgeClass,
+                )}
               >
                 Salud: {v.healthScore.toFixed(0)}%
               </span>
@@ -617,7 +706,14 @@ function VendedorCard({ vendedor: v, isExpanded, onExpand, fmt, onNameSave }) {
               % Vencida
             </p>
             <p
-              className={cn("text-lg font-bold", v.pctVencida > 30 ? "text-rose-600" : v.pctVencida > 15 ? "text-amber-600" : "text-emerald-600")}
+              className={cn(
+                "text-lg font-bold",
+                v.pctVencida > 30
+                  ? "text-rose-600"
+                  : v.pctVencida > 15
+                    ? "text-amber-600"
+                    : "text-emerald-600",
+              )}
             >
               {v.pctVencida.toFixed(1)}%
             </p>
@@ -694,7 +790,14 @@ function VendedorCard({ vendedor: v, isExpanded, onExpand, fmt, onNameSave }) {
                         {c.count}
                       </td>
                       <td
-                        className={cn("px-4 py-2 text-right font-bold", c.maxMora > 30 ? "text-rose-600" : c.maxMora > 0 ? "text-amber-600" : "text-emerald-600")}
+                        className={cn(
+                          "px-4 py-2 text-right font-bold",
+                          c.maxMora > 30
+                            ? "text-rose-600"
+                            : c.maxMora > 0
+                              ? "text-amber-600"
+                              : "text-emerald-600",
+                        )}
                       >
                         {c.maxMora > 0 ? `${c.maxMora}d` : "Al dia"}
                       </td>

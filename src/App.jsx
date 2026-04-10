@@ -9,19 +9,24 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import DashboardManager from "./components/DashboardManager";
 import DashboardPage from "./pages/DashboardPage";
 import ClientsPage from "./pages/ClientsPage";
-import FilesPage from "./pages/FilesPage";
-import MessagesPage from "./pages/MessagesPage";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { Toaster } from "sileo";
 import "sileo/styles.css";
 import LoginPage from "./pages/LoginPage";
+import PrivacyPage from "./pages/PrivacyPage";
+import TermsPage from "./pages/TermsPage";
+import DataDeletionPage from "./pages/DataDeletionPage";
 import { GlobalErrorBoundary } from "./components/GlobalErrorBoundary";
 
 // Lazy imports for heavy pages
+const FilesPage = lazy(() => import("./pages/FilesPage"));
+const MessagesPage = lazy(() => import("./pages/MessagesPage"));
 const CfoAnalysisPage = lazy(() => import("./pages/CfoAnalysisPage"));
 const ChatbotPage = lazy(() => import("./pages/ChatbotPage"));
 const ComisionesPage = lazy(() => import("./pages/ComisionesPage"));
-const DirectorioClientesPage = lazy(() => import("./pages/DirectorioClientesPage"));
+const DirectorioClientesPage = lazy(
+  () => import("./pages/DirectorioClientesPage"),
+);
 const VendedoresPage = lazy(() => import("./pages/VendedoresPage"));
 const ScoreCrediticioPage = lazy(() => import("./pages/ScoreCrediticioPage"));
 
@@ -48,6 +53,9 @@ export default function App() {
           <BrowserRouter>
             <Routes>
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="/terms" element={<TermsPage />} />
+              <Route path="/data-deletion" element={<DataDeletionPage />} />
 
               {/* Dashboard Modular System */}
               <Route
@@ -60,14 +68,70 @@ export default function App() {
               >
                 <Route index element={<DashboardPage />} />
                 <Route path="clientes" element={<ClientsPage />} />
-                <Route path="directorio" element={<Suspense fallback={LazyFallback}><DirectorioClientesPage /></Suspense>} />
-                <Route path="vendedores" element={<Suspense fallback={LazyFallback}><VendedoresPage /></Suspense>} />
-                <Route path="archivos" element={<FilesPage />} />
-                <Route path="mensajes" element={<MessagesPage />} />
-                <Route path="cfo" element={<Suspense fallback={LazyFallback}><CfoAnalysisPage /></Suspense>} />
-                <Route path="chatbot" element={<Suspense fallback={LazyFallback}><ChatbotPage /></Suspense>} />
-                <Route path="score-crediticio" element={<Suspense fallback={LazyFallback}><ScoreCrediticioPage /></Suspense>} />
-                <Route path="comisiones" element={<Suspense fallback={LazyFallback}><ComisionesPage /></Suspense>} />
+                <Route
+                  path="directorio"
+                  element={
+                    <Suspense fallback={LazyFallback}>
+                      <DirectorioClientesPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="vendedores"
+                  element={
+                    <Suspense fallback={LazyFallback}>
+                      <VendedoresPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="archivos"
+                  element={
+                    <Suspense fallback={LazyFallback}>
+                      <FilesPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="mensajes"
+                  element={
+                    <Suspense fallback={LazyFallback}>
+                      <MessagesPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="cfo"
+                  element={
+                    <Suspense fallback={LazyFallback}>
+                      <CfoAnalysisPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="chatbot"
+                  element={
+                    <Suspense fallback={LazyFallback}>
+                      <ChatbotPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="score-crediticio"
+                  element={
+                    <Suspense fallback={LazyFallback}>
+                      <ScoreCrediticioPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="comisiones"
+                  element={
+                    <Suspense fallback={LazyFallback}>
+                      <ComisionesPage />
+                    </Suspense>
+                  }
+                />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Route>
             </Routes>

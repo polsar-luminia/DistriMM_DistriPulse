@@ -1,8 +1,6 @@
 import { describe, test, expect } from "vitest";
 import { normalizeBrand, getNormalizedMarcasList } from "../brandNormalization";
 
-// ─── normalizeBrand ───────────────────────────────────────────────────────────
-
 describe("normalizeBrand", () => {
   // Null / undefined / empty
   test("retorna 'SIN MARCA' cuando recibe null", () => {
@@ -93,8 +91,6 @@ describe("normalizeBrand", () => {
     expect(normalizeBrand("CONTEGRAL ESPECIAL")).toBe("CONTEGRAL");
   });
 });
-
-// ─── getNormalizedMarcasList ──────────────────────────────────────────────────
 
 describe("getNormalizedMarcasList", () => {
   test("deduplica marcas que normalizan al mismo nombre", () => {

@@ -1,9 +1,3 @@
-/**
- * @fileoverview Lote (batch) operations hook for WhatsApp messaging.
- * Handles lote creation, polling, retry, cancel, and detail loading.
- * @module hooks/messaging/useLotes
- */
-
 import { useState, useCallback, useEffect, useRef } from "react";
 import { supabase } from "../../lib/supabase";
 import {
@@ -16,27 +10,9 @@ import {
   triggerLoteProcessing,
   retryLoteFailed,
   cancelLote,
+  getActiveInstance,
 } from "../../services/messagingService";
 
-/**
- * Gestiona operaciones de lotes (batches) para envío masivo de WhatsApp.
- * Incluye creación, polling de progreso, retry de fallidos, y cancelación.
- * @returns {{
- *   lotes: Array,
- *   loadingLotes: boolean,
- *   refreshLotes: () => Promise<void>,
- *   activeLote: object|null,
- *   activeLoteDetalle: Array,
- *   loadingDetalle: boolean,
- *   loadLoteDetalle: (loteId: string) => Promise<void>,
- *   creatingLote: boolean,
- *   createAndSendLote: (loteHeader: object, destinatarios: Array) => Promise<{success: boolean, loteId: string|null, error: string|null}>,
- *   handleRetryFailed: (loteId: string) => Promise<{success: boolean, error: string|null}>,
- *   handleCancelLote: (loteId: string) => Promise<{success: boolean, error: string|null}>,
- *   startPolling: (loteId: string) => void,
- *   stopPolling: () => void
- * }}
- */
 export function useLotes() {
   const [lotes, setLotes] = useState([]);
   const [loadingLotes, setLoadingLotes] = useState(false);
@@ -64,9 +40,6 @@ export function useLotes() {
     };
   }, []);
 
-  /**
-   * Load all lotes for the history view.
-   */
   const refreshLotes = useCallback(async () => {
     setLoadingLotes(true);
     try {
@@ -74,16 +47,13 @@ export function useLotes() {
       if (error) throw error;
       setLotes(data || []);
     } catch (err) {
-      if (import.meta.env.DEV) console.error("[useLotes] Error loading lotes:", err);
+      if (import.meta.env.DEV)
+        console.error("[useLotes] Error loading lotes:", err);
     } finally {
       setLoadingLotes(false);
     }
   }, []);
 
-  /**
-   * Load detail for a specific lote (drill-down view).
-   * @param {string} loteId
-   */
   const loadLoteDetalle = useCallback(async (loteId) => {
     setLoadingDetalle(true);
     try {
@@ -98,62 +68,55 @@ export function useLotes() {
       setActiveLote(loteRes.data);
       setActiveLoteDetalle(detalleRes.data || []);
     } catch (err) {
-      if (import.meta.env.DEV) console.error("[useLotes] Error loading lote detail:", err);
+      if (import.meta.env.DEV)
+        console.error("[useLotes] Error loading lote detail:", err);
     } finally {
       setLoadingDetalle(false);
     }
   }, []);
 
-  /**
-   * Start polling a lote's progress every 10 seconds.
-   * Uses isFetching guard to prevent concurrent poll requests from stacking.
-   * @param {string} loteId
-   */
-  const startPolling = useCallback(
-    (loteId) => {
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-      }
-      pollingInFlightRef.current = false;
+  // Poll a lote's progress every 10s; isFetching guard prevents concurrent requests
 
-      const poll = async () => {
-        // Skip if a previous poll is still in flight
-        if (pollingInFlightRef.current) return;
-        pollingInFlightRef.current = true;
-        try {
-          const { data } = await getLoteById(loteId);
-          if (data) {
-            setActiveLote(data);
+  const startPolling = useCallback((loteId) => {
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+    }
+    pollingInFlightRef.current = false;
 
-            const { data: lotesData } = await getLotes(50);
-            if (lotesData) setLotes(lotesData);
+    const poll = async () => {
+      // Skip if a previous poll is still in flight
+      if (pollingInFlightRef.current) return;
+      pollingInFlightRef.current = true;
+      try {
+        const { data } = await getLoteById(loteId);
+        if (data) {
+          setActiveLote(data);
 
-            // If lote is no longer in process, refresh detail and stop polling
-            if (data.estado !== "pendiente" && data.estado !== "en_proceso") {
-              const { data: detalleData } = await getLoteDetalle(loteId);
-              if (detalleData) setActiveLoteDetalle(detalleData);
+          const { data: lotesData } = await getLotes(50);
+          if (lotesData) setLotes(lotesData);
 
-              clearInterval(pollingRef.current);
-              pollingRef.current = null;
-            }
+          // If lote is no longer in process, refresh detail and stop polling
+          if (data.estado !== "pendiente" && data.estado !== "en_proceso") {
+            const { data: detalleData } = await getLoteDetalle(loteId);
+            if (detalleData) setActiveLoteDetalle(detalleData);
+
+            clearInterval(pollingRef.current);
+            pollingRef.current = null;
           }
-        } catch (err) {
-          if (import.meta.env.DEV) console.error("[useLotes] Polling error:", err);
-        } finally {
-          pollingInFlightRef.current = false;
         }
-      };
+      } catch (err) {
+        if (import.meta.env.DEV)
+          console.error("[useLotes] Polling error:", err);
+      } finally {
+        pollingInFlightRef.current = false;
+      }
+    };
 
-      // Poll immediately then every 10 seconds
-      poll();
-      pollingRef.current = setInterval(poll, 10000);
-    },
-    [],
-  );
+    // Poll immediately then every 10 seconds
+    poll();
+    pollingRef.current = setInterval(poll, 10000);
+  }, []);
 
-  /**
-   * Stop polling.
-   */
   const stopPolling = useCallback(() => {
     if (pollingRef.current) {
       clearInterval(pollingRef.current);
@@ -161,24 +124,35 @@ export function useLotes() {
     }
   }, []);
 
-  /**
-   * Create a new lote and trigger processing.
-   * Uses ref to prevent double-click (fixes stale closure).
-   * @param {object} loteHeader - { tipo, mensaje_plantilla, plantilla_id, filtros_aplicados }
-   * @param {object[]} destinatarios - Array of { cliente_nombre, cliente_nit, telefono, mensaje_personalizado, facturas_ids }
-   * @returns {Promise<{success: boolean, loteId: string|null, error: string|null}>}
-   */
   const createAndSendLote = useCallback(
     async (loteHeader, destinatarios) => {
       // Use ref to avoid stale closure on creatingLote state
       if (creatingLoteRef.current) {
-        return { success: false, loteId: null, error: "Ya se está creando un lote" };
+        return {
+          success: false,
+          loteId: null,
+          error: "Ya se está creando un lote",
+        };
       }
 
-      // Pre-flight checks
+      // Pre-flight: verify active WhatsApp instance
+      const { data: activeInstance } = await getActiveInstance();
+      if (!activeInstance?.id) {
+        return {
+          success: false,
+          loteId: null,
+          error:
+            "No hay instancia de WhatsApp activa. Conecta tu numero en la pestana WhatsApp.",
+        };
+      }
+
+      // Solo recomendación si está fuera de horario — no bloquea el envío
       const hourCheck = checkSendingHours();
-      if (!hourCheck.allowed) {
-        return { success: false, loteId: null, error: hourCheck.reason };
+      if (!hourCheck.allowed && import.meta.env.DEV) {
+        console.warn(
+          "[useLotes] Envío de lote fuera de horario recomendado:",
+          hourCheck.reason,
+        );
       }
 
       const dailyCheck = await checkDailyLimit();
@@ -195,7 +169,11 @@ export function useLotes() {
       const cappedDestinatarios = destinatarios.slice(0, remaining);
 
       if (cappedDestinatarios.length === 0) {
-        return { success: false, loteId: null, error: "No hay destinatarios válidos" };
+        return {
+          success: false,
+          loteId: null,
+          error: "No hay destinatarios válidos",
+        };
       }
 
       creatingLoteRef.current = true;
@@ -219,16 +197,55 @@ export function useLotes() {
         }));
 
         // 3. Mark lote as en_proceso
-        await supabase
-          .from("distrimm_recordatorios_lote")
-          .update({ estado: "en_proceso", updated_at: new Date().toISOString() })
-          .eq("id", loteId);
+        try {
+          const { error: updateError } = await supabase
+            .from("distrimm_recordatorios_lote")
+            .update({
+              estado: "en_proceso",
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", loteId);
+          if (updateError)
+            console.error(
+              "[useLotes] Error updating lote to en_proceso:",
+              updateError,
+            );
+        } catch (updateErr) {
+          console.error(
+            "[useLotes] Error updating lote to en_proceso:",
+            updateErr,
+          );
+        }
 
-        // 4. Trigger n8n webhook with ALL recipients
-        const { error: triggerError } = await triggerLoteProcessing(loteId, destinatariosConIds);
+        // 4. Trigger n8n webhook with ALL recipients (pass instance_id)
+        const triggerResult = await triggerLoteProcessing(
+          loteId,
+          destinatariosConIds,
+          activeInstance.id,
+        );
 
-        if (triggerError) {
-          if (import.meta.env.DEV) console.warn("[useLotes] Lote created but trigger failed:", triggerError);
+        if (!triggerResult.success) {
+          // Mark lote as failed so the user can see and retry
+          try {
+            const { error: failError } = await supabase
+              .from("distrimm_recordatorios_lote")
+              .update({
+                estado: "fallido",
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", loteId);
+            if (failError)
+              console.error(
+                "[useLotes] Error updating lote to fallido:",
+                failError,
+              );
+          } catch (failErr) {
+            console.error(
+              "[useLotes] Error updating lote to fallido:",
+              failErr,
+            );
+          }
+          throw triggerResult.error || new Error("Error al enviar mensajes");
         }
 
         // 5. Start polling for this lote's progress
@@ -239,7 +256,8 @@ export function useLotes() {
 
         return { success: true, loteId, error: null };
       } catch (err) {
-        if (import.meta.env.DEV) console.error("[useLotes] Error creating lote:", err);
+        if (import.meta.env.DEV)
+          console.error("[useLotes] Error creating lote:", err);
         return { success: false, loteId: null, error: err.message };
       } finally {
         creatingLoteRef.current = false;
@@ -249,11 +267,6 @@ export function useLotes() {
     [startPolling, refreshLotes],
   );
 
-  /**
-   * Retry failed messages in a lote.
-   * @param {string} loteId
-   * @returns {Promise<{success: boolean, error: string|null}>}
-   */
   const handleRetryFailed = useCallback(
     async (loteId) => {
       try {
@@ -264,18 +277,14 @@ export function useLotes() {
 
         return { success: true, error: null };
       } catch (err) {
-        if (import.meta.env.DEV) console.error("[useLotes] Error retrying lote:", err);
+        if (import.meta.env.DEV)
+          console.error("[useLotes] Error retrying lote:", err);
         return { success: false, error: err.message };
       }
     },
     [startPolling],
   );
 
-  /**
-   * Cancel a pending/in-process lote.
-   * @param {string} loteId
-   * @returns {Promise<{success: boolean, error: string|null}>}
-   */
   const handleCancelLote = useCallback(
     async (loteId) => {
       try {
@@ -290,7 +299,8 @@ export function useLotes() {
 
         return { success: true, error: null };
       } catch (err) {
-        if (import.meta.env.DEV) console.error("[useLotes] Error cancelling lote:", err);
+        if (import.meta.env.DEV)
+          console.error("[useLotes] Error cancelling lote:", err);
         return { success: false, error: err.message };
       }
     },

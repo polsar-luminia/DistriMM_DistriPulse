@@ -1,9 +1,3 @@
-/**
- * @fileoverview Messages Page - Centralized WhatsApp messaging with Lote system.
- * Tabs: Nuevo Lote, Historial Lotes, Plantillas, WhatsApp.
- * @module pages/MessagesPage
- */
-
 import { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
 import { cn } from "@/lib/utils";

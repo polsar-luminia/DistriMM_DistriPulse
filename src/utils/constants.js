@@ -1,14 +1,4 @@
-/**
- * @fileoverview Centralized constants for the DistriPulse Analytics application.
- * Eliminates "magic numbers" and hardcoded strings throughout the codebase.
- * @module utils/constants
- */
-
 import { AGING_BUCKET_DAYS } from "../constants/thresholds";
-
-// ============================================================================
-// UI COLORS (Tailwind-compatible)
-// ============================================================================
 
 export const COLORS = {
   // Semantic
@@ -42,10 +32,6 @@ export const COLORS = {
   },
 };
 
-// ============================================================================
-// FILTER DEFAULTS
-// ============================================================================
-
 export const DEFAULT_FILTERS = {
   search: "",
   status: "ALL",
@@ -61,10 +47,6 @@ export const DEFAULT_REMINDER_CONFIG = {
   sentStatus: "all",
   searchQuery: "",
 };
-
-// ============================================================================
-// THRESHOLDS
-// ============================================================================
 
 export const THRESHOLDS = {
   /** Days overdue considered "high risk" */
@@ -83,10 +65,6 @@ export const THRESHOLDS = {
   HIGH_RISK_PERCENTAGE: 20,
 };
 
-// ============================================================================
-// AGING BUCKETS
-// ============================================================================
-
 export const AGING_BUCKETS = [
   { key: "Al Día", min: -Infinity, max: 0, color: COLORS.AGING.AL_DIA },
   { key: "1-30 Días", min: 1, max: AGING_BUCKET_DAYS.BUCKET_30, color: COLORS.AGING.DIAS_1_30 },
@@ -95,18 +73,10 @@ export const AGING_BUCKETS = [
   { key: "+90 Días", min: AGING_BUCKET_DAYS.BUCKET_90 + 1, max: Infinity, color: COLORS.AGING.DIAS_90_PLUS },
 ];
 
-// ============================================================================
-// PAGINATION
-// ============================================================================
-
 export const PAGINATION = {
   DEFAULT_PAGE_SIZE: 10,
   PAGE_SIZE_OPTIONS: [10, 25, 50, 100],
 };
-
-// ============================================================================
-// DATE FORMATS
-// ============================================================================
 
 export const DATE_FORMATS = {
   DISPLAY: "dd/MM/yyyy",
@@ -114,29 +84,12 @@ export const DATE_FORMATS = {
   TIMEZONE: "America/Bogota",
 };
 
-// ============================================================================
-// UPLOAD TYPES
-// ============================================================================
-
-export const UPLOAD_TYPES = {
-  CARTERA: "cartera",
-  CLIENTES: "clientes",
-};
-
-// ============================================================================
-// VENDEDOR THRESHOLDS
-// ============================================================================
-
 export const VENDEDOR_THRESHOLDS = {
   /** % vencida above which vendedor is high risk */
   HIGH_RISK_PCT: 30,
   /** % vencida above which vendedor is medium risk */
   MEDIUM_RISK_PCT: 15,
 };
-
-// ============================================================================
-// CLIENT COVERAGE THRESHOLDS
-// ============================================================================
 
 export const COVERAGE_THRESHOLDS = {
   /** Min % of clients with celular for "good" status */

@@ -1,9 +1,3 @@
-/**
- * @fileoverview Chat Sessions Hook - State management for DistriBot conversation persistence.
- * Manages session CRUD, message loading, search, and auto-titling.
- * @module hooks/useChatSessions
- */
-
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
   getChatSessions,
@@ -15,11 +9,6 @@ import {
   searchChatSessions,
 } from "../services/chatSessionService";
 
-/**
- * Transforms DB message rows into the format expected by ChatbotPage.
- * @param {Array} dbMessages - Raw rows from distrimm_chat_messages
- * @returns {Array} Messages in { id, role, content, timestamp, isError } format
- */
 function transformMessages(dbMessages) {
   return dbMessages.map((m) => ({
     id: m.id,
@@ -30,28 +19,6 @@ function transformMessages(dbMessages) {
   }));
 }
 
-/**
- * Hook for managing DistriBot chat session persistence.
- * Handles session CRUD, message loading/persisting, search with debounce, and auto-titling.
- *
- * @param {string|null} userId - Current user's UUID from AuthContext
- * @returns {{
- *   sessions: Array<{id: string, session_id: string, title: string, created_at: string}>,
- *   activeSession: Object|null,
- *   setActiveSession: Function,
- *   loadingSessions: boolean,
- *   loadingMessages: boolean,
- *   searchQuery: string,
- *   setSearchQuery: Function,
- *   searchResults: Array|null,
- *   startNewSession: () => Promise<string|null>,
- *   loadSession: (session: Object) => Promise<Array>,
- *   persistMessage: (role: string, content: string, isError?: boolean) => Promise<void>,
- *   autoTitle: (firstUserMessage: string) => Promise<void>,
- *   removeSession: (sessionId: string) => Promise<boolean>,
- *   refreshSessions: () => Promise<void>,
- * }}
- */
 export function useChatSessions(userId) {
   const [sessions, setSessions] = useState([]);
   const [activeSession, setActiveSession] = useState(null);
@@ -62,6 +29,7 @@ export function useChatSessions(userId) {
 
   const searchTimeoutRef = useRef(null);
   const fetchRequestIdRef = useRef(0);
+  const loadSessionRequestIdRef = useRef(0);
 
   // ─── Load sessions on mount ───
   const refreshSessions = useCallback(async () => {
@@ -73,7 +41,8 @@ export function useChatSessions(userId) {
       setSessions(data || []);
     } catch (err) {
       if (requestId !== fetchRequestIdRef.current) return;
-      if (import.meta.env.DEV) console.error("[useChatSessions] Error refreshing sessions:", err);
+      if (import.meta.env.DEV)
+        console.error("[useChatSessions] Error refreshing sessions:", err);
     } finally {
       if (requestId === fetchRequestIdRef.current) setLoadingSessions(false);
     }
@@ -86,10 +55,14 @@ export function useChatSessions(userId) {
         if (cancelled) return;
       });
     }
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [userId, refreshSessions]);
 
   // ─── Create new session ───
+  // Returns { sessionId, dbId } so callers can use the DB id immediately
+  // without waiting for activeSession state to update.
   const startNewSession = useCallback(async () => {
     if (!userId) return null;
     const sessionId = crypto.randomUUID();
@@ -98,49 +71,61 @@ export function useChatSessions(userId) {
       setActiveSession(data);
       // Prepend to sessions list
       setSessions((prev) => [data, ...prev]);
+      return { sessionId: data.session_id, dbId: data.id };
     }
-    return data ? data.session_id : sessionId;
+    return { sessionId, dbId: null };
   }, [userId]);
 
   // ─── Load existing session messages ───
   const loadSession = useCallback(async (session) => {
+    const requestId = ++loadSessionRequestIdRef.current;
     setLoadingMessages(true);
     setActiveSession(session);
     try {
       const { data } = await getChatMessages(session.id);
+      if (requestId !== loadSessionRequestIdRef.current) return [];
       const messages = transformMessages(data || []);
       setLoadingMessages(false);
       return messages;
     } catch (err) {
-      if (import.meta.env.DEV) console.error("[useChatSessions] Error loading messages:", err);
+      if (requestId !== loadSessionRequestIdRef.current) return [];
+      if (import.meta.env.DEV)
+        console.error("[useChatSessions] Error loading messages:", err);
       setLoadingMessages(false);
       return [];
     }
   }, []);
 
   // ─── Persist a message (fire-and-forget) ───
+  // Accepts optional sessionDbId override for when activeSession state hasn't updated yet
   const persistMessage = useCallback(
-    async (role, content, isError = false) => {
-      if (!activeSession) return;
-      await saveChatMessage(activeSession.id, role, content, isError);
+    async (role, content, isError = false, sessionDbId = null) => {
+      const dbId = sessionDbId || activeSession?.id;
+      if (!dbId) return;
+      try {
+        await saveChatMessage(dbId, role, content, isError);
+      } catch (err) {
+        if (import.meta.env.DEV)
+          console.error("[useChatSessions] Error persisting message:", err);
+      }
     },
-    [activeSession]
+    [activeSession],
   );
 
   // ─── Auto-title from first user message ───
   const autoTitle = useCallback(
     async (firstUserMessage) => {
       if (!activeSession) return;
-      const title = firstUserMessage.substring(0, 80).trim() || "Nueva conversacion";
-      await updateChatSessionTitle(activeSession.session_id, title);
+      const sessionId = activeSession.session_id;
+      const title =
+        firstUserMessage.substring(0, 80).trim() || "Nueva conversacion";
+      await updateChatSessionTitle(sessionId, title);
       setActiveSession((prev) => (prev ? { ...prev, title } : prev));
       setSessions((prev) =>
-        prev.map((s) =>
-          s.session_id === activeSession.session_id ? { ...s, title } : s
-        )
+        prev.map((s) => (s.session_id === sessionId ? { ...s, title } : s)),
       );
     },
-    [activeSession]
+    [activeSession],
   );
 
   // ─── Delete session ───
@@ -155,7 +140,7 @@ export function useChatSessions(userId) {
       }
       return success;
     },
-    [activeSession]
+    [activeSession],
   );
 
   // ─── Search with debounce ───
@@ -169,7 +154,7 @@ export function useChatSessions(userId) {
       const { data } = await searchChatSessions(userId, query);
       setSearchResults(data || []);
     },
-    [userId]
+    [userId],
   );
 
   useEffect(() => {

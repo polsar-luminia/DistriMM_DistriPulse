@@ -1,9 +1,4 @@
-/**
- * @fileoverview NuevoLoteTab - Create a new messaging batch (3-step wizard).
- * @module components/messages/NuevoLoteTab
- */
-
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Search,
   Filter,
@@ -46,26 +41,43 @@ export default function NuevoLoteTab({ currentLoadId, messaging }) {
   // Load segmented clients
   const handleSegment = async () => {
     if (!currentLoadId) {
-      sileo.error({ title: "No hay una carga activa", description: "Suba un archivo primero." });
+      sileo.error({
+        title: "No hay una carga activa",
+        description: "Suba un archivo primero.",
+      });
       return;
     }
 
     const filters = {
       cargaId: currentLoadId,
       tipoFiltro,
-      diasMoraMin: Number(diasMoraMin) || 1,
-      diasVencerMax: Number(diasVencerMax) || 30,
+      diasMoraMin: diasMoraMin !== "" ? Number(diasMoraMin) : 1,
+      diasVencerMax: diasVencerMax !== "" ? Number(diasVencerMax) : 30,
       montoMin: montoMin ? Number(montoMin) : 0,
       montoMax: montoMax ? Number(montoMax) : 999999999,
     };
 
-    await messaging.fetchSegmentedClients(filters);
+    const { data, error } = await messaging.fetchSegmentedClients(filters);
+    if (error) {
+      sileo.error({
+        title: "Error al buscar clientes",
+        description: error.message || String(error),
+      });
+    } else if (!data || data.length === 0) {
+      sileo.info("No se encontraron clientes con los filtros seleccionados.");
+    }
     setSelectedNits(new Set());
   };
 
   // Extract stable references from messaging to avoid broken memoization
   // (messaging object is recreated each render; using it as dep defeats useMemo)
-  const { segmentedClients, resolveClientPhone, templates, buildInvoiceDetail, renderTemplate } = messaging;
+  const {
+    segmentedClients,
+    resolveClientPhone,
+    templates,
+    buildInvoiceDetail,
+    renderTemplate,
+  } = messaging;
 
   // Enrich segmented clients with phone data (RPC already returns celular/telefono_1)
   const enrichedClients = useMemo(() => {
@@ -111,7 +123,9 @@ export default function NuevoLoteTab({ currentLoadId, messaging }) {
   };
 
   const selectAllWithPhone = () => {
-    const validNits = filteredClients.filter((c) => c.phone?.valid).map((c) => c.cliente_nit);
+    const validNits = filteredClients
+      .filter((c) => c.phone?.valid)
+      .map((c) => c.cliente_nit);
     setSelectedNits(new Set(validNits));
   };
 
@@ -120,41 +134,43 @@ export default function NuevoLoteTab({ currentLoadId, messaging }) {
   // Get selected template
   const selectedTemplate = templates.find((t) => t.id === selectedTemplateId);
 
-  // Render message for a client
-  const renderMessageForClient = useCallback(
-    (client) => {
-      if (!selectedTemplate) return "";
-      // RPC returns facturas_detalle as jsonb array
-      const invoiceItems = (client.facturas_detalle || []).map((f) => ({
-        documento_id: f.documento_id,
-        nro_factura: f.nro_factura,
-        fecha_vencimiento: f.fecha_vencimiento,
-        dias_mora: f.dias_mora,
-        valor_saldo: f.valor_saldo,
-      }));
-      const { detalle_facturas, total } = buildInvoiceDetail(invoiceItems);
-      return renderTemplate(selectedTemplate.contenido, {
-        cliente: client.cliente_nombre || "Cliente",
-        detalle_facturas,
-        total,
-        municipio: client.municipio || "",
-      });
-    },
-    [selectedTemplate, buildInvoiceDetail, renderTemplate],
-  );
-
   // Build recipients for selected clients
   const selectedRecipients = useMemo(() => {
     return filteredClients
       .filter((c) => selectedNits.has(c.cliente_nit) && c.phone?.valid)
-      .map((c) => ({
-        cliente_nombre: c.cliente_nombre,
-        cliente_nit: c.cliente_nit,
-        telefono: c.phone.phone,
-        mensaje_personalizado: renderMessageForClient(c),
-        facturas_ids: (c.facturas_ids || []).map(String),
-      }));
-  }, [filteredClients, selectedNits, renderMessageForClient]);
+      .map((c) => {
+        const invoiceItems = (c.facturas_detalle || []).map((f) => ({
+          documento_id: f.documento_id,
+          nro_factura: f.nro_factura,
+          fecha_vencimiento: f.fecha_vencimiento,
+          dias_mora: f.dias_mora,
+          valor_saldo: f.valor_saldo,
+        }));
+        const { detalle_facturas, total } = buildInvoiceDetail(invoiceItems);
+        return {
+          cliente_nombre: c.cliente_nombre,
+          cliente_nit: c.cliente_nit,
+          telefono: c.phone.phone,
+          mensaje_personalizado: selectedTemplate
+            ? renderTemplate(selectedTemplate.contenido, {
+                cliente: c.cliente_nombre || "Cliente",
+                detalle_facturas,
+                total,
+                municipio: c.municipio || "",
+              })
+            : "",
+          template_var2: detalle_facturas,
+          template_var3: total,
+          facturas_ids: (c.facturas_ids || []).map(String),
+        };
+      });
+  }, [
+    filteredClients,
+    selectedNits,
+    selectedTemplate,
+    buildInvoiceDetail,
+    renderTemplate,
+  ]);
 
   // Confirm and send lote
   const handleCreateLote = async () => {
@@ -186,7 +202,10 @@ export default function NuevoLoteTab({ currentLoadId, messaging }) {
     );
 
     if (success) {
-      sileo.success({ title: "Lote creado", description: `${selectedRecipients.length} destinatarios. Enviando...` });
+      sileo.success({
+        title: "Lote creado",
+        description: `${selectedRecipients.length} destinatarios. Enviando...`,
+      });
       setStep(1);
       setSelectedNits(new Set());
     } else {
@@ -212,7 +231,7 @@ export default function NuevoLoteTab({ currentLoadId, messaging }) {
                   ? "bg-indigo-600 text-white shadow"
                   : step > s.num
                     ? "bg-indigo-100 text-indigo-600 cursor-pointer hover:bg-indigo-200"
-                    : "bg-slate-100 text-slate-400"
+                    : "bg-slate-100 text-slate-400",
               )}
               disabled={s.num > step}
             >
@@ -223,7 +242,7 @@ export default function NuevoLoteTab({ currentLoadId, messaging }) {
                     ? "bg-white text-indigo-600"
                     : step > s.num
                       ? "bg-indigo-600 text-white"
-                      : "bg-slate-300 text-white"
+                      : "bg-slate-300 text-white",
                 )}
               >
                 {step > s.num ? "✓" : s.num}
@@ -232,7 +251,10 @@ export default function NuevoLoteTab({ currentLoadId, messaging }) {
             </button>
             {s.num < 3 && (
               <div
-                className={cn("flex-1 h-0.5 rounded", step > s.num ? "bg-indigo-400" : "bg-slate-200")}
+                className={cn(
+                  "flex-1 h-0.5 rounded",
+                  step > s.num ? "bg-indigo-400" : "bg-slate-200",
+                )}
               />
             )}
           </React.Fragment>
@@ -249,13 +271,17 @@ export default function NuevoLoteTab({ currentLoadId, messaging }) {
 
           {!currentLoadId && (
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
-              <AlertTriangle size={18} className="text-amber-500 mt-0.5 shrink-0" />
+              <AlertTriangle
+                size={18}
+                className="text-amber-500 mt-0.5 shrink-0"
+              />
               <div>
                 <p className="text-sm font-bold text-amber-800">
                   Sin carga activa
                 </p>
                 <p className="text-xs text-amber-600 mt-1">
-                  Suba un archivo de cartera primero para poder segmentar clientes.
+                  Suba un archivo de cartera primero para poder segmentar
+                  clientes.
                 </p>
               </div>
             </div>
@@ -357,7 +383,8 @@ export default function NuevoLoteTab({ currentLoadId, messaging }) {
             {enrichedClients.length > 0 && (
               <span className="text-xs font-bold text-slate-500">
                 {enrichedClients.length} clientes encontrados •{" "}
-                <span className="text-emerald-600">{withPhoneCount}</span> con teléfono
+                <span className="text-emerald-600">{withPhoneCount}</span> con
+                teléfono
               </span>
             )}
           </div>
@@ -382,7 +409,9 @@ export default function NuevoLoteTab({ currentLoadId, messaging }) {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-indigo-600">{selectedCount}</span>
+                  <span className="text-xs font-bold text-indigo-600">
+                    {selectedCount}
+                  </span>
                   <span className="text-xs text-slate-400">seleccionados</span>
                   <button
                     onClick={selectAllWithPhone}
@@ -407,9 +436,14 @@ export default function NuevoLoteTab({ currentLoadId, messaging }) {
                       <th className="px-3 py-3 w-8">
                         <input
                           type="checkbox"
-                          checked={selectedCount > 0 && selectedCount === withPhoneCount}
+                          checked={
+                            selectedCount > 0 &&
+                            selectedCount === withPhoneCount
+                          }
                           onChange={(e) =>
-                            e.target.checked ? selectAllWithPhone() : clearSelection()
+                            e.target.checked
+                              ? selectAllWithPhone()
+                              : clearSelection()
                           }
                           className="w-3 h-3 rounded text-indigo-600 border-slate-500"
                         />
@@ -428,7 +462,7 @@ export default function NuevoLoteTab({ currentLoadId, messaging }) {
                         key={c.cliente_nit}
                         className={cn(
                           "hover:bg-indigo-50/30 transition-colors",
-                          selectedNits.has(c.cliente_nit) && "bg-indigo-50/50"
+                          selectedNits.has(c.cliente_nit) && "bg-indigo-50/50",
                         )}
                       >
                         <td className="px-3 py-2.5">
@@ -465,7 +499,7 @@ export default function NuevoLoteTab({ currentLoadId, messaging }) {
                                 ? "bg-rose-100 text-rose-700"
                                 : (c.max_dias_mora || 0) > 0
                                   ? "bg-amber-100 text-amber-700"
-                                  : "bg-emerald-100 text-emerald-700"
+                                  : "bg-emerald-100 text-emerald-700",
                             )}
                           >
                             {c.max_dias_mora || 0}d
@@ -516,7 +550,9 @@ export default function NuevoLoteTab({ currentLoadId, messaging }) {
           </div>
 
           <div className="text-xs text-slate-500 bg-slate-50 rounded-lg p-3">
-            <span className="font-bold text-indigo-600">{selectedRecipients.length}</span>{" "}
+            <span className="font-bold text-indigo-600">
+              {selectedRecipients.length}
+            </span>{" "}
             destinatarios con teléfono válido seleccionados
           </div>
 
@@ -531,13 +567,11 @@ export default function NuevoLoteTab({ currentLoadId, messaging }) {
               className="w-full pl-4 pr-10 py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 appearance-none cursor-pointer focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
             >
               <option value="">Seleccionar Plantilla...</option>
-              {templates
-                .filter((t) => t.tipo === "recordatorio" || t.tipo === tipoFiltro)
-                .map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.nombre} ({t.tipo})
-                  </option>
-                ))}
+              {templates.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.nombre} ({t.tipo})
+                </option>
+              ))}
             </select>
           </div>
 
@@ -638,7 +672,8 @@ export default function NuevoLoteTab({ currentLoadId, messaging }) {
             </div>
             <div className="bg-slate-50 rounded-xl p-4 text-center">
               <p className="text-lg font-black text-amber-600">
-                ~{Math.max(1, Math.ceil(selectedRecipients.length * 5 / 60))} min
+                ~{Math.max(1, Math.ceil((selectedRecipients.length * 5) / 60))}{" "}
+                min
               </p>
               <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">
                 Tiempo Estimado
@@ -654,7 +689,8 @@ export default function NuevoLoteTab({ currentLoadId, messaging }) {
                 Los mensajes se enviarán vía Meta Cloud API oficial.
               </p>
               <p className="text-xs text-amber-600 mt-1">
-                El proceso continuará en segundo plano. Puede ver el progreso en el historial.
+                El proceso continuará en segundo plano. Puede ver el progreso en
+                el historial.
               </p>
             </div>
           </div>
@@ -683,6 +719,22 @@ export default function NuevoLoteTab({ currentLoadId, messaging }) {
               </p>
             )}
           </div>
+
+          {/* Recomendación de horario */}
+          {(() => {
+            const h = messaging.checkSendingHours();
+            return !h.allowed ? (
+              <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-700">
+                <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+                <span>
+                  <strong>Fuera de horario recomendado</strong> ({h.hour}:00h).
+                  Se recomienda enviar entre 7am y 9pm hora Colombia. El envío
+                  no está bloqueado, pero los mensajes podrían tener menor
+                  efectividad.
+                </span>
+              </div>
+            ) : null;
+          })()}
 
           {/* Action buttons */}
           <div className="flex justify-between pt-2">

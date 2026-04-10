@@ -1,17 +1,7 @@
-/**
- * @fileoverview Vendedor expanded detail row — shows commission breakdown per salesperson.
- * @module components/comisiones/VendedorDetail
- */
-
 import React, { useMemo } from "react";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-} from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import {
   formatCurrency,
   formatFullCurrency,
@@ -20,7 +10,12 @@ import {
 
 const DONUT_COLORS = ["#34d399", "#d1d5db"];
 
-export default function VendedorDetail({ vendedor, ventas, loading, getExclusionInfo }) {
+export default function VendedorDetail({
+  vendedor,
+  ventas,
+  loading,
+  getExclusionInfo,
+}) {
   const v = vendedor;
 
   // Classify each sale
@@ -36,10 +31,13 @@ export default function VendedorDetail({ vendedor, ventas, loading, getExclusion
   const devoluciones = classified.filter((i) => i.tipo === "DV");
 
   // Donut data
-  const donutData = useMemo(() => [
-    { name: "Comisionable", value: Number(v.ventas_comisionables || 0) },
-    { name: "Excluido", value: Number(v.ventas_excluidas || 0) },
-  ], [v]);
+  const donutData = useMemo(
+    () => [
+      { name: "Comisionable", value: Number(v.ventas_comisionables || 0) },
+      { name: "Sin comisión", value: Number(v.ventas_excluidas || 0) },
+    ],
+    [v],
+  );
 
   // Top 3 products by valor_total (comisionables)
   const topProducts = useMemo(() => {
@@ -70,7 +68,9 @@ export default function VendedorDetail({ vendedor, ventas, loading, getExclusion
         <h4 className="text-sm font-bold text-slate-800">
           Detalle de ventas de {v.vendedor_nombre || "Vendedor"}{" "}
           <span className="font-normal text-slate-500">
-            — {classified.length} items ({comisionables.length} comisionables, {excluidos.length} excluidos{devoluciones.length > 0 ? `, ${devoluciones.length} DV` : ""})
+            — {classified.length} items ({comisionables.length} comisionables,{" "}
+            {excluidos.length} sin comisión
+            {devoluciones.length > 0 ? `, ${devoluciones.length} DV` : ""})
           </span>
         </h4>
       </div>
@@ -101,26 +101,38 @@ export default function VendedorDetail({ vendedor, ventas, loading, getExclusion
           <div className="text-xs">
             <div className="flex items-center gap-1.5 mb-1">
               <div className="w-2 h-2 rounded-full bg-emerald-400" />
-              <span className="text-slate-600">Comisionable: <strong>{formatCurrency(v.ventas_comisionables)}</strong></span>
+              <span className="text-slate-600">
+                Comisionable:{" "}
+                <strong>{formatCurrency(v.ventas_comisionables)}</strong>
+              </span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-full bg-slate-300" />
-              <span className="text-slate-500">Excluido: <strong>{formatCurrency(v.ventas_excluidas)}</strong></span>
+              <span className="text-slate-500">
+                Sin comisión:{" "}
+                <strong>{formatCurrency(v.ventas_excluidas)}</strong>
+              </span>
             </div>
           </div>
         </div>
 
         {/* Top 3 productos comisionables */}
         <div className="bg-white rounded-lg border border-slate-200 p-3">
-          <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-2">Top 3 Comisionables</p>
+          <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-2">
+            Top 3 Comisionables
+          </p>
           {topProducts.length === 0 ? (
             <p className="text-xs text-slate-400">Sin productos</p>
           ) : (
             <div className="space-y-1">
               {topProducts.map((p, i) => (
                 <div key={p.id} className="flex justify-between text-xs">
-                  <span className="text-slate-600 truncate max-w-[140px]">{i + 1}. {p.producto_descripcion || p.producto_codigo}</span>
-                  <span className="font-mono font-bold text-slate-700 shrink-0 ml-2">{formatCurrency(p.valor_total)}</span>
+                  <span className="text-slate-600 truncate max-w-[140px]">
+                    {i + 1}. {p.producto_descripcion || p.producto_codigo}
+                  </span>
+                  <span className="font-mono font-bold text-slate-700 shrink-0 ml-2">
+                    {formatCurrency(p.valor_total)}
+                  </span>
                 </div>
               ))}
             </div>
@@ -129,21 +141,28 @@ export default function VendedorDetail({ vendedor, ventas, loading, getExclusion
 
         {/* Top 3 excluidos */}
         <div className="bg-white rounded-lg border border-slate-200 p-3">
-          <p className="text-[10px] font-bold text-rose-500 uppercase tracking-wider mb-2">Top 3 Excluidos</p>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+            Top 3 Sin Comisión
+          </p>
           {topExcluded.length === 0 ? (
-            <p className="text-xs text-slate-400">Sin excluidos</p>
+            <p className="text-xs text-slate-400">
+              Todas las marcas tienen cuota
+            </p>
           ) : (
             <div className="space-y-1">
               {topExcluded.map((p, i) => (
                 <div key={p.id} className="flex justify-between text-xs">
-                  <span className="text-slate-500 truncate max-w-[140px]">{i + 1}. {p.producto_descripcion || p.producto_codigo}</span>
-                  <span className="font-mono text-rose-500 shrink-0 ml-2">{formatCurrency(p.valor_total)}</span>
+                  <span className="text-slate-500 truncate max-w-[140px]">
+                    {i + 1}. {p.producto_descripcion || p.producto_codigo}
+                  </span>
+                  <span className="font-mono text-rose-500 shrink-0 ml-2">
+                    {formatCurrency(p.valor_total)}
+                  </span>
                 </div>
               ))}
             </div>
           )}
         </div>
-
       </div>
 
       {/* Detail table */}
@@ -164,28 +183,68 @@ export default function VendedorDetail({ vendedor, ventas, loading, getExclusion
           </thead>
           <tbody className="divide-y divide-slate-200">
             {classified.map((item) => (
-              <tr key={item.id} className={item.excluded ? "bg-[#f8f8f8] opacity-60" : "hover:bg-white"}>
+              <tr
+                key={item.id}
+                className={
+                  item.excluded ? "bg-[#f8f8f8] opacity-60" : "hover:bg-white"
+                }
+              >
                 <td className="px-2 py-1.5 text-center">
                   {item.tipo === "DV" ? (
-                    <span className="inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700">DV</span>
+                    <span className="inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700">
+                      DV
+                    </span>
                   ) : (
                     <span className="text-[10px] text-slate-400">VE</span>
                   )}
                 </td>
-                <td className={cn("px-2 py-1.5 font-mono", item.excluded ? "line-through text-slate-400" : "text-slate-700")}>{item.producto_codigo}</td>
-                <td className={cn("px-2 py-1.5 truncate max-w-[180px]", item.excluded ? "line-through text-slate-400" : "text-slate-600")}>{item.producto_descripcion}</td>
-                <td className="px-2 py-1.5 text-slate-500 truncate max-w-[120px]">{item.cliente_nombre}</td>
-                <td className="px-2 py-1.5 text-slate-400 font-mono">{item.factura}</td>
-                <td className="px-2 py-1.5 text-right font-mono">{formatNumber(item.cantidad)}</td>
-                <td className="px-2 py-1.5 text-right font-mono">{formatFullCurrency(item.valor_total)}</td>
-                <td className="px-2 py-1.5 text-right font-mono">{formatFullCurrency(item.costo)}</td>
+                <td
+                  className={cn(
+                    "px-2 py-1.5 font-mono",
+                    item.excluded
+                      ? "line-through text-slate-400"
+                      : "text-slate-700",
+                  )}
+                >
+                  {item.producto_codigo}
+                </td>
+                <td
+                  className={cn(
+                    "px-2 py-1.5 truncate max-w-[180px]",
+                    item.excluded
+                      ? "line-through text-slate-400"
+                      : "text-slate-600",
+                  )}
+                >
+                  {item.producto_descripcion}
+                </td>
+                <td className="px-2 py-1.5 text-slate-500 truncate max-w-[120px]">
+                  {item.cliente_nombre}
+                </td>
+                <td className="px-2 py-1.5 text-slate-400 font-mono">
+                  {item.factura}
+                </td>
+                <td className="px-2 py-1.5 text-right font-mono">
+                  {formatNumber(item.cantidad)}
+                </td>
+                <td className="px-2 py-1.5 text-right font-mono">
+                  {formatFullCurrency(item.valor_total)}
+                </td>
+                <td className="px-2 py-1.5 text-right font-mono">
+                  {formatFullCurrency(item.costo)}
+                </td>
                 <td className="px-2 py-1.5 text-center">
                   {item.excluded ? (
-                    <span className="inline-flex px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700" title={item.reason}>
+                    <span
+                      className="inline-flex px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700"
+                      title={item.reason}
+                    >
                       {item.reason}
                     </span>
                   ) : (
-                    <span className="inline-flex px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">Comisionable</span>
+                    <span className="inline-flex px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">
+                      Comisionable
+                    </span>
                   )}
                 </td>
               </tr>
