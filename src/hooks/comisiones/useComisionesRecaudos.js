@@ -11,6 +11,9 @@ import {
   upsertPresupuestoMarca,
   deletePresupuestoMarca as deletePresupuestoMarcaSvc,
   copiarPresupuestosMes,
+  getReglasExtra,
+  upsertReglaExtra,
+  deleteReglaExtra,
 } from "../../services/comisionesService";
 import { dedupeRecaudosByCargaId } from "./reportingUtils";
 
@@ -22,7 +25,8 @@ export function useComisionesRecaudos() {
   const [loadingRecaudos, setLoadingRecaudos] = useState(false);
   const [presupuestosRecaudo, setPresupuestosRecaudo] = useState([]);
   const [presupuestosMarca, setPresupuestosMarca] = useState([]);
-  const [loadingPresupuestos, setLoadingPresupuestos] = useState(false);
+  const [presupuestosReglaExtra, setPresupuestosReglaExtra] = useState([]);
+  const [loadingPresupuestos, setLoadingPresupuestos] = useState(true);
 
   const autoSelectedRef = useRef(false);
 
@@ -159,12 +163,14 @@ export function useComisionesRecaudos() {
   const fetchPresupuestos = useCallback(async (year, month) => {
     setLoadingPresupuestos(true);
     try {
-      const [recRes, marcaRes] = await Promise.all([
+      const [recRes, marcaRes, reglasRes] = await Promise.all([
         getPresupuestosRecaudo(year, month),
         getPresupuestosMarca(year, month),
+        getReglasExtra(year, month),
       ]);
       setPresupuestosRecaudo(recRes.data || []);
       setPresupuestosMarca(marcaRes.data || []);
+      setPresupuestosReglaExtra(reglasRes.data || []);
     } catch (err) {
       if (import.meta.env.DEV)
         console.error(
@@ -173,6 +179,7 @@ export function useComisionesRecaudos() {
         );
       setPresupuestosRecaudo([]);
       setPresupuestosMarca([]);
+      setPresupuestosReglaExtra([]);
     }
     setLoadingPresupuestos(false);
   }, []);
@@ -183,6 +190,15 @@ export function useComisionesRecaudos() {
 
   const savePresupuestoMarca = useCallback(async (row) => {
     return upsertPresupuestoMarca(row);
+  }, []);
+
+  const saveReglaExtra = useCallback(async (row) => {
+    return upsertReglaExtra(row);
+  }, []);
+
+  const removeReglaExtra = useCallback(async (id) => {
+    const { success } = await deleteReglaExtra(id);
+    return success;
   }, []);
 
   const removePresupuestoRecaudo = useCallback(async (id) => {
@@ -215,12 +231,15 @@ export function useComisionesRecaudos() {
     fetchRecaudosPeriodo,
     presupuestosRecaudo,
     presupuestosMarca,
+    presupuestosReglaExtra,
     loadingPresupuestos,
     fetchPresupuestos,
     savePresupuestoRecaudo,
     savePresupuestoMarca,
+    saveReglaExtra,
     removePresupuestoRecaudo,
     removePresupuestoMarca,
+    removeReglaExtra,
     copiarPresupuestos,
   };
 }
