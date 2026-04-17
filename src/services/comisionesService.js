@@ -204,7 +204,9 @@ export const getCargasByMonth = async (year, month) => {
 
     const { data, error } = await supabase
       .from("distrimm_comisiones_cargas")
-      .select("id, fecha_ventas, nombre_archivo")
+      .select(
+        "id, fecha_ventas, nombre_archivo, total_registros, total_ventas, created_at",
+      )
       .gte("fecha_ventas", startDate)
       .lt("fecha_ventas", endDate)
       .order("fecha_ventas", { ascending: true })
@@ -546,6 +548,58 @@ export const copiarPresupuestosMes = async (
   }
 };
 
+export const getReglasExtra = async (year, month) => {
+  try {
+    const { data, error } = await supabase
+      .from("distrimm_comisiones_reglas_extra")
+      .select("*")
+      .eq("periodo_year", year)
+      .eq("periodo_month", month)
+      .order("vendedor_codigo");
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    if (import.meta.env.DEV)
+      console.error("[comisionesService] Error fetching reglas extra:", error);
+    return { data: null, error };
+  }
+};
+
+export const upsertReglaExtra = async (row) => {
+  try {
+    const { id, _isNew, _globalIdx, ...rest } = row;
+    const payload = { ...rest, updated_at: new Date().toISOString() };
+    const { data, error } = await supabase
+      .from("distrimm_comisiones_reglas_extra")
+      .upsert(payload, {
+        onConflict: "periodo_year,periodo_month,vendedor_codigo",
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    if (import.meta.env.DEV)
+      console.error("[comisionesService] Error upserting regla extra:", error);
+    return { data: null, error };
+  }
+};
+
+export const deleteReglaExtra = async (id) => {
+  try {
+    const { error } = await supabase
+      .from("distrimm_comisiones_reglas_extra")
+      .delete()
+      .eq("id", id);
+    if (error) throw error;
+    return { success: true, error: null };
+  } catch (error) {
+    if (import.meta.env.DEV)
+      console.error("[comisionesService] Error deleting regla extra:", error);
+    return { success: false, error };
+  }
+};
+
 export const calcularComisiones = async (cargaId) => {
   try {
     const { data, error } = await supabase.rpc("fn_calcular_comisiones", {
@@ -601,6 +655,7 @@ export const saveSnapshot = async ({
   resumen,
   presupuestosMarca,
   presupuestosRecaudo,
+  reglasExtra,
   totalesVentas,
   exclusiones,
   catalogoCount,
@@ -613,6 +668,7 @@ export const saveSnapshot = async ({
     totalRecaudos,
     presupuestosMarca,
     presupuestosRecaudo,
+    reglasExtra,
     exclusiones,
     catalogoCount,
     catalogo,
@@ -634,6 +690,9 @@ export const saveSnapshot = async ({
           presupuestos_recaudo_ids: (presupuestosRecaudo || []).map(
             (p) => p.id,
           ),
+          reglas_extra_ids: (reglasExtra || [])
+            .filter((r) => r.activa)
+            .map((r) => r.id),
           input_hash: inputHash,
           totales_ventas: totalesVentas || {},
           updated_at: new Date().toISOString(),
@@ -662,6 +721,7 @@ export function buildInputHash({
   totalRecaudos,
   presupuestosMarca,
   presupuestosRecaudo,
+  reglasExtra,
   exclusiones,
   catalogoCount,
   catalogo,
@@ -690,8 +750,18 @@ export function buildInputHash({
     .sort()
     .join(",");
 
+  // Fingerprint de reglas extra — solo activas (inactivas no afectan el cálculo)
+  const reglasExtraFp = (reglasExtra || [])
+    .filter((r) => r.activa)
+    .map(
+      (r) =>
+        `${r.id}:${r.vendedor_codigo}:${r.umbral || 0}:${r.pct_comision || 0}:${r.updated_at || ""}`,
+    )
+    .sort()
+    .join(",");
+
   // Bump CALC_VERSION cuando cambie la lógica de cálculo para invalidar snapshots
-  const CALC_VERSION = 3; // v3: descuento IVA en recaudo + comisión ventas sobre valor_total
+  const CALC_VERSION = 4; // v4: regla comisión para marcas no listadas
   return [
     `calcV:${CALC_VERSION}`,
     ...(cargaIds || []).sort(),
@@ -699,6 +769,7 @@ export function buildInputHash({
     `r:${totalRecaudos}`,
     `pm:${presMarcaFp}`,
     `pr:${presRecaudoFp}`,
+    `rx:${reglasExtraFp}`,
     `excl:${exclFingerprint}`,
     `cat:${
       catalogo?.length
