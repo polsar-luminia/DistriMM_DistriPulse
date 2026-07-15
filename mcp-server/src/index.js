@@ -18,6 +18,7 @@ import { createClient } from "@supabase/supabase-js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { registerTools } from "./tools.js";
+import { registerActions } from "./actions.js";
 
 const PORT = process.env.PORT || 3102;
 const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, MCP_ACCESS_TOKEN } = process.env;
@@ -59,6 +60,10 @@ app.use(express.json({ limit: "1mb" }));
 app.get("/mcp/health", (_req, res) => {
   res.json({ ok: true, server: SERVER_INFO.name, version: SERVER_INFO.version });
 });
+
+// Fachada REST + esquema OpenAPI para GPT Actions (custom GPTs).
+// Debe registrarse ANTES del handler genérico GET /mcp/:token (405).
+registerActions(app, supabase, tokenValido);
 
 async function handleMcp(req, res) {
   if (!tokenValido(extraerToken(req))) {

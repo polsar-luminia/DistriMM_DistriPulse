@@ -44,6 +44,23 @@ Requiere plan Plus/Pro/Team/Enterprise.
 En **Claude** (claude.ai → Configuración → Conectores → Añadir conector personalizado)
 funciona con la misma URL.
 
+## Cómo conectarlo a un GPT personalizado (GPT Actions)
+
+El builder de GPTs no habla MCP — usa **Acciones** con esquema OpenAPI. El servidor
+expone una fachada REST equivalente bajo `/mcp/actions/*` para eso:
+
+1. En el GPT → **Crear nueva acción**:
+   - **Autenticación:** `Clave de API` → tipo **Bearer** → pegar el `MCP_ACCESS_TOKEN`
+     (el mismo token de la URL del conector, pero SIN la URL).
+   - **Esquema → Importar desde URL:**
+     `https://distrimm.luminiatech.digital/mcp/actions/openapi.json`
+   - **Política de privacidad:** `https://distrimm.luminiatech.digital/privacy`
+2. Importa 8 operaciones: resumenEjecutivo, consultarVentas, consultarCartera,
+   consultarInventario, analisisStockYSugerido, consultarComisiones, buscar y ficha.
+3. Publicar **solo con enlace / solo workspace** — nunca público en la tienda.
+
+El token rota igual para ambas vías (es el mismo `MCP_ACCESS_TOKEN`).
+
 ## Operación
 
 ```bash
