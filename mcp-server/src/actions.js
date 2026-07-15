@@ -93,7 +93,11 @@ const LIMITE = p("limite", { type: "integer", minimum: 1, maximum: 100 }, "Máxi
 const RESP = {
   200: {
     description: "Resultado en JSON (valores en pesos colombianos COP)",
-    content: { "application/json": { schema: { type: "object" } } },
+    content: {
+      "application/json": {
+        schema: { $ref: "#/components/schemas/Resultado" },
+      },
+    },
   },
 };
 
@@ -110,6 +114,18 @@ export const OPENAPI_SCHEMA = {
   components: {
     securitySchemes: {
       bearerAuth: { type: "http", scheme: "bearer" },
+    },
+    schemas: {
+      Resultado: {
+        type: "object",
+        description:
+          "Resultado de la consulta. La estructura varía según el endpoint; las cifras monetarias vienen en pesos colombianos (COP) y las fechas en formato YYYY-MM-DD.",
+        properties: {
+          moneda: { type: "string", description: "Siempre 'COP' cuando hay cifras monetarias" },
+          error: { type: "string", description: "Presente solo si la consulta no pudo resolverse" },
+        },
+        additionalProperties: true,
+      },
     },
   },
   paths: {
