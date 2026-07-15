@@ -42,10 +42,10 @@ Each service has a single responsibility and communicates with exactly one backe
 - `cfoService.js` — CFO analysis (via Edge Function proxy)
 
 Edge Function architecture (sin n8n):
-- **WhatsApp** (`proxy-n8n-whatsapp`): llama directo a Meta Graph API v21.0. Lazy token refresh, loop secuencial por destinatario.
+- **WhatsApp** (`proxy-n8n-whatsapp`): llama directo a Meta Graph API v21.0. Lazy token refresh, loop secuencial por destinatario. Verifica JWT con service_role (`verify_jwt: false` en deploy + auth interna). Persiste `wamid` y `phone_number_id` en `distrimm_recordatorios_detalle` para auditoría. Recomputa conteos del lote desde el detalle (idempotente).
 - **CFO** (`proxy-n8n-cfo`): llama RPC `fn_cfo_distrimm_dashboard` → GPT-4o (`response_format: json_object`) → guarda en `distrimm_cfo_analyses`. Timeout 90s.
 - **Chatbot** (`proxy-n8n-chatbot`): AI agent GPT-4.1-mini con tool-calling nativo. Tool `consulta_sql_cartera` → RPC `fn_distribot_consulta_cartera`. Historial desde `distrimm_chat_messages`. Timeout 100s, máx 25 iteraciones.
-- Todos usan `supabase.functions.invoke()` con auth JWT del usuario (verificada con ANON_KEY + header). Requiere `OPENAI_API_KEY` en secrets.
+- Todos usan `supabase.functions.invoke()` con auth JWT del usuario. Requiere `OPENAI_API_KEY` en secrets.
 
 ### Supabase Tables
 Legacy tables (no prefix): `historial_cargas`, `cartera_items`
@@ -53,8 +53,9 @@ New tables (`distrimm_` prefix): `distrimm_clientes`, `distrimm_vendedores`, `di
 Comisiones tables: `distrimm_comisiones_cargas` (upload history), `distrimm_comisiones_ventas` (sale line items, CASCADE on carga), `distrimm_productos_catalogo` (product master with marca/categoría), `distrimm_comisiones_exclusiones` (brand/product exclusion rules)
 RPC: `fn_calcular_comisiones(p_carga_id UUID)` — returns per-salesperson totals with exclusions applied
 
-`distrimm_whatsapp_instances` stores per-user WhatsApp Business connections (via Embedded Signup). The frontend reads it (SELECT) to show connection status; Edge Functions write to it (INSERT/UPDATE via `service_role`).
+`distrimm_whatsapp_instances` stores per-user WhatsApp Business connections (via Embedded Signup). The frontend reads it (SELECT) to show connection status; Edge Functions write to it (INSERT/UPDATE via `service_role`). **Regla operativa: una sola instancia con `status='active'` por organización.** El frontend hace `eq(status,'active').order(created_at desc).limit(1)` — si hay más de una activa, toma la más reciente y puede acabar mandando desde el número equivocado. Cuando aparezca una intrusa, marcarla como `disconnected`.
 `distrimm_whatsapp_credentials` stores access tokens for each instance — only accessible via Edge Functions with `service_role` key (no RLS policies for users).
+`distrimm_recordatorios_detalle` incluye `wamid` y `phone_number_id` (nullable) — se llenan en cada envío exitoso para auditar desde qué número salió y cruzar con webhooks de Meta.
 
 Link key between datasets: `cartera_items.tercero_nit` ↔ `distrimm_clientes.no_identif`
 
@@ -102,7 +103,7 @@ Other server-side secrets (Meta access token per instance) live in `distrimm_wha
 - Dominio: https://distrimm.luminiatech.digital
 - Código en VPS: `/var/www/distrimm-agro/`
 - Supabase URL: `https://xzhqhmjfhnvqxndxayxs.supabase.co`
-- PM2 procesos: `distrimm-api` (puerto 3103), `distrimm-mcp` (puerto 3102), `luminia-monitor`
+- PM2 procesos: `distrimm-mcp` (puerto 3102), `luminia-monitor` (el viejo `distrimm-api`:3103 ya no existe en el VPS)
 - Nginx sirve frontend desde: `/var/www/distrimm-agro/` (SPA con `try_files`)
 - SSL: Certbot (Let's Encrypt) auto-renovación
 
@@ -111,20 +112,15 @@ Other server-side secrets (Meta access token per instance) live in `distrimm_wha
 /var/www/distrimm-agro/
 ├── index.html              # Frontend build (React SPA)
 ├── assets/                 # JS/CSS bundles
-├── distrimm-api/           # Express API (puerto 3103)
-│   ├── src/index.js        # Entry point
-│   ├── src/routes/         # vendedores, ventas, recaudo, comisiones, cartera, catalogo, analisis
-│   └── .env                # SUPABASE_URL, SUPABASE_SERVICE_KEY, API_KEY, PORT
-└── mcp-server/             # MCP Server (puerto 3102)
-    ├── src/index.js         # StreamableHTTP MCP
-    ├── src/tools/           # cartera, ventas, comisiones, recaudo, maestros, audit, analisis
-    └── .env                 # SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, PORT
+└── mcp-server/             # MCP Server v2 (puerto 3102) — código fuente en mcp-server/ del repo
+    ├── src/index.js        # StreamableHTTP stateless + auth por token en URL
+    ├── src/tools.js        # 8 tools: resumen, ventas, cartera, inventario, sugerido, comisiones, search, fetch
+    └── .env                # SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, MCP_ACCESS_TOKEN, PORT (chmod 600)
 ```
 
 ### Nginx
 ```
 distrimm.luminiatech.digital
-├── /api/   → proxy_pass localhost:3103  (Express API)
 ├── /mcp    → proxy_pass localhost:3102  (MCP Server, StreamableHTTP)
 └── /       → try_files (React SPA)
 ```
@@ -139,17 +135,9 @@ pnpm build
 tar -cf - -C dist . | ssh admin@161.97.111.39 'cd /var/www/distrimm-agro && rm -rf assets && tar -xf -'
 ```
 
-**API (backend):**
-```bash
-# Copiar archivo modificado
-cat distrimm-api/src/routes/ARCHIVO.js | ssh admin@161.97.111.39 'cat > /var/www/distrimm-agro/distrimm-api/src/routes/ARCHIVO.js'
-# Reiniciar
-ssh admin@161.97.111.39 'pm2 restart distrimm-api'
-```
-
 **MCP Server:**
 ```bash
-cat mcp-server/src/tools/ARCHIVO.js | ssh admin@161.97.111.39 'cat > /var/www/distrimm-agro/mcp-server/src/tools/ARCHIVO.js'
+cat mcp-server/src/ARCHIVO.js | ssh admin@161.97.111.39 'cat > /var/www/distrimm-agro/mcp-server/src/ARCHIVO.js'
 ssh admin@161.97.111.39 'pm2 restart distrimm-mcp'
 ```
 
@@ -160,8 +148,8 @@ El servidor tiene fail2ban. Si hay timeout:
 2. Mi IP está en whitelist de fail2ban — no debería banearse
 3. Si sigue sin responder: Rescue System en Contabo → montar `/dev/sda1` en `/mnt/real` → arreglar SSH
 
-### MCP Server URL
-`https://distrimm.luminiatech.digital/mcp` — StreamableHTTP, usado desde Claude.ai para consultar datos de Supabase.
+### MCP Server (v2, jul/2026)
+`https://distrimm.luminiatech.digital/mcp/<MCP_ACCESS_TOKEN>` — StreamableHTTP stateless para conectores de ChatGPT y Claude (gerencia consulta ventas, cartera, inventario, comisiones y sugerido en lenguaje natural). El token vive en el `.env` del VPS; guía completa de conexión y rotación en `mcp-server/README.md`. Los datos salen de las RPCs `fn_mcp_*` (`sql/mcp_server_rpcs.sql`), solo lectura y solo ejecutables con `service_role`. Health: `GET /mcp/health` (sin token).
 
 ## Health Stack
 
