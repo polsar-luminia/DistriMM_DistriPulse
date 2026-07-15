@@ -29,6 +29,7 @@ const DirectorioClientesPage = lazy(
 );
 const VendedoresPage = lazy(() => import("./pages/VendedoresPage"));
 const ScoreCrediticioPage = lazy(() => import("./pages/ScoreCrediticioPage"));
+const SugeridoPedidosPage = lazy(() => import("./pages/SugeridoPedidosPage"));
 
 const LazyFallback = (
   <div className="flex items-center justify-center h-64">
@@ -129,6 +130,14 @@ export default function App() {
                   element={
                     <Suspense fallback={LazyFallback}>
                       <ComisionesPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="sugerido-pedidos"
+                  element={
+                    <Suspense fallback={LazyFallback}>
+                      <SugeridoPedidosPage />
                     </Suspense>
                   }
                 />

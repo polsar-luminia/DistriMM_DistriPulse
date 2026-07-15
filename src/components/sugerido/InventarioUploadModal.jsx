@@ -1,0 +1,415 @@
+import React, { useState } from "react";
+import {
+  Upload,
+  X,
+  FileSpreadsheet,
+  Calendar,
+  CheckCircle,
+  AlertCircle,
+  Loader2,
+  ArrowRight,
+  Warehouse,
+} from "lucide-react";
+import { sileo } from "sileo";
+import { cn } from "@/lib/utils";
+import { getColombiaTodayISO, formatFullCurrency } from "../../utils/formatters";
+import { validateWorkbook } from "../../utils/excelETL";
+import {
+  isSaldosFormat,
+  transformSaldos,
+  BODEGAS_CONFIABLES,
+} from "../../utils/inventarioUpload";
+import { uploadInventario } from "../../services/sugeridoService";
+import { logAudit } from "../../services/auditService";
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+export default function InventarioUploadModal({ isOpen, onClose, onSuccess }) {
+  const [file, setFile] = useState(null);
+  const [fileName, setFileName] = useState("");
+  const [fechaSaldos, setFechaSaldos] = useState(getColombiaTodayISO);
+  const [step, setStep] = useState("select");
+  const [previewData, setPreviewData] = useState([]);
+  const [fullData, setFullData] = useState([]);
+  const [progress, setProgress] = useState(0);
+  const [error, setError] = useState(null);
+  const [uploading, setUploading] = useState(false);
+
+  const reset = () => {
+    setFile(null);
+    setStep("select");
+    setPreviewData([]);
+    setFullData([]);
+    setError(null);
+    setProgress(0);
+  };
+
+  const handleClose = () => {
+    reset();
+    onClose();
+  };
+
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      if (selectedFile.size > MAX_FILE_SIZE) {
+        setError("El archivo excede el tamaño máximo permitido (10MB)");
+        return;
+      }
+      setFile(selectedFile);
+      setFileName(selectedFile.name);
+      setError(null);
+    }
+  };
+
+  const handleAnalyze = () => {
+    if (!file) return;
+    setError(null);
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const XLSX = await import("xlsx-js-style");
+        const data = new Uint8Array(e.target.result);
+        const wb = XLSX.read(data, { type: "array", cellDates: false });
+        const ws = validateWorkbook(wb);
+
+        let jsonData = XLSX.utils.sheet_to_json(ws, { range: 0 });
+        if (jsonData.length === 0)
+          jsonData = XLSX.utils.sheet_to_json(ws, { range: 1 });
+        if (jsonData.length === 0)
+          throw new Error("El archivo parece estar vacio.");
+
+        if (!isSaldosFormat(jsonData))
+          throw new Error(
+            "Formato no reconocido. Se esperaba el reporte 'Saldos de Productos' (columnas Codigo, Bodega, Nombre Producto, Cantidad).",
+          );
+
+        const processed = transformSaldos(jsonData);
+        if (processed.length === 0)
+          throw new Error("No se encontraron registros validos.");
+
+        setFullData(processed);
+        setPreviewData(processed.slice(0, 5));
+        setStep("preview");
+      } catch (err) {
+        setError("Error al leer el archivo: " + err.message);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
+  const handleUpload = async () => {
+    if (uploading) return;
+    setUploading(true);
+    setStep("uploading");
+    setProgress(20);
+
+    try {
+      const totalValor = fullData.reduce((s, r) => s + r.valor, 0);
+
+      // Atomic RPC: carga + items + reemplazo de la misma fecha en una transacción
+      const { data: cargaId, error: rpcErr } = await uploadInventario(
+        {
+          nombre_archivo: fileName || "Saldos de Productos",
+          fecha_saldos: fechaSaldos,
+          total_registros: fullData.length,
+          total_valor: totalValor,
+        },
+        fullData,
+      );
+      if (rpcErr) throw rpcErr;
+
+      setProgress(100);
+      setStep("success");
+      sileo.success("Inventario cargado exitosamente");
+      logAudit("UPLOAD_INVENTARIO", "distrimm_inventario_items", cargaId, {
+        archivo: fileName,
+        registros: fullData.length,
+        total_valor: totalValor,
+        fecha_saldos: fechaSaldos,
+      });
+      setTimeout(() => {
+        onSuccess(cargaId);
+        handleClose();
+      }, 1500);
+    } catch (err) {
+      if (import.meta.env.DEV) console.error("Upload inventario error:", err);
+      setError("Error al guardar: " + (err?.message || JSON.stringify(err)));
+      setStep("preview");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  // Banner stats del preview
+  const bodegasEnArchivo = [...new Set(fullData.map((r) => r.bodega))].sort(
+    (a, b) => a - b,
+  );
+  const filasConfiables = fullData.filter((r) =>
+    BODEGAS_CONFIABLES.includes(r.bodega),
+  ).length;
+  const totalValor = fullData.reduce((s, r) => s + r.valor, 0);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl my-8 overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="bg-slate-900 p-4 flex justify-between items-center text-white shrink-0">
+          <h3 className="font-bold text-lg flex items-center gap-2">
+            <Upload size={20} className="text-indigo-400" /> Cargar Saldos de
+            Productos
+          </h3>
+          <button
+            onClick={handleClose}
+            disabled={step === "uploading"}
+            className="p-1 hover:bg-slate-700 rounded transition-colors"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="p-6 overflow-y-auto">
+          {error && (
+            <div className="mb-6 bg-rose-50 text-rose-700 p-4 rounded-lg flex items-start gap-3 border border-rose-200">
+              <AlertCircle size={20} className="mt-0.5 shrink-0" />
+              <div>
+                <p className="font-bold">Error</p>
+                <p className="text-sm">{error}</p>
+              </div>
+            </div>
+          )}
+
+          {step === "select" && (
+            <div className="space-y-6">
+              <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 text-sm text-indigo-700">
+                <p className="font-bold mb-1">
+                  Reporte "Saldos de Productos" del ERP
+                </p>
+                <p className="text-xs text-indigo-600">
+                  Se guardan todas las bodegas, pero el sugerido se calcula
+                  solo con las bodegas confiables (
+                  {BODEGAS_CONFIABLES.join(", ")}). Subir un archivo con la
+                  misma fecha reemplaza la carga anterior.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <label
+                  htmlFor="inventario-fecha"
+                  className="block text-sm font-bold text-slate-700"
+                >
+                  Fecha del corte de saldos
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Calendar size={18} className="text-indigo-600" />
+                  </div>
+                  <input
+                    id="inventario-fecha"
+                    type="date"
+                    value={fechaSaldos}
+                    onChange={(e) => setFechaSaldos(e.target.value)}
+                    className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-medium"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-bold text-slate-700">
+                  Archivo Excel
+                </label>
+                <div
+                  className={cn(
+                    "border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-all group",
+                    file
+                      ? "border-indigo-500 bg-indigo-50/50"
+                      : "border-slate-300 hover:border-indigo-400 hover:bg-slate-50",
+                  )}
+                >
+                  <input
+                    type="file"
+                    accept=".xlsx,.xls,.csv"
+                    onChange={handleFileChange}
+                    className="hidden"
+                    id="inventario-file"
+                  />
+                  <label
+                    htmlFor="inventario-file"
+                    className="cursor-pointer flex flex-col items-center w-full"
+                  >
+                    {file ? (
+                      <>
+                        <div className="bg-indigo-100 p-3 rounded-full mb-3">
+                          <FileSpreadsheet
+                            size={32}
+                            className="text-indigo-700"
+                          />
+                        </div>
+                        <span className="text-base font-bold text-slate-900 break-all">
+                          {file.name}
+                        </span>
+                        <span className="text-xs text-indigo-700 font-medium mt-1 uppercase tracking-wide">
+                          Archivo Seleccionado
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <div className="bg-slate-100 p-3 rounded-full mb-3 group-hover:bg-indigo-100 transition-colors">
+                          <Upload
+                            size={32}
+                            className="text-slate-400 group-hover:text-indigo-600 transition-colors"
+                          />
+                        </div>
+                        <span className="text-sm font-semibold text-slate-700">
+                          Haz clic para buscar el archivo
+                        </span>
+                        <span className="text-xs text-slate-400 mt-2">
+                          Soporta .xls / .xlsx
+                        </span>
+                      </>
+                    )}
+                  </label>
+                </div>
+              </div>
+
+              <button
+                onClick={handleAnalyze}
+                disabled={!file}
+                className="w-full py-3 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-indigo-900/20 transition-all"
+              >
+                Analizar y Previsualizar <ArrowRight size={18} />
+              </button>
+            </div>
+          )}
+
+          {step === "preview" && (
+            <div className="space-y-6">
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex gap-3">
+                <Warehouse className="text-amber-600 shrink-0" size={24} />
+                <div className="min-w-0">
+                  <h4 className="font-bold text-sm uppercase tracking-wide mb-1 text-amber-800">
+                    Inventario Detectado
+                  </h4>
+                  <p className="text-sm text-amber-700">
+                    {fullData.length} filas producto/bodega — Bodegas en el
+                    archivo: {bodegasEnArchivo.join(", ")} ·{" "}
+                    {filasConfiables} filas en bodegas confiables (
+                    {BODEGAS_CONFIABLES.join(", ")}). Valor total:{" "}
+                    {formatFullCurrency(totalValor)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm">
+                <div className="bg-slate-50 px-4 py-2 border-b border-slate-200 flex justify-between items-center">
+                  <span className="text-xs font-bold text-slate-500 uppercase">
+                    Primeras 5 filas
+                  </span>
+                  <span className="text-xs font-mono text-slate-400">
+                    {fullData.length} registros totales
+                  </span>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-left">
+                    <thead className="bg-slate-50 text-xs text-slate-500 uppercase font-bold">
+                      <tr>
+                        <th className="px-3 py-2">Código</th>
+                        <th className="px-3 py-2">Producto</th>
+                        <th className="px-3 py-2 text-center">Bodega</th>
+                        <th className="px-3 py-2 text-right">Cantidad</th>
+                        <th className="px-3 py-2 text-right">Valor</th>
+                        <th className="px-3 py-2">Marca</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {previewData.map((row, i) => (
+                        <tr key={i} className="hover:bg-slate-50">
+                          <td className="px-3 py-2 text-xs font-mono">
+                            {row.producto_codigo}
+                          </td>
+                          <td className="px-3 py-2 text-xs truncate max-w-[180px]">
+                            {row.producto_nombre}
+                          </td>
+                          <td className="px-3 py-2 text-xs text-center">
+                            <span
+                              className={cn(
+                                "text-[10px] font-bold px-2 py-0.5 rounded-full",
+                                BODEGAS_CONFIABLES.includes(row.bodega)
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : "bg-slate-100 text-slate-500",
+                              )}
+                            >
+                              {row.bodega}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2 text-xs text-right font-mono">
+                            {row.cantidad}
+                          </td>
+                          <td className="px-3 py-2 text-xs text-right font-mono">
+                            {formatFullCurrency(row.valor)}
+                          </td>
+                          <td className="px-3 py-2 text-xs truncate max-w-[120px]">
+                            {row.marca}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setStep("select")}
+                  className="flex-1 px-4 py-3 border border-slate-300 text-slate-700 rounded-lg text-sm font-bold hover:bg-slate-50 transition-colors"
+                >
+                  Cancelar / Corregir
+                </button>
+                <button
+                  onClick={handleUpload}
+                  disabled={uploading}
+                  className="flex-[2] px-4 py-3 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-indigo-900/20 flex items-center justify-center gap-2 transition-all"
+                >
+                  <CheckCircle size={18} /> Guardar {fullData.length} registros
+                </button>
+              </div>
+            </div>
+          )}
+
+          {step === "uploading" && (
+            <div className="flex flex-col items-center justify-center py-12">
+              <Loader2
+                size={48}
+                className="text-indigo-600 animate-spin mb-4"
+              />
+              <h4 className="text-xl font-bold text-slate-900 mb-2">
+                Guardando Inventario...
+              </h4>
+              <p className="text-slate-500 text-sm mb-6">Por favor espera.</p>
+              <div className="w-full max-w-xs bg-slate-100 rounded-full h-3 overflow-hidden">
+                <div
+                  className="bg-indigo-600 h-3 rounded-full transition-all duration-300"
+                  style={{ width: progress + "%" }}
+                />
+              </div>
+              <p className="text-xs text-slate-400 mt-2 font-mono">
+                {progress}% completado
+              </p>
+            </div>
+          )}
+
+          {step === "success" && (
+            <div className="flex flex-col items-center justify-center py-12 text-indigo-600">
+              <CheckCircle size={64} className="mb-4" />
+              <h4 className="text-2xl font-bold mb-2">Carga Exitosa!</h4>
+              <p className="text-slate-500">
+                {fullData.length} registros de inventario guardados.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

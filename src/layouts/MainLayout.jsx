@@ -25,6 +25,7 @@ import {
   BotMessageSquare,
   ShieldCheck,
   Receipt,
+  ShoppingCart,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import ErrorBoundary from "../components/common/ErrorBoundary";
@@ -60,6 +61,7 @@ const navSections = [
       { to: "/vendedores", icon: Briefcase, text: "Vendedores" },
       { to: "/score-crediticio", icon: ShieldCheck, text: "Score Crediticio" },
       { to: "/comisiones", icon: Receipt, text: "Comisiones" },
+      { to: "/sugerido-pedidos", icon: ShoppingCart, text: "Sugerido de Pedidos" },
     ],
   },
   {
