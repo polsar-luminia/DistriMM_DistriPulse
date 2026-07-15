@@ -17,6 +17,7 @@ import {
   RefreshCw,
   Lock,
   Info,
+  AlertTriangle,
 } from "lucide-react";
 import { sileo } from "sileo";
 import { logAudit } from "../../services/auditService";
@@ -29,10 +30,95 @@ import {
 import { generarReportePDF } from "../../utils/reportePDF";
 import { generarReporteExcelMensual } from "../../utils/reporteExcelMensual";
 import { clickableProps } from "@/utils/a11y";
+import { RECAUDO_THRESHOLDS } from "../../constants/thresholds";
 import { Card, KpiCard, EmptyState, MESES } from "./ComisionesShared";
 import { DashboardContext } from "../DashboardManager";
 import { getPeriodoOperativo } from "../../utils/periodoOperativo";
 import ReporteVendedorDetail from "./ReporteVendedorDetail";
+
+function DesgloseOrigenCard({ titulo, color, data }) {
+  const isEmerald = color === "emerald";
+  const borderCls = isEmerald
+    ? "border-emerald-200 bg-emerald-50/30"
+    : "border-amber-200 bg-amber-50/30";
+  const labelCls = isEmerald ? "text-emerald-700" : "text-amber-700";
+  const chipCls = isEmerald
+    ? "bg-emerald-100 text-emerald-700"
+    : "bg-amber-100 text-amber-700";
+
+  if (!data || data.count === 0) {
+    return (
+      <div className={`rounded-lg border p-3 ${borderCls}`}>
+        <p className={`text-[10px] font-bold uppercase mb-1 ${labelCls}`}>
+          {titulo}
+        </p>
+        <p className="text-xs text-slate-400">
+          Sin recaudos de {titulo.toLowerCase()} este periodo
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`rounded-lg border p-3 space-y-1 ${borderCls}`}>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-1">
+        <p className={`text-[10px] font-bold uppercase ${labelCls}`}>
+          {titulo}
+        </p>
+        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${chipCls}`}>
+          {data.count} recaudo{data.count !== 1 ? "s" : ""}
+        </span>
+      </div>
+
+      {/* Bruto */}
+      <div className="flex justify-between text-xs">
+        <span className="text-slate-500">Bruto recaudado</span>
+        <span className="font-bold text-slate-800 tabular-nums">
+          {formatFullCurrency(data.bruto)}
+        </span>
+      </div>
+
+      {/* Excluido marca */}
+      {data.excluidoMarca > 0 && (
+        <div className="flex justify-between text-xs">
+          <span className="text-slate-400 pl-2">Excluido por marca</span>
+          <span className="text-slate-500 tabular-nums">
+            −{formatFullCurrency(data.excluidoMarca)}
+          </span>
+        </div>
+      )}
+
+      {/* Mora por encima del límite de comisión */}
+      {data.noComisionableMora > 0 && (
+        <div className="flex justify-between text-xs">
+          <span className="text-slate-400 pl-2">
+            Mora {">"} {RECAUDO_THRESHOLDS.DIAS_MORA_LIMITE} días (
+            {data.countNoAplican})
+          </span>
+          <span className="text-rose-500 tabular-nums">
+            −{formatFullCurrency(data.noComisionableMora)}
+          </span>
+        </div>
+      )}
+
+      {/* Separador */}
+      <div className="border-t border-slate-200 pt-1 mt-1">
+        <div className="flex justify-between text-xs">
+          <span className={`font-bold ${labelCls}`}>Comisionable</span>
+          <span className={`font-black tabular-nums ${labelCls}`}>
+            {formatFullCurrency(data.comisionable)}
+          </span>
+        </div>
+        {data.ivaDescontado > 0 && (
+          <p className="text-[9px] text-slate-400 mt-0.5">
+            ⓘ Ya incluye descuento de IVA (ver card arriba)
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function ReporteMensualTab({ hook }) {
   const { reporteMensual, loadingReporte, generarReporteMensual } = hook;
@@ -447,6 +533,26 @@ export default function ReporteMensualTab({ hook }) {
         </div>
       )}
 
+      {!loadingReporte && hasData && reporteMensual?.anomalyWarning && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-3 text-sm text-red-800">
+          <AlertTriangle size={16} className="shrink-0 text-red-500 mt-0.5" />
+          <span>
+            <strong>Posible carga incorrecta:</strong> La última carga del mes (
+            <em>{reporteMensual.anomalyWarning.lastCarga.nombre_archivo}</em>,{" "}
+            {reporteMensual.anomalyWarning.lastRows.toLocaleString("es-CO")}{" "}
+            filas) tiene significativamente menos registros que una carga
+            anterior (
+            <em>
+              {reporteMensual.anomalyWarning.mayorCarga.nombre_archivo}
+            </em>
+            , {reporteMensual.anomalyWarning.maxPrevRows.toLocaleString("es-CO")}{" "}
+            filas). Si el archivo no es acumulativo, elimínalo en la pestaña{" "}
+            <strong>Ventas</strong> y vuelve a generar el reporte con la carga
+            correcta.
+          </span>
+        </div>
+      )}
+
       {/* Advertencias de datos faltantes */}
       {!loadingReporte && hasData && (
         <div className="space-y-2 mb-4">
@@ -709,11 +815,17 @@ export default function ReporteMensualTab({ hook }) {
                                                   >
                                                     <td className="px-3 py-1.5 font-medium">
                                                       {dm.marca}
-                                                      {!dm.tienePresupuesto && (
-                                                        <span className="ml-1 text-[9px] bg-slate-200 text-slate-500 px-1 py-0.5 rounded">
-                                                          Sin config
+                                                      {dm.reglaNoListadas && (
+                                                        <span className="ml-1 text-[9px] bg-amber-50 text-amber-700 border border-amber-200 px-1 py-0.5 rounded">
+                                                          No listada
                                                         </span>
                                                       )}
+                                                      {!dm.tienePresupuesto &&
+                                                        !dm.reglaNoListadas && (
+                                                          <span className="ml-1 text-[9px] bg-slate-200 text-slate-500 px-1 py-0.5 rounded">
+                                                            Sin config
+                                                          </span>
+                                                        )}
                                                     </td>
                                                     <td className="px-3 py-1.5 text-right font-mono">
                                                       {formatFullCurrency(
@@ -794,6 +906,7 @@ export default function ReporteMensualTab({ hook }) {
                                           este vendedor
                                         </p>
                                       ) : (
+                                        <>
                                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                           <div className="bg-white rounded-lg border border-slate-200 p-3">
                                             <p className="text-[10px] text-slate-400 font-bold uppercase">
@@ -867,6 +980,27 @@ export default function ReporteMensualTab({ hook }) {
                                             </p>
                                           </div>
                                         </div>
+                                        {/* Desglose por origen: crédito vs contado */}
+                                        {liq.comisionRecaudo.desglose && (
+                                          <div className="mt-3">
+                                            <p className="text-[10px] text-slate-400 font-bold uppercase mb-2">
+                                              Desglose por Origen
+                                            </p>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                              <DesgloseOrigenCard
+                                                titulo="Crédito"
+                                                color="emerald"
+                                                data={liq.comisionRecaudo.desglose.credito}
+                                              />
+                                              <DesgloseOrigenCard
+                                                titulo="Contado"
+                                                color="amber"
+                                                data={liq.comisionRecaudo.desglose.contado}
+                                              />
+                                            </div>
+                                          </div>
+                                        )}
+                                        </>
                                       )}
                                     </div>
 

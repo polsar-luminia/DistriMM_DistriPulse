@@ -51,5 +51,8 @@ export const DISPLAY_LIMITS = {
 
 // Recaudo (collections) thresholds
 export const RECAUDO_THRESHOLDS = {
-  DIAS_MORA_LIMITE: 70,
+  // Días máximos entre emisión de factura y pago para que el recaudo comisione.
+  // Se amplió de 70 a 72 (jul/2026) porque los días se cuentan desde la fecha
+  // de factura y pagos legítimos quedaban por fuera por 1-2 días.
+  DIAS_MORA_LIMITE: 72,
 };
