@@ -56,7 +56,7 @@ BEGIN
           AND fecha < v_mes_ant_ini + (v_hoy - v_mes_ini + 1)), 0)
     )
   ) INTO v_ventas
-  FROM distrimm_comisiones_ventas
+  FROM distrimm_ventas_vigentes
   WHERE fecha >= v_mes_ant_ini;
 
   SELECT jsonb_build_object(
@@ -144,7 +144,7 @@ BEGIN
         WHEN 'cliente' THEN COALESCE(v.cliente_nombre, v.cliente_nit)
         WHEN 'municipio' THEN COALESCE(v.municipio, 'SIN MUNICIPIO')
       END AS grupo
-    FROM distrimm_comisiones_ventas v
+    FROM distrimm_ventas_vigentes v
     LEFT JOIN distrimm_productos_catalogo p ON p.codigo = v.producto_codigo
     WHERE v.fecha BETWEEN v_desde AND v_hasta
       AND (p_buscar IS NULL OR
@@ -466,7 +466,7 @@ BEGIN
       MAX(v.producto_descripcion) AS descripcion,
       SUM(CASE WHEN v.tipo = 'DV' THEN -v.cantidad ELSE v.cantidad END) AS cantidad_vendida,
       MAX(v.fecha) FILTER (WHERE v.tipo <> 'DV') AS ultima_venta
-    FROM distrimm_comisiones_ventas v
+    FROM distrimm_ventas_vigentes v
     WHERE v.fecha > v_fecha_saldos - p_dias_analisis
       AND v.fecha <= v_fecha_saldos
     GROUP BY v.producto_codigo
@@ -745,7 +745,7 @@ BEGIN
            'vendedor:' || v.vendedor_codigo AS id,
            v.vendedor_nombre || ' (codigo ' || v.vendedor_codigo || ')' AS titulo,
            'vendedor' AS tipo
-    FROM distrimm_comisiones_ventas v
+    FROM distrimm_ventas_vigentes v
     WHERE v.vendedor_nombre ILIKE '%' || p_query || '%' OR v.vendedor_codigo = p_query
     LIMIT v_limite
   )
@@ -788,13 +788,13 @@ BEGIN
           'venta_neta', ROUND(COALESCE(SUM(valor_total),0)),
           'clientes', COUNT(DISTINCT cliente_nit),
           'ultima_venta', MAX(fecha))
-        FROM distrimm_comisiones_ventas
+        FROM distrimm_ventas_vigentes
         WHERE producto_codigo = p.codigo AND fecha > v_hoy - 90
       ),
       'top_clientes_90_dias', (
         SELECT jsonb_agg(jsonb_build_object('cliente', cliente, 'venta', ROUND(venta)))
         FROM (SELECT COALESCE(cliente_nombre, cliente_nit) cliente, SUM(valor_total) venta
-              FROM distrimm_comisiones_ventas
+              FROM distrimm_ventas_vigentes
               WHERE producto_codigo = p.codigo AND fecha > v_hoy - 90
               GROUP BY 1 ORDER BY 2 DESC LIMIT 5) t
       )
@@ -820,13 +820,13 @@ BEGIN
         SELECT jsonb_build_object('venta_neta', ROUND(COALESCE(SUM(valor_total),0)),
           'facturas', COUNT(DISTINCT factura) FILTER (WHERE tipo <> 'DV'),
           'ultima_compra', MAX(fecha))
-        FROM distrimm_comisiones_ventas
+        FROM distrimm_ventas_vigentes
         WHERE cliente_nit = c.no_identif AND fecha > v_hoy - 90
       ),
       'top_productos_90_dias', (
         SELECT jsonb_agg(jsonb_build_object('producto', producto, 'venta', ROUND(venta)))
         FROM (SELECT COALESCE(producto_descripcion, producto_codigo) producto, SUM(valor_total) venta
-              FROM distrimm_comisiones_ventas
+              FROM distrimm_ventas_vigentes
               WHERE cliente_nit = c.no_identif AND fecha > v_hoy - 90
               GROUP BY 1 ORDER BY 2 DESC LIMIT 5) t
       )
@@ -841,7 +841,7 @@ BEGIN
         SELECT jsonb_build_object('venta_neta', ROUND(COALESCE(SUM(valor_total),0)),
           'margen', ROUND(COALESCE(SUM(margen_valor),0)),
           'clientes', COUNT(DISTINCT cliente_nit))
-        FROM distrimm_comisiones_ventas
+        FROM distrimm_ventas_vigentes
         WHERE vendedor_codigo = v.vendedor_codigo AND fecha >= date_trunc('month', v_hoy)::DATE
       ),
       'cartera_asignada', (
@@ -866,7 +866,7 @@ BEGIN
     FROM (
       -- distrimm_vendedores está vacía: se deriva de las ventas
       SELECT DISTINCT ON (vendedor_codigo) vendedor_codigo, vendedor_nombre
-      FROM distrimm_comisiones_ventas
+      FROM distrimm_ventas_vigentes
       WHERE vendedor_codigo = v_clave
       ORDER BY vendedor_codigo, fecha DESC
     ) v;

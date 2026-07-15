@@ -150,7 +150,7 @@ DECLARE
   v_fecha_saldos DATE;
   v_factor NUMERIC;
 BEGIN
-  IF auth.uid() IS NULL THEN
+  IF auth.uid() IS NULL AND COALESCE(auth.role(), '') <> 'service_role' THEN
     RAISE EXCEPTION 'No autenticado';
   END IF;
 
@@ -191,7 +191,7 @@ BEGIN
       MAX(v.producto_descripcion) AS descripcion,
       SUM(CASE WHEN v.tipo = 'DV' THEN -v.cantidad ELSE v.cantidad END) AS cantidad_vendida,
       MAX(v.fecha) FILTER (WHERE v.tipo <> 'DV') AS ultima_venta
-    FROM distrimm_comisiones_ventas v
+    FROM distrimm_ventas_vigentes v
     WHERE v.fecha > v_fecha_saldos - p_dias_analisis
       AND v.fecha <= v_fecha_saldos
     GROUP BY v.producto_codigo
