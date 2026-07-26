@@ -201,7 +201,7 @@ El servidor tiene fail2ban. Si hay timeout:
 ### MCP Server (v2, jul/2026)
 `https://distrimm.luminiatech.digital/mcp/<MCP_ACCESS_TOKEN>` — StreamableHTTP stateless para conectores de ChatGPT y Claude (gerencia consulta ventas, cartera, inventario, comisiones y sugerido en lenguaje natural). El token vive en el `.env` del VPS; guía completa de conexión y rotación en `mcp-server/README.md`. Los datos salen de las RPCs `fn_mcp_*` (`sql/mcp_server_rpcs.sql`), solo lectura y solo ejecutables con `service_role`. Health: `GET /mcp/health` (sin token).
 
-## Sincronización automática desde el ERP SAMIT (Fases 0–2 hechas, 26/07/2026)
+## Sincronización automática desde el ERP SAMIT (COMPLETA, 26/07/2026)
 
 Los datos viajan solos del ERP de la oficina al VPS. Reemplaza la carga manual de Excel.
 Plan completo en `docs/plans/plan-sincronizacion-samit.md`; mapa del ERP en
@@ -381,6 +381,49 @@ tabla daría siempre `sospechoso`.
 - **Solo lectura sobre el ERP**, siempre con `WITH (NOLOCK)`. Hoy el agente lee como
   `GERENCIA DISTRI MM`; el plan recomienda un login SQL dedicado de solo lectura (sería la única
   escritura sobre el ERP en todo el proyecto, **requiere aprobación del dueño**).
+
+
+### Decisiones tomadas y pendientes abiertos (26/07/2026)
+
+**El IVA se excluye SIEMPRE de la base comisionable de recaudos** (decisión del dueño). No se
+implementó tocando `valor_recaudo` —que guarda el dinero recibido, bruto— sino llenando
+`valor_iva`, porque el cálculo ya hacía `valor_recaudo - valor_excluido_marca - valor_iva`
+(`comisionesCalculator.js:148`). El Excel dejaba esa columna en cero, y por eso venía comisionando
+sobre el IVA. El valor sale de `dbo.DeterminarBasePagoComisionVendedor`, la regla del propio ERP.
+
+Impacto medido sobre lo ya liquidado — **−75.723 COP en cinco meses**, y **nadie cambia de tramo**
+(el cumplimiento se mueve como mucho un punto):
+
+| Mes | Vendedor 14 | Vendedor 4 |
+|---|---|---|
+| Marzo | −3.752 | −19.271 |
+| Abril | −3.728 | −24.351 |
+| Mayo | 0 | −13.700 |
+| Junio | 0 | −10.921 |
+| Julio | 0 | 0 (ninguno llega al 80% del primer tramo) |
+
+Solo afecta a los vendedores **14 y 4**: son los únicos con meta de recaudo activa. En los siete
+meses de 2026 el IVA excluido suma **44.513.793 COP** sobre 5.978 millones recaudados (0,74%); el
+efecto en dinero pagado es mucho menor porque las tasas de comisión son de 0,5% a 0,9%.
+
+**Pendientes que el dueño decidió dejar abiertos:**
+- **No hay respaldo del VPS.** Riesgo aceptado explícitamente. Toda la operación —incluidos los
+  siete meses de historia reconstruida— vive solo ahí.
+- **No hay SMTP**, así que **no existe "olvidé mi contraseña"**. Para reponer una clave hay que
+  hacerlo por base. GoTrue quedó con `MAILER_AUTOCONFIRM` y `DISABLE_SIGNUP`.
+- **Rotar `OPENAI_API_KEY` y `META_APP_SECRET`**: pasaron por un archivo y por el chat. Conviene
+  también reemplazar por un marcador la llave `anon` real que `.env.example` trae desde `5262f79`
+  (es pública por diseño, pero no debería estar versionada).
+- **Las 42 filas de junio** con diferencia de valor quedaron sin explicación de por qué el Excel las
+  trataba distinto (ver arriba). Ya no bloquea: el Excel dejó de ser la fuente.
+
+**RIESGO CONOCIDO — hay RPCs en producción que NO están en el repo.** Al corregir
+`fn_cfo_historico_cartera` se descubrió que vivía solo en la base; se exportó a
+`sql/fn_cfo_historico_cartera.sql`. Un inventario posterior encontró que **10 de 35 funciones
+`fn_*` siguen sin versionar**: `fn_actualizar_estado_envio`, `fn_check_upload_rate_limit`,
+`fn_clientes_cartera_filtrados`, `fn_delete_all_rutas`, `fn_delete_ventas_carga`,
+`fn_finalizar_lote_envio`, `fn_get_wa_instance`, `fn_get_wa_instance_name`, `fn_log_upload`,
+`fn_user_role`. Si se recrea la base desde el repo, esas se pierden.
 
 ## Health Stack
 
