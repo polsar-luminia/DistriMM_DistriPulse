@@ -482,9 +482,13 @@ Mayo y junio muestran cero porque se congelaron antes de que existiera el dato d
 cálculo en vivo está **verificado correcto**: vendedor 4 en junio llega al 115,8% de su meta →
 tramo 4 (1,2%) → 2.779.307, y el impacto del IVA sale exacto (`910.080 × 1,2% = 10.921`, el mismo
 número de la tabla de arriba). Vendedor 14 en 0 sí es correcto: 74,7%, por debajo del primer tramo.
-**Recalcular sobrescribe una liquidación congelada, así que es decisión del dueño**, no un arreglo
-técnico. `useComisionesCalculo` ya trae ambas modalidades (crédito y contado) y filtra
-`fuente === 'erp'`; ahí no hay nada que corregir.
+`useComisionesCalculo` ya trae ambas modalidades (crédito y contado) y filtra `fuente === 'erp'`;
+ahí no hay nada que corregir.
+
+**DECISIÓN DEL DUEÑO (26/07/2026): los snapshots de marzo a junio se dejan como están.** Son el
+registro de lo que efectivamente se liquidó y se pagó en la era manual; de julio en adelante todo
+sale del ERP. **No pulsar "Recalcular" en esos meses** — no es un bug pendiente, es una decisión
+tomada.
 
 **Falsa alarma corregida:** `.env.example` **nunca** tuvo la llave `anon` real. Se revisaron los
 cuatro commits que lo tocan y todo el historial del archivo: siempre fue el marcador truncado

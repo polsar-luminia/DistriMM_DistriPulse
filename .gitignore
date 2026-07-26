@@ -88,8 +88,10 @@ supabase/.temp/
 # n8n skills (internal reference)
 n8n-skills/
 
-# Development plans and docs
-docs/plans/
+# docs/plans/ SÍ se versiona (decisión del dueño, 26/07/2026). El mapeo del ERP
+# y el plan de sincronización eran la única documentación de SAMIT y vivían solo
+# en un disco — y el VPS tampoco tiene respaldo. Se revisó que no traen secretos:
+# las menciones a token/secret son nombres de variables y fragmentos de código.
 
 # Example data (may contain sensitive info)
 Ejemplo Excel/
