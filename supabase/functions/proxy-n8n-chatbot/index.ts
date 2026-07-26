@@ -28,7 +28,8 @@ CARTERA (cuentas por cobrar):
 VENTAS Y MARGENES:
 - distrimm_ventas_vigentes: vista DEDUPLICADA. USAR SIEMPRE para agregados de ventas/margen.
 - Columnas: fecha, factura, vendedor_codigo, vendedor_nombre, vendedor_nit, cliente_nit, cliente_nombre, municipio, producto_codigo, producto_descripcion, cantidad, valor_unidad, precio, descuento, valor_total, costo, tipo, margen_valor, margen_pct
-- tipo: 'VE' = venta, 'DV' = devolucion. Venta neta = SUM(CASE WHEN tipo='DV' THEN -valor_total ELSE valor_total END). Margen neto = SUM(CASE WHEN tipo='DV' THEN -margen_valor ELSE margen_valor END).
+- tipo: 'VE' = venta, 'DV' = devolucion. Las DV YA vienen con valor_total, costo y margen_valor NEGATIVOS (asi las sincroniza el ERP). Venta neta = SUM(valor_total) y margen neto = SUM(margen_valor), a secas. NUNCA les cambies el signo con CASE WHEN tipo='DV': eso las suma en vez de restarlas e infla las ventas ~8%.
+- cantidad NO viene con signo: para unidades netas si hay que usar SUM(CASE WHEN tipo='DV' THEN -cantidad ELSE cantidad END).
 - OJO: distrimm_comisiones_ventas es la tabla CRUDA con cargas solapadas (multiplica ~10x los totales). NO la uses para agregados globales; solo con un carga_id especifico.
 
 INVENTARIO:
@@ -49,7 +50,7 @@ EJEMPLOS:
 -- Cartera: aging
 SELECT rango_mora, SUM(valor_saldo) total, COUNT(*) facturas FROM distrimm_cartera_ultima WHERE cliente_nombre <> 'MENORES CUANTIAS' GROUP BY rango_mora ORDER BY MIN(dias_mora)
 -- Ventas: top vendedores por venta neta y margen (90 dias)
-SELECT vendedor_nombre, SUM(CASE WHEN tipo='DV' THEN -valor_total ELSE valor_total END) venta_neta, SUM(CASE WHEN tipo='DV' THEN -margen_valor ELSE margen_valor END) margen FROM distrimm_ventas_vigentes WHERE fecha > CURRENT_DATE - 90 GROUP BY vendedor_nombre ORDER BY venta_neta DESC LIMIT 10
+SELECT vendedor_nombre, SUM(valor_total) venta_neta, SUM(margen_valor) margen FROM distrimm_ventas_vigentes WHERE fecha > CURRENT_DATE - 90 GROUP BY vendedor_nombre ORDER BY venta_neta DESC LIMIT 10
 -- Ventas: productos con mejor margen %
 SELECT producto_descripcion, ROUND(AVG(margen_pct),1) margen_pct, SUM(valor_total) venta FROM distrimm_ventas_vigentes WHERE tipo='VE' GROUP BY producto_descripcion HAVING SUM(valor_total) > 5000000 ORDER BY margen_pct DESC LIMIT 15
 -- Inventario: stock valorizado por marca (bodegas confiables)

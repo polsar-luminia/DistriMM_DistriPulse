@@ -70,12 +70,12 @@ BEGIN
   ORDER BY fecha_corte DESC LIMIT 1;
 
   -- ── Ventas netas (VE - DV) en ventanas ancladas a la fecha de corte ──────
-  SELECT COALESCE(SUM(CASE WHEN tipo = 'DV' THEN -valor_total ELSE valor_total END), 0)
+  SELECT COALESCE(SUM(valor_total), 0)
   INTO v_ventas_netas_90d
   FROM distrimm_ventas_vigentes
   WHERE fecha > v_fecha_corte - 90 AND fecha <= v_fecha_corte;
 
-  SELECT COALESCE(SUM(CASE WHEN tipo = 'DV' THEN -valor_total ELSE valor_total END), 0)
+  SELECT COALESCE(SUM(valor_total), 0)
   INTO v_ventas_netas_30d
   FROM distrimm_ventas_vigentes
   WHERE fecha > v_fecha_corte - 30 AND fecha <= v_fecha_corte;
@@ -181,7 +181,7 @@ BEGIN
   -- ── POR VENDEDOR vía atribución por ventas ───────────────────────────────
   WITH ventas_cli_vend AS (
     SELECT cliente_nit, vendedor_codigo, MAX(vendedor_nombre) AS vendedor_nombre,
-           SUM(CASE WHEN tipo = 'DV' THEN -valor_total ELSE valor_total END) AS venta_neta
+           SUM(valor_total) AS venta_neta
     FROM distrimm_ventas_vigentes
     WHERE vendedor_codigo IS NOT NULL AND cliente_nit IS NOT NULL
     GROUP BY cliente_nit, vendedor_codigo
@@ -262,7 +262,7 @@ BEGIN
     FROM deud d
     LEFT JOIN LATERAL (
       SELECT
-        ROUND(SUM(CASE WHEN v.tipo = 'DV' THEN -v.valor_total ELSE v.valor_total END))::bigint AS compras_90d,
+        ROUND(SUM(v.valor_total))::bigint AS compras_90d,
         (v_fecha_corte - MAX(v.fecha) FILTER (WHERE v.tipo <> 'DV'))::int AS dias_ultima_compra
       FROM distrimm_ventas_vigentes v
       WHERE v.cliente_nit = d.tercero_nit
@@ -273,7 +273,7 @@ BEGIN
       FROM distrimm_ventas_vigentes v
       WHERE v.cliente_nit = d.tercero_nit AND v.vendedor_codigo IS NOT NULL
       GROUP BY vendedor_nombre
-      ORDER BY SUM(CASE WHEN v.tipo = 'DV' THEN -v.valor_total ELSE v.valor_total END) DESC
+      ORDER BY SUM(v.valor_total) DESC
       LIMIT 1
     ) cvd ON true
   ) t;

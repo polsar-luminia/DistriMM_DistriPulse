@@ -460,12 +460,26 @@ coherentes con lo de arriba.
 - **Rol `distrimm_migracion` eliminado** y **6 sesiones residuales de `auth.sessions` borradas**.
   Verificado después: la base de rollback sigue intacta (62 tablas, 110.107 ventas, 77 políticas).
 
-**ROTO EN PRODUCCIÓN — `OPENAI_API_KEY` es inválida. CFO y DistriBot no funcionan.** OpenAI
-responde `401 invalid_api_key`. La clave del VPS está bien formada (164 chars, prefijo `sk-proj-`,
-sin comillas ni espacios): está **revocada**, no corrompida — encaja con que se rotara tras haber
-pasado por el chat, sin reponerla en el servidor. Se arregla escribiendo la nueva en
-`/etc/distrimm/functions.env` y `pm2 restart distrimm-functions`. Todo lo demás del stack está sano;
-esto es lo único caído.
+**RESUELTO — `OPENAI_API_KEY` repuesta (26/07/2026).** La anterior estaba revocada y OpenAI
+devolvía `401 invalid_api_key`; se instaló una nueva en `/etc/distrimm/functions.env` (respaldo en
+`functions.env.bak-20260726`) y se reinició `distrimm-functions`. CFO y DistriBot verificados de
+punta a punta. Al reponer una clave, **validarla antes de instalarla** con
+`GET https://api.openai.com/v1/models` — la primera que se intentó era, byte por byte, la misma que
+ya estaba puesta y muerta.
+
+**CORREGIDO — las devoluciones se estaban sumando en vez de restarse.** El ERP sincroniza las `DV`
+con `valor_total`, `costo` y `margen_valor` **ya negativos**, pero el prompt de DistriBot y
+`fn_cfo_distrimm_dashboard` seguían aplicando `CASE WHEN tipo='DV' THEN -valor_total …`, herencia
+del Excel manual (donde venían positivas). La doble negación **inflaba las ventas un 8%**:
++499.230.632 COP en 2026, +118.689.118 solo en junio. Se probó al peso: la fórmula vieja daba
+936.725.211 para junio contra los 818.036.093 reales, y el bot respondía exactamente eso.
+
+Arreglado en los dos sitios (5 ocurrencias en la RPC + el prompt y su ejemplo). El DSO del CFO pasó
+de 41,1 a **44,6 días** — era optimista por la misma causa.
+
+> **`cantidad` es la excepción: NO viene con signo.** Para unidades netas sí hay que usar
+> `SUM(CASE WHEN tipo='DV' THEN -cantidad ELSE cantidad END)`, que es justo lo que hacen las
+> `fn_mcp_*` — el MCP estaba correcto y no se tocó.
 
 **ATENCIÓN — los snapshots de comisiones de marzo a junio son de la era manual.** Julio se
 regeneró hoy con datos sincronizados y **cuadra exacto** con el cálculo en vivo. Los anteriores no:
