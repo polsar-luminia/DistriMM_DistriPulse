@@ -374,6 +374,158 @@ describe("enrichFromDB", () => {
     expect(result[0]._sinMatchCartera).toBe(false);
     expect(result[0].vendedor_codigo).toBe("V05");
   });
+
+  test("modo estricto: atribuye contado por factura en ventas", async () => {
+    const rows = [
+      {
+        cliente_nit: "900123",
+        factura: "88888",
+        fecha_abono: "2026-04-20",
+      },
+    ];
+
+    let fromCallIndex = 0;
+    const responses = [
+      { data: [], error: null },
+      { data: [], error: null },
+      {
+        data: [
+          {
+            factura: "FELE-88888",
+            vendedor_codigo: "14",
+            fecha: "2026-04-01",
+          },
+        ],
+        error: null,
+      },
+    ];
+
+    mockFrom.mockImplementation(() => {
+      const chain = {};
+      ["select", "in", "range", "order"].forEach((m) => {
+        chain[m] = vi.fn(() => chain);
+      });
+      chain.then = (cb) => {
+        const res = responses[fromCallIndex] || { data: [], error: null };
+        fromCallIndex++;
+        return Promise.resolve(cb(res));
+      };
+      return chain;
+    });
+
+    const result = await enrichFromDB(rows, { strictInvoiceMatch: true });
+
+    expect(result[0].vendedor_codigo).toBe("14");
+    expect(result[0].dias_mora).toBe(19);
+    expect(result[0]._sinMatchCartera).toBe(false);
+    expect(result[0]._sinMatchFactura).toBe(false);
+  });
+
+  test("modo estricto: atribuye contado por factura en cartera si no hay venta", async () => {
+    const rows = [
+      {
+        cliente_nit: "900123",
+        factura: "55555",
+        fecha_abono: "2026-02-01",
+      },
+    ];
+
+    let fromCallIndex = 0;
+    const responses = [
+      {
+        data: [
+          {
+            no_identif: "900123",
+            nombre_completo: "TEST",
+            vendedor_codigo: "V01",
+          },
+        ],
+        error: null,
+      },
+      {
+        data: [
+          {
+            id: 1,
+            documento_id: "55555",
+            tercero_nit: "900123",
+            fecha_emision: "2026-01-15",
+            fecha_vencimiento: "2026-02-15",
+            dias_mora: 10,
+            vendedor_codigo: "V02",
+            valor_saldo: 100000,
+          },
+        ],
+        error: null,
+      },
+      { data: [], error: null },
+    ];
+
+    mockFrom.mockImplementation(() => {
+      const chain = {};
+      ["select", "in", "range", "order"].forEach((m) => {
+        chain[m] = vi.fn(() => chain);
+      });
+      chain.then = (cb) => {
+        const res = responses[fromCallIndex] || { data: [], error: null };
+        fromCallIndex++;
+        return Promise.resolve(cb(res));
+      };
+      return chain;
+    });
+
+    const result = await enrichFromDB(rows, { strictInvoiceMatch: true });
+
+    expect(result[0].vendedor_codigo).toBe("V02");
+    expect(result[0].dias_mora).toBe(17);
+    expect(result[0]._sinMatchCartera).toBe(false);
+  });
+
+  test("modo estricto: no usa fallback de vendedor por cliente si falta factura", async () => {
+    const rows = [
+      {
+        cliente_nit: "900123",
+        factura: "99999",
+        fecha_abono: "2026-04-20",
+      },
+    ];
+
+    let fromCallIndex = 0;
+    const responses = [
+      {
+        data: [
+          {
+            no_identif: "900123",
+            nombre_completo: "CLIENTE",
+            vendedor_codigo: "V01",
+          },
+        ],
+        error: null,
+      },
+      { data: [], error: null },
+      { data: [], error: null },
+    ];
+
+    mockFrom.mockImplementation(() => {
+      const chain = {};
+      ["select", "in", "range", "order"].forEach((m) => {
+        chain[m] = vi.fn(() => chain);
+      });
+      chain.then = (cb) => {
+        const res = responses[fromCallIndex] || { data: [], error: null };
+        fromCallIndex++;
+        return Promise.resolve(cb(res));
+      };
+      return chain;
+    });
+
+    const result = await enrichFromDB(rows, { strictInvoiceMatch: true });
+
+    expect(result[0].cliente_nombre).toBe("CLIENTE");
+    expect(result[0].vendedor_codigo).toBe("");
+    expect(result[0].dias_mora).toBe(-1);
+    expect(result[0]._sinMatchCartera).toBe(true);
+    expect(result[0]._sinMatchFactura).toBe(true);
+  });
 });
 
 // ────────────────────────────────────────────────────

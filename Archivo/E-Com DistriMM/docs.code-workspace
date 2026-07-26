@@ -1,0 +1,19 @@
+{
+	"folders": [
+		{
+			"path": "docs"
+		},
+		{
+			"path": "node_modules"
+		},
+		{
+			"path": "public"
+		},
+		{
+			"path": "src"
+		},
+		{
+			"path": ".superpowers"
+		}
+	]
+}

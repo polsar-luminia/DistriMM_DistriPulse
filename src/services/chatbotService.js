@@ -48,7 +48,7 @@ export async function sendChatMessage(sessionId, message) {
 
     if (error) throw error;
 
-    // n8n Chat Trigger returns { output: "..." } after the code node
+    // Edge Function returns { output: "..." }
     const output = result?.output || result?.text || result?.response || "";
 
     if (!output) {
@@ -66,9 +66,8 @@ export async function sendChatMessage(sessionId, message) {
   }
 }
 
-// Memory is stored on n8n's Postgres (not Supabase), so we can't delete it
-// directly. Resetting the session ID starts a fresh conversation since n8n
-// indexes memory by session ID.
+// La memoria del chatbot vive en distrimm_chat_messages (Supabase).
+// clearChatMemory es un no-op — el "reset" ocurre creando un nuevo sessionId.
 
 export async function clearChatMemory(_sessionId) {
   return { success: true, error: null };
@@ -85,23 +84,24 @@ export function getSuggestedQuestions() {
       message: "Cuales son los 10 clientes con mayor deuda vencida?",
     },
     {
+      label: "Top vendedores",
+      message:
+        "Cuales son los vendedores con mayor venta neta y margen en los ultimos 90 dias?",
+    },
+    {
+      label: "Productos rentables",
+      message:
+        "Que productos tienen el mejor margen porcentual con ventas relevantes?",
+    },
+    {
+      label: "Stock por marca",
+      message:
+        "Muestra el stock valorizado por marca en las bodegas confiables (1, 5 y 6)",
+    },
+    {
       label: "Aging de cartera",
       message:
         "Muestra la distribucion de la cartera por rangos de mora con montos y porcentajes",
-    },
-    {
-      label: "Facturas criticas",
-      message:
-        "Que facturas tienen mas de 90 dias de mora y saldo mayor a 5 millones?",
-    },
-    {
-      label: "Por municipio",
-      message: "Como se distribuye la cartera por municipio?",
-    },
-    {
-      label: "Indicadores clave",
-      message:
-        "Calcula los indicadores clave: % morosidad, mora promedio y DSO estimado",
     },
   ];
 }

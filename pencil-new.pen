@@ -1,0 +1,5247 @@
+{
+  "version": "2.10",
+  "children": [
+    {
+      "type": "frame",
+      "id": "bi8Au",
+      "x": 0,
+      "y": 0,
+      "name": "DistriMM · Canvas",
+      "width": 2500,
+      "height": 11000,
+      "fill": "#C5CFC5",
+      "layout": "none",
+      "children": [
+        {
+          "type": "frame",
+          "id": "6nQEm",
+          "x": 60,
+          "y": 60,
+          "name": "📱 Homepage · Mobile",
+          "clip": true,
+          "width": 390,
+          "height": 1940,
+          "fill": "#FFFFFF",
+          "layout": "vertical",
+          "children": [
+            {
+              "type": "frame",
+              "id": "asWfn",
+              "name": "Navbar",
+              "width": 390,
+              "height": 60,
+              "fill": "#1B5232",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "Ocw5y",
+                  "x": 6,
+                  "y": 6,
+                  "name": "Logo Block",
+                  "width": 162,
+                  "height": 48,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "zHpJy",
+                      "x": 0,
+                      "y": 0,
+                      "name": "Red Band",
+                      "width": 150,
+                      "height": 15,
+                      "fill": "#C62828",
+                      "cornerRadius": 2,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "EaeGF",
+                          "x": 3,
+                          "y": 1,
+                          "name": "mLogoRedTx",
+                          "fill": "#FFFFFF",
+                          "content": "ALMACÉN AGROPECUARIO",
+                          "fontFamily": "Inter",
+                          "fontSize": 7,
+                          "fontWeight": "800"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "Q4QyD",
+                      "x": 0,
+                      "y": 17,
+                      "name": "mLogoDISTRI",
+                      "fill": "#4CAF50",
+                      "content": "DISTRI",
+                      "fontFamily": "Inter",
+                      "fontSize": 24,
+                      "fontWeight": "900"
+                    },
+                    {
+                      "type": "text",
+                      "id": "THt1k",
+                      "x": 88,
+                      "y": 17,
+                      "name": "mLogoMM",
+                      "fill": "#FFFFFF",
+                      "content": "MM",
+                      "fontFamily": "Inter",
+                      "fontSize": 24,
+                      "fontWeight": "900"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "m3ExX",
+                  "x": 256,
+                  "y": 13,
+                  "name": "WA Pill",
+                  "width": 90,
+                  "height": 34,
+                  "fill": "#25D366",
+                  "cornerRadius": 17,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "meE2C",
+                      "x": 11,
+                      "y": 9,
+                      "name": "nWATx",
+                      "fill": "#FFFFFF",
+                      "content": "WhatsApp",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "RLXsK",
+                  "x": 356,
+                  "y": 14,
+                  "name": "Hamburger",
+                  "fill": "#FFFFFF",
+                  "content": "☰",
+                  "fontFamily": "Inter",
+                  "fontSize": 22,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "uvjLt",
+              "name": "Hero",
+              "width": 390,
+              "height": 444,
+              "fill": "#1B5232",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "ellipse",
+                  "id": "UdcaI",
+                  "x": 220,
+                  "y": -80,
+                  "name": "Deco Circle",
+                  "opacity": 0.09,
+                  "fill": "#F9A825",
+                  "width": 260,
+                  "height": 260
+                },
+                {
+                  "type": "frame",
+                  "id": "ARqKH",
+                  "x": 16,
+                  "y": 18,
+                  "name": "Badge",
+                  "width": 228,
+                  "height": 28,
+                  "fill": "#F9A825",
+                  "cornerRadius": 14,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "EADwA",
+                      "x": 10,
+                      "y": 5,
+                      "name": "hBadgeTx",
+                      "fill": "#1B5232",
+                      "content": "🌿 FLORENCIA, CAQUETÁ · AGROPECUARIO",
+                      "fontFamily": "Inter",
+                      "fontSize": 9,
+                      "fontWeight": "800"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "2KE1u",
+                  "x": 16,
+                  "y": 60,
+                  "name": "H1 Line 1",
+                  "fill": "#FFFFFF",
+                  "content": "TU ALMACÉN",
+                  "fontFamily": "Inter",
+                  "fontSize": 32,
+                  "fontWeight": "900"
+                },
+                {
+                  "type": "text",
+                  "id": "YaINi",
+                  "x": 16,
+                  "y": 100,
+                  "name": "H1 Gold",
+                  "fill": "#F9A825",
+                  "content": "AGROPECUARIO",
+                  "fontFamily": "Inter",
+                  "fontSize": 32,
+                  "fontWeight": "900"
+                },
+                {
+                  "type": "text",
+                  "id": "Dne27",
+                  "x": 16,
+                  "y": 140,
+                  "name": "H1 Line 3",
+                  "fill": "#FFFFFF",
+                  "content": "AHORA EN LÍNEA",
+                  "fontFamily": "Inter",
+                  "fontSize": 32,
+                  "fontWeight": "900"
+                },
+                {
+                  "type": "text",
+                  "id": "dInVT",
+                  "x": 16,
+                  "y": 200,
+                  "name": "Subtitle",
+                  "fill": "#F9A825",
+                  "content": "MÁS AHORRO · MÁS CALIDAD\nMÁS PRODUCCIÓN",
+                  "fontFamily": "Inter",
+                  "fontSize": 15,
+                  "fontWeight": "900"
+                },
+                {
+                  "type": "frame",
+                  "id": "rStfm",
+                  "x": 16,
+                  "y": 256,
+                  "name": "Ver Catálogo CTA",
+                  "width": 174,
+                  "height": 44,
+                  "fill": "#F9A825",
+                  "cornerRadius": 10,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "zKANc",
+                      "x": 16,
+                      "y": 14,
+                      "name": "hBtn1Tx",
+                      "fill": "#1B5232",
+                      "content": "VER CATÁLOGO →",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "900"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "jKHE1",
+                  "x": 198,
+                  "y": 256,
+                  "name": "WA CTA Hero",
+                  "width": 176,
+                  "height": 44,
+                  "fill": "#25D366",
+                  "cornerRadius": 10,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "5Dyrx",
+                      "x": 12,
+                      "y": 14,
+                      "name": "hBtn2Tx",
+                      "fill": "#FFFFFF",
+                      "content": "PEDIR POR WHATSAPP",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "rectangle",
+                  "id": "h2dVY",
+                  "x": 16,
+                  "y": 320,
+                  "name": "Stats Divider",
+                  "opacity": 0.14,
+                  "fill": "#FFFFFF",
+                  "width": 358,
+                  "height": 1
+                },
+                {
+                  "type": "frame",
+                  "id": "9b43V",
+                  "x": 16,
+                  "y": 332,
+                  "name": "Stats Row",
+                  "width": 358,
+                  "height": 72,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "y1pvt",
+                      "x": 0,
+                      "y": 0,
+                      "name": "S500",
+                      "width": 89,
+                      "height": 72,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "eYnzW",
+                          "x": 0,
+                          "y": 8,
+                          "name": "s1N",
+                          "fill": "#F9A825",
+                          "content": "500+",
+                          "fontFamily": "Inter",
+                          "fontSize": 20,
+                          "fontWeight": "900"
+                        },
+                        {
+                          "type": "text",
+                          "id": "bu8vl",
+                          "x": 0,
+                          "y": 36,
+                          "name": "s1L",
+                          "opacity": 0.6,
+                          "fill": "#FFFFFF",
+                          "content": "Productos",
+                          "fontFamily": "Inter",
+                          "fontSize": 10,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "vCxK4",
+                      "x": 89,
+                      "y": 0,
+                      "name": "S20",
+                      "width": 89,
+                      "height": 72,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "0qFbL",
+                          "x": 0,
+                          "y": 8,
+                          "name": "s2N",
+                          "fill": "#F9A825",
+                          "content": "20+",
+                          "fontFamily": "Inter",
+                          "fontSize": 20,
+                          "fontWeight": "900"
+                        },
+                        {
+                          "type": "text",
+                          "id": "TBVpl",
+                          "x": 0,
+                          "y": 36,
+                          "name": "s2L",
+                          "opacity": 0.6,
+                          "fill": "#FFFFFF",
+                          "content": "Marcas",
+                          "fontFamily": "Inter",
+                          "fontSize": 10,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "vNQcj",
+                      "x": 178,
+                      "y": 0,
+                      "name": "SB2B",
+                      "width": 89,
+                      "height": 72,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "lTF9F",
+                          "x": 0,
+                          "y": 8,
+                          "name": "s3N",
+                          "fill": "#F9A825",
+                          "content": "B2B",
+                          "fontFamily": "Inter",
+                          "fontSize": 20,
+                          "fontWeight": "900"
+                        },
+                        {
+                          "type": "text",
+                          "id": "9721z",
+                          "x": 0,
+                          "y": 36,
+                          "name": "s3L",
+                          "opacity": 0.6,
+                          "fill": "#FFFFFF",
+                          "content": "Mayoristas",
+                          "fontFamily": "Inter",
+                          "fontSize": 10,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "NE0uE",
+                      "x": 267,
+                      "y": 0,
+                      "name": "SEnvio",
+                      "width": 91,
+                      "height": 72,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "9rmeb",
+                          "x": 0,
+                          "y": 8,
+                          "name": "s4N",
+                          "fill": "#F9A825",
+                          "content": "📦",
+                          "fontFamily": "Inter",
+                          "fontSize": 20,
+                          "fontWeight": "900"
+                        },
+                        {
+                          "type": "text",
+                          "id": "y1mc6",
+                          "x": 0,
+                          "y": 36,
+                          "name": "s4L",
+                          "opacity": 0.6,
+                          "fill": "#FFFFFF",
+                          "content": "Envío dom.",
+                          "fontFamily": "Inter",
+                          "fontSize": 10,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "wchYC",
+              "name": "Categorías",
+              "width": 390,
+              "height": 284,
+              "fill": "#FFFFFF",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "l5zKD",
+                  "x": 16,
+                  "y": 20,
+                  "name": "cTitle",
+                  "fill": "#1B5232",
+                  "content": "Categorías",
+                  "fontFamily": "Inter",
+                  "fontSize": 20,
+                  "fontWeight": "800"
+                },
+                {
+                  "type": "rectangle",
+                  "cornerRadius": 2,
+                  "id": "737Lg",
+                  "x": 16,
+                  "y": 48,
+                  "name": "cUnder",
+                  "fill": "#F9A825",
+                  "width": 36,
+                  "height": 3
+                },
+                {
+                  "type": "text",
+                  "id": "dM5NZ",
+                  "x": 310,
+                  "y": 21,
+                  "name": "cLink",
+                  "fill": "#1B5232",
+                  "content": "Ver todas →",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "frame",
+                  "id": "qTAQA",
+                  "x": 16,
+                  "y": 60,
+                  "name": "Cat Grid",
+                  "width": 358,
+                  "height": 212,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "u4WUo",
+                      "x": 0,
+                      "y": 0,
+                      "name": "Cat Agrosemillas",
+                      "width": 112,
+                      "height": 100,
+                      "fill": "#F4FAF4",
+                      "cornerRadius": 14,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "5x8lB",
+                          "x": 36,
+                          "y": 12,
+                          "name": "cA1Ico",
+                          "content": "🌱",
+                          "fontFamily": "Inter",
+                          "fontSize": 30,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "QzK5J",
+                          "x": 0,
+                          "y": 58,
+                          "name": "cA1Nm",
+                          "fill": "#1B5232",
+                          "content": "Agrosemillas",
+                          "fontFamily": "Inter",
+                          "fontSize": 10,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "2EB7V",
+                          "x": 0,
+                          "y": 74,
+                          "name": "cA1Cnt",
+                          "fill": "#9CA3AF",
+                          "content": "5 productos",
+                          "fontFamily": "Inter",
+                          "fontSize": 9,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "AXX9P",
+                      "x": 123,
+                      "y": 0,
+                      "name": "Cat Vacunas",
+                      "width": 112,
+                      "height": 100,
+                      "fill": "#F4FAF4",
+                      "cornerRadius": 14,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Jt5qd",
+                          "x": 36,
+                          "y": 12,
+                          "name": "cA2Ico",
+                          "content": "💉",
+                          "fontFamily": "Inter",
+                          "fontSize": 30,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "xIWl6",
+                          "x": 0,
+                          "y": 58,
+                          "name": "cA2Nm",
+                          "fill": "#1B5232",
+                          "content": "Vacunas",
+                          "fontFamily": "Inter",
+                          "fontSize": 10,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "AVLE5",
+                          "x": 0,
+                          "y": 74,
+                          "name": "cA2Cnt",
+                          "fill": "#9CA3AF",
+                          "content": "3 productos",
+                          "fontFamily": "Inter",
+                          "fontSize": 9,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "vQjzg",
+                      "x": 246,
+                      "y": 0,
+                      "name": "Cat Drogas",
+                      "width": 112,
+                      "height": 100,
+                      "fill": "#F4FAF4",
+                      "cornerRadius": 14,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "blEgL",
+                          "x": 36,
+                          "y": 12,
+                          "name": "cA3Ico",
+                          "content": "💊",
+                          "fontFamily": "Inter",
+                          "fontSize": 30,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "frp1H",
+                          "x": 0,
+                          "y": 58,
+                          "name": "cA3Nm",
+                          "fill": "#1B5232",
+                          "content": "Drogas Vet.",
+                          "fontFamily": "Inter",
+                          "fontSize": 10,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "WHrr2",
+                          "x": 0,
+                          "y": 74,
+                          "name": "cA3Cnt",
+                          "fill": "#9CA3AF",
+                          "content": "6 productos",
+                          "fontFamily": "Inter",
+                          "fontSize": 9,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "fOOCu",
+                      "x": 0,
+                      "y": 110,
+                      "name": "Cat Concentrados",
+                      "width": 112,
+                      "height": 100,
+                      "fill": "#F4FAF4",
+                      "cornerRadius": 14,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "KhiPG",
+                          "x": 36,
+                          "y": 12,
+                          "name": "cB1Ico",
+                          "content": "🌾",
+                          "fontFamily": "Inter",
+                          "fontSize": 30,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "gQ9MK",
+                          "x": 0,
+                          "y": 58,
+                          "name": "cB1Nm",
+                          "fill": "#1B5232",
+                          "content": "Concentrados",
+                          "fontFamily": "Inter",
+                          "fontSize": 10,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "wGGNg",
+                          "x": 0,
+                          "y": 74,
+                          "name": "cB1Cnt",
+                          "fill": "#9CA3AF",
+                          "content": "3 productos",
+                          "fontFamily": "Inter",
+                          "fontSize": 9,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "FVsPO",
+                      "x": 123,
+                      "y": 110,
+                      "name": "Cat Sales",
+                      "width": 112,
+                      "height": 100,
+                      "fill": "#F4FAF4",
+                      "cornerRadius": 14,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "PeWpJ",
+                          "x": 36,
+                          "y": 12,
+                          "name": "cB2Ico",
+                          "content": "🧂",
+                          "fontFamily": "Inter",
+                          "fontSize": 30,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "OPhZt",
+                          "x": 0,
+                          "y": 58,
+                          "name": "cB2Nm",
+                          "fill": "#1B5232",
+                          "content": "Sales Minerales",
+                          "fontFamily": "Inter",
+                          "fontSize": 9,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "uegTh",
+                          "x": 0,
+                          "y": 74,
+                          "name": "cB2Cnt",
+                          "fill": "#9CA3AF",
+                          "content": "3 productos",
+                          "fontFamily": "Inter",
+                          "fontSize": 9,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "ieTvz",
+              "name": "Productos Destacados",
+              "width": 390,
+              "height": 604,
+              "fill": "#F8F9FA",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "7lDFd",
+                  "x": 16,
+                  "y": 20,
+                  "name": "pTitle",
+                  "fill": "#1B5232",
+                  "content": "Productos Destacados",
+                  "fontFamily": "Inter",
+                  "fontSize": 20,
+                  "fontWeight": "800"
+                },
+                {
+                  "type": "rectangle",
+                  "cornerRadius": 2,
+                  "id": "0coRD",
+                  "x": 16,
+                  "y": 48,
+                  "name": "pUnder",
+                  "fill": "#F9A825",
+                  "width": 36,
+                  "height": 3
+                },
+                {
+                  "type": "text",
+                  "id": "TKkqm",
+                  "x": 298,
+                  "y": 21,
+                  "name": "pLink",
+                  "fill": "#1B5232",
+                  "content": "Ver todos →",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "frame",
+                  "id": "0rSx7",
+                  "x": 16,
+                  "y": 62,
+                  "name": "2col Grid",
+                  "width": 358,
+                  "height": 530,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "YzBRa",
+                      "x": 0,
+                      "y": 0,
+                      "name": "Card Brachiaria",
+                      "width": 173,
+                      "height": 254,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 14,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "rectangle",
+                          "cornerRadius": 14,
+                          "id": "XZis4",
+                          "x": 0,
+                          "y": 0,
+                          "name": "Img",
+                          "fill": "#D4EDD4",
+                          "width": 173,
+                          "height": 126
+                        },
+                        {
+                          "type": "frame",
+                          "id": "rreqd",
+                          "x": 8,
+                          "y": 8,
+                          "name": "Badge",
+                          "width": 92,
+                          "height": 22,
+                          "fill": "#1B5232",
+                          "cornerRadius": 11,
+                          "layout": "none",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "42dsY",
+                              "x": 6,
+                              "y": 4,
+                              "name": "pc1BadgeTx",
+                              "fill": "#FFFFFF",
+                              "content": "Agrosemillas",
+                              "fontFamily": "Inter",
+                              "fontSize": 9,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "BS03s",
+                          "x": 8,
+                          "y": 134,
+                          "name": "pc1Brand",
+                          "fill": "#9CA3AF",
+                          "content": "AGROSEMILLAS",
+                          "fontFamily": "Inter",
+                          "fontSize": 9,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "ATokG",
+                          "x": 8,
+                          "y": 148,
+                          "name": "pc1Name",
+                          "fill": "#1F2937",
+                          "content": "Brachiaria\nHumidicola x 1kg",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "brmE8",
+                          "x": 8,
+                          "y": 178,
+                          "name": "pc1Price",
+                          "fill": "#1B5232",
+                          "content": "$28.000",
+                          "fontFamily": "Inter",
+                          "fontSize": 17,
+                          "fontWeight": "900"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "3Yx4h",
+                          "x": 8,
+                          "y": 208,
+                          "name": "WA Btn",
+                          "width": 157,
+                          "height": 36,
+                          "fill": "#25D366",
+                          "cornerRadius": 9,
+                          "layout": "none",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "USpXU",
+                              "x": 10,
+                              "y": 9,
+                              "name": "pc1WATx",
+                              "fill": "#FFFFFF",
+                              "content": "Pedir por WhatsApp",
+                              "fontFamily": "Inter",
+                              "fontSize": 10,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "dLnRW",
+                      "x": 185,
+                      "y": 0,
+                      "name": "Card Clostrisan",
+                      "width": 173,
+                      "height": 254,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 14,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "rectangle",
+                          "cornerRadius": 14,
+                          "id": "XLjeB",
+                          "x": 0,
+                          "y": 0,
+                          "name": "Img",
+                          "fill": "#D1E0EF",
+                          "width": 173,
+                          "height": 126
+                        },
+                        {
+                          "type": "frame",
+                          "id": "5YfPk",
+                          "x": 8,
+                          "y": 8,
+                          "name": "Badge",
+                          "width": 64,
+                          "height": 22,
+                          "fill": "#1B5232",
+                          "cornerRadius": 11,
+                          "layout": "none",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "DV4d7",
+                              "x": 6,
+                              "y": 4,
+                              "name": "pc2BadgeTx",
+                              "fill": "#FFFFFF",
+                              "content": "Vacunas",
+                              "fontFamily": "Inter",
+                              "fontSize": 9,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "PCWCv",
+                          "x": 8,
+                          "y": 134,
+                          "name": "pc2Brand",
+                          "fill": "#9CA3AF",
+                          "content": "VIRBAC",
+                          "fontFamily": "Inter",
+                          "fontSize": 9,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "URSld",
+                          "x": 8,
+                          "y": 148,
+                          "name": "pc2Name",
+                          "fill": "#1F2937",
+                          "content": "Clostrisan 11\nx 50 dosis",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "XBge3",
+                          "x": 8,
+                          "y": 178,
+                          "name": "pc2Price",
+                          "fill": "#1B5232",
+                          "content": "$185.000",
+                          "fontFamily": "Inter",
+                          "fontSize": 17,
+                          "fontWeight": "900"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Q17hO",
+                          "x": 8,
+                          "y": 208,
+                          "name": "WA Btn",
+                          "width": 157,
+                          "height": 36,
+                          "fill": "#25D366",
+                          "cornerRadius": 9,
+                          "layout": "none",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "v6cPh",
+                              "x": 10,
+                              "y": 9,
+                              "name": "pc2WATx",
+                              "fill": "#FFFFFF",
+                              "content": "Pedir por WhatsApp",
+                              "fontFamily": "Inter",
+                              "fontSize": 10,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "hHTuO",
+                      "x": 0,
+                      "y": 266,
+                      "name": "Card Ivermectina",
+                      "width": 173,
+                      "height": 254,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 14,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "rectangle",
+                          "cornerRadius": 14,
+                          "id": "jQb6t",
+                          "x": 0,
+                          "y": 0,
+                          "name": "pc3Img",
+                          "fill": "#EFDDD4",
+                          "width": 173,
+                          "height": 126
+                        },
+                        {
+                          "type": "text",
+                          "id": "ba0b5",
+                          "x": 8,
+                          "y": 134,
+                          "name": "pc3Brand",
+                          "fill": "#9CA3AF",
+                          "content": "VECOL",
+                          "fontFamily": "Inter",
+                          "fontSize": 9,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "tdOiv",
+                          "x": 8,
+                          "y": 148,
+                          "name": "pc3Name",
+                          "fill": "#1F2937",
+                          "content": "Ivermectina 1%\nx 500ml",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "RuNaI",
+                          "x": 8,
+                          "y": 178,
+                          "name": "pc3Price",
+                          "fill": "#1B5232",
+                          "content": "$78.000",
+                          "fontFamily": "Inter",
+                          "fontSize": 17,
+                          "fontWeight": "900"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "ifCdk",
+                          "x": 8,
+                          "y": 208,
+                          "name": "WA Btn",
+                          "width": 157,
+                          "height": 36,
+                          "fill": "#25D366",
+                          "cornerRadius": 9,
+                          "layout": "none",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "nWFJk",
+                              "x": 10,
+                              "y": 9,
+                              "name": "pc3WATx",
+                              "fill": "#FFFFFF",
+                              "content": "Pedir por WhatsApp",
+                              "fontFamily": "Inter",
+                              "fontSize": 10,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "kGJag",
+                      "x": 185,
+                      "y": 266,
+                      "name": "Card Sal Mineral",
+                      "width": 173,
+                      "height": 254,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 14,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "rectangle",
+                          "cornerRadius": 14,
+                          "id": "DGOhr",
+                          "x": 0,
+                          "y": 0,
+                          "name": "pc4Img",
+                          "fill": "#F5ECD5",
+                          "width": 173,
+                          "height": 126
+                        },
+                        {
+                          "type": "text",
+                          "id": "qg84r",
+                          "x": 8,
+                          "y": 134,
+                          "name": "pc4Brand",
+                          "fill": "#9CA3AF",
+                          "content": "VECOL",
+                          "fontFamily": "Inter",
+                          "fontSize": 9,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "t4jSl",
+                          "x": 8,
+                          "y": 148,
+                          "name": "pc4Name",
+                          "fill": "#1F2937",
+                          "content": "Sal Mineral\n10% x 40kg",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "QhcNN",
+                          "x": 8,
+                          "y": 178,
+                          "name": "pc4Price",
+                          "fill": "#1B5232",
+                          "content": "$120.000",
+                          "fontFamily": "Inter",
+                          "fontSize": 17,
+                          "fontWeight": "900"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "rt0VT",
+                          "x": 8,
+                          "y": 208,
+                          "name": "WA Btn",
+                          "width": 157,
+                          "height": 36,
+                          "fill": "#25D366",
+                          "cornerRadius": 9,
+                          "layout": "none",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "WCpsl",
+                              "x": 10,
+                              "y": 9,
+                              "name": "pc4WATx",
+                              "fill": "#FFFFFF",
+                              "content": "Pedir por WhatsApp",
+                              "fontFamily": "Inter",
+                              "fontSize": 10,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "1y1aC",
+              "name": "B2B Banner",
+              "width": 390,
+              "height": 308,
+              "fill": "#0f3d22",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "rYZXR",
+                  "x": 16,
+                  "y": 22,
+                  "name": "Badge",
+                  "width": 168,
+                  "height": 26,
+                  "fill": "#f9a8252e",
+                  "cornerRadius": 13,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Jt2IU",
+                      "x": 10,
+                      "y": 4,
+                      "name": "b2bBadgeTx",
+                      "fill": "#F9A825",
+                      "content": "PORTAL MAYORISTAS",
+                      "fontFamily": "Inter",
+                      "fontSize": 10,
+                      "fontWeight": "800"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "96CVG",
+                  "x": 16,
+                  "y": 60,
+                  "name": "b2bH2",
+                  "fill": "#FFFFFF",
+                  "content": "¿Eres distribuidor\no veterinario?",
+                  "fontFamily": "Inter",
+                  "fontSize": 24,
+                  "fontWeight": "900"
+                },
+                {
+                  "type": "text",
+                  "id": "aiCEe",
+                  "x": 16,
+                  "y": 126,
+                  "name": "b2bSub",
+                  "opacity": 0.72,
+                  "fill": "#FFFFFF",
+                  "content": "Accede a precios especiales, crédito\ny atención personalizada para tu negocio.",
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "78ntJ",
+                  "x": 16,
+                  "y": 180,
+                  "name": "b2bBen1",
+                  "opacity": 0.88,
+                  "fill": "#FFFFFF",
+                  "content": "✓  Precios mayoristas exclusivos",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "GxcTR",
+                  "x": 16,
+                  "y": 200,
+                  "name": "b2bBen2",
+                  "opacity": 0.88,
+                  "fill": "#FFFFFF",
+                  "content": "✓  Crédito a 30/60 días",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "IcWCs",
+                  "x": 16,
+                  "y": 232,
+                  "name": "CTA Mayorista",
+                  "width": 290,
+                  "height": 50,
+                  "fill": "#F9A825",
+                  "cornerRadius": 10,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "uSiQL",
+                      "x": 14,
+                      "y": 14,
+                      "name": "b2bCTATx",
+                      "fill": "#1B5232",
+                      "content": "Registrarme como Mayorista →",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "800"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "hselJ",
+              "name": "Footer",
+              "width": 390,
+              "height": 240,
+              "fill": "#0a2a17",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "L6FEU",
+                  "x": 16,
+                  "y": 22,
+                  "name": "fLogo",
+                  "fill": "#FFFFFF",
+                  "content": "DistriMM",
+                  "fontFamily": "Inter",
+                  "fontSize": 20,
+                  "fontWeight": "900"
+                },
+                {
+                  "type": "text",
+                  "id": "3vg21",
+                  "x": 16,
+                  "y": 52,
+                  "name": "fDesc",
+                  "opacity": 0.55,
+                  "fill": "#FFFFFF",
+                  "content": "Almacén Agropecuario · Florencia, Caquetá\nDistribuidores de laboratorios veterinarios.",
+                  "fontFamily": "Inter",
+                  "fontSize": 11,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "ePOag",
+                  "x": 16,
+                  "y": 106,
+                  "name": "fProd",
+                  "opacity": 0.55,
+                  "fill": "#FFFFFF",
+                  "content": "Agrosemillas · Vacunas · Concentrados\nSales Minerales · Drogas Veterinarias",
+                  "fontFamily": "Inter",
+                  "fontSize": 11,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "pEeSF",
+                  "x": 16,
+                  "y": 156,
+                  "name": "fContact",
+                  "opacity": 0.55,
+                  "fill": "#FFFFFF",
+                  "content": "📞 313 4835092   💬 WhatsApp\n📍 Florencia, Caquetá · Colombia",
+                  "fontFamily": "Inter",
+                  "fontSize": 11,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "OmFq3",
+                  "x": 16,
+                  "y": 214,
+                  "name": "fCopy",
+                  "opacity": 0.28,
+                  "fill": "#FFFFFF",
+                  "content": "© 2026 DistriMM · Todos los derechos reservados",
+                  "fontFamily": "Inter",
+                  "fontSize": 10,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "Mx4ui",
+          "x": 510,
+          "y": 60,
+          "name": "🖥️ Homepage · Desktop",
+          "clip": true,
+          "width": 1440,
+          "height": 2020,
+          "fill": "#FFFFFF",
+          "layout": "vertical",
+          "children": [
+            {
+              "type": "frame",
+              "id": "uvkR9",
+              "name": "Navbar",
+              "width": 1440,
+              "height": 72,
+              "fill": "#1B5232",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "Kp62q",
+                  "x": 32,
+                  "y": 10,
+                  "name": "Logo Block",
+                  "width": 200,
+                  "height": 52,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "eo616",
+                      "x": 0,
+                      "y": 0,
+                      "name": "Red Band",
+                      "width": 184,
+                      "height": 17,
+                      "fill": "#C62828",
+                      "cornerRadius": 2,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "zXpDW",
+                          "x": 6,
+                          "y": 2,
+                          "name": "dLogoRedTx",
+                          "fill": "#FFFFFF",
+                          "content": "ALMACÉN AGROPECUARIO",
+                          "fontFamily": "Inter",
+                          "fontSize": 8,
+                          "fontWeight": "800"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "HZlsa",
+                      "x": 0,
+                      "y": 19,
+                      "name": "dLogoDISTRI",
+                      "fill": "#4CAF50",
+                      "content": "DISTRI",
+                      "fontFamily": "Inter",
+                      "fontSize": 28,
+                      "fontWeight": "900"
+                    },
+                    {
+                      "type": "text",
+                      "id": "dzaIp",
+                      "x": 108,
+                      "y": 19,
+                      "name": "dLogoMM",
+                      "fill": "#FFFFFF",
+                      "content": "MM",
+                      "fontFamily": "Inter",
+                      "fontSize": 28,
+                      "fontWeight": "900"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "sCJ2V",
+                  "x": 216,
+                  "y": 26,
+                  "name": "dL1",
+                  "opacity": 0.85,
+                  "fill": "#FFFFFF",
+                  "content": "Catálogo",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "cs498",
+                  "x": 296,
+                  "y": 26,
+                  "name": "dL2",
+                  "opacity": 0.85,
+                  "fill": "#FFFFFF",
+                  "content": "Vacunas",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "Yu3j6",
+                  "x": 368,
+                  "y": 26,
+                  "name": "dL3",
+                  "opacity": 0.85,
+                  "fill": "#FFFFFF",
+                  "content": "Concentrados",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "6Vj3h",
+                  "x": 488,
+                  "y": 26,
+                  "name": "dL4",
+                  "opacity": 0.85,
+                  "fill": "#FFFFFF",
+                  "content": "Sales Minerales",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "OjcfQ",
+                  "x": 626,
+                  "y": 26,
+                  "name": "dL5",
+                  "opacity": 0.85,
+                  "fill": "#FFFFFF",
+                  "content": "Ofertas",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "U4lVA",
+                  "x": 920,
+                  "y": 19,
+                  "name": "Search",
+                  "width": 208,
+                  "height": 34,
+                  "fill": "#ffffff1f",
+                  "cornerRadius": 17,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "T0a2c",
+                      "x": 12,
+                      "y": 9,
+                      "name": "dNavSrchTx",
+                      "opacity": 0.55,
+                      "fill": "#FFFFFF",
+                      "content": "🔍 Buscar producto...",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "MzTMI",
+                  "x": 1158,
+                  "y": 17,
+                  "name": "WA Btn",
+                  "width": 144,
+                  "height": 38,
+                  "fill": "#F9A825",
+                  "cornerRadius": 8,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "ciVkc",
+                      "x": 28,
+                      "y": 10,
+                      "name": "dNavWATx",
+                      "fill": "#1B5232",
+                      "content": "📱 WhatsApp",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "800"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "XEoS1",
+              "name": "Hero",
+              "width": 1440,
+              "height": 500,
+              "fill": "#1B5232",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "ellipse",
+                  "id": "dJ5yG",
+                  "x": 960,
+                  "y": -140,
+                  "name": "dHGlow",
+                  "opacity": 0.08,
+                  "fill": "#F9A825",
+                  "width": 440,
+                  "height": 440
+                },
+                {
+                  "type": "frame",
+                  "id": "kNvjw",
+                  "x": 80,
+                  "y": 56,
+                  "name": "Badge",
+                  "width": 252,
+                  "height": 28,
+                  "fill": "#F9A825",
+                  "cornerRadius": 14,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "jdg8N",
+                      "x": 10,
+                      "y": 5,
+                      "name": "dHBadgeTx",
+                      "fill": "#1B5232",
+                      "content": "🌿 Florencia, Caquetá · Envío a toda la región",
+                      "fontFamily": "Inter",
+                      "fontSize": 10,
+                      "fontWeight": "800"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "M8y7i",
+                  "x": 80,
+                  "y": 100,
+                  "name": "dHT1",
+                  "fill": "#FFFFFF",
+                  "content": "TU ALMACÉN",
+                  "fontFamily": "Inter",
+                  "fontSize": 68,
+                  "fontWeight": "900"
+                },
+                {
+                  "type": "text",
+                  "id": "75iUF",
+                  "x": 80,
+                  "y": 172,
+                  "name": "dHT2",
+                  "fill": "#F9A825",
+                  "content": "AGROPECUARIO",
+                  "fontFamily": "Inter",
+                  "fontSize": 68,
+                  "fontWeight": "900"
+                },
+                {
+                  "type": "text",
+                  "id": "utYwq",
+                  "x": 80,
+                  "y": 244,
+                  "name": "dHT3",
+                  "fill": "#FFFFFF",
+                  "content": "AHORA EN LÍNEA",
+                  "fontFamily": "Inter",
+                  "fontSize": 68,
+                  "fontWeight": "900"
+                },
+                {
+                  "type": "text",
+                  "id": "PsRvm",
+                  "x": 80,
+                  "y": 338,
+                  "name": "dHSub",
+                  "fill": "#F9A825",
+                  "content": "MÁS AHORRO · MÁS CALIDAD · MÁS PRODUCCIÓN",
+                  "fontFamily": "Inter",
+                  "fontSize": 22,
+                  "fontWeight": "900"
+                },
+                {
+                  "type": "frame",
+                  "id": "kAdnx",
+                  "x": 80,
+                  "y": 392,
+                  "name": "Ver Catalogo",
+                  "width": 208,
+                  "height": 54,
+                  "fill": "#F9A825",
+                  "cornerRadius": 10,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "xNTji",
+                      "x": 26,
+                      "y": 16,
+                      "name": "dHBtn1Tx",
+                      "fill": "#1B5232",
+                      "content": "Ver Catálogo →",
+                      "fontFamily": "Inter",
+                      "fontSize": 16,
+                      "fontWeight": "800"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "VN943",
+                  "x": 300,
+                  "y": 392,
+                  "name": "Portal Mayoristas",
+                  "width": 224,
+                  "height": 54,
+                  "fill": "#ffffff1a",
+                  "cornerRadius": 10,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "knOVQ",
+                      "x": 30,
+                      "y": 16,
+                      "name": "dHBtn2Tx",
+                      "fill": "#FFFFFF",
+                      "content": "Portal Mayoristas",
+                      "fontFamily": "Inter",
+                      "fontSize": 16,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "N18si",
+                  "x": 880,
+                  "y": 56,
+                  "name": "Hero Image",
+                  "width": 480,
+                  "height": 388,
+                  "fill": "#ffffff0d",
+                  "cornerRadius": 20,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "kUIoM",
+                      "x": 178,
+                      "y": 140,
+                      "name": "dHImgDeco",
+                      "content": "🌾",
+                      "fontFamily": "Inter",
+                      "fontSize": 112,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "rectangle",
+                  "id": "ff281",
+                  "x": 80,
+                  "y": 462,
+                  "name": "dHDiv",
+                  "opacity": 0.12,
+                  "fill": "#FFFFFF",
+                  "width": 760,
+                  "height": 1
+                },
+                {
+                  "type": "text",
+                  "id": "zMG7p",
+                  "x": 80,
+                  "y": 474,
+                  "name": "dHSRow",
+                  "opacity": 0.65,
+                  "fill": "#FFFFFF",
+                  "content": "500+ Productos   ·   20+ Marcas   ·   B2B Mayoristas   ·   📦 Envío a domicilio",
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "ZCKl4",
+              "name": "Brand Marquee",
+              "width": 1440,
+              "height": 56,
+              "fill": "#F9A825",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "W8aom",
+                  "x": 40,
+                  "y": 18,
+                  "name": "dMarqTx",
+                  "fill": "#1B5232",
+                  "content": "VIRBAC  ·  VECOL  ·  ITALCOL  ·  SOLLA  ·  BAYER  ·  OUROFINO  ·  PIONEER  ·  CONTEGRAL  ·  REFISAL  ·  BIOGENESIS  ·  VIRBAC  ·  VECOL",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "800"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "Pt7OV",
+              "name": "Categorías",
+              "width": 1440,
+              "height": 300,
+              "fill": "#FFFFFF",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "hSAi3",
+                  "x": 80,
+                  "y": 36,
+                  "name": "dCTitle",
+                  "fill": "#1B5232",
+                  "content": "Categorías",
+                  "fontFamily": "Inter",
+                  "fontSize": 28,
+                  "fontWeight": "800"
+                },
+                {
+                  "type": "rectangle",
+                  "cornerRadius": 2,
+                  "id": "PqVS5",
+                  "x": 80,
+                  "y": 72,
+                  "name": "dCUnder",
+                  "fill": "#F9A825",
+                  "width": 44,
+                  "height": 4
+                },
+                {
+                  "type": "text",
+                  "id": "wW5NS",
+                  "x": 1320,
+                  "y": 38,
+                  "name": "dCLink",
+                  "fill": "#1B5232",
+                  "content": "Ver todas →",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "frame",
+                  "id": "pekng",
+                  "x": 80,
+                  "y": 92,
+                  "name": "5col Grid",
+                  "width": 1280,
+                  "height": 186,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "myTJj",
+                      "x": 0,
+                      "y": 0,
+                      "name": "Agrosemillas",
+                      "width": 246,
+                      "height": 160,
+                      "fill": "#F4FAF4",
+                      "cornerRadius": 16,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "ukt8U",
+                          "x": 92,
+                          "y": 26,
+                          "name": "dCC1Ico",
+                          "content": "🌱",
+                          "fontFamily": "Inter",
+                          "fontSize": 52,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "IgrZj",
+                          "x": 16,
+                          "y": 102,
+                          "name": "dCC1Nm",
+                          "fill": "#1B5232",
+                          "content": "Agrosemillas",
+                          "fontFamily": "Inter",
+                          "fontSize": 15,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "tnePP",
+                          "x": 16,
+                          "y": 124,
+                          "name": "dCC1Cnt",
+                          "fill": "#9CA3AF",
+                          "content": "5 productos",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "m5iLj",
+                      "x": 254,
+                      "y": 0,
+                      "name": "Vacunas",
+                      "width": 246,
+                      "height": 160,
+                      "fill": "#F4FAF4",
+                      "cornerRadius": 16,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "mOmJQ",
+                          "x": 92,
+                          "y": 26,
+                          "name": "dCC2Ico",
+                          "content": "💉",
+                          "fontFamily": "Inter",
+                          "fontSize": 52,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "XyO4e",
+                          "x": 16,
+                          "y": 102,
+                          "name": "dCC2Nm",
+                          "fill": "#1B5232",
+                          "content": "Vacunas",
+                          "fontFamily": "Inter",
+                          "fontSize": 15,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "6FNnQ",
+                          "x": 16,
+                          "y": 124,
+                          "name": "dCC2Cnt",
+                          "fill": "#9CA3AF",
+                          "content": "3 productos",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "E2MuY",
+                      "x": 508,
+                      "y": 0,
+                      "name": "Drogas",
+                      "width": 246,
+                      "height": 160,
+                      "fill": "#F4FAF4",
+                      "cornerRadius": 16,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "PmMPz",
+                          "x": 92,
+                          "y": 26,
+                          "name": "dCC3Ico",
+                          "content": "💊",
+                          "fontFamily": "Inter",
+                          "fontSize": 52,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "7YPxO",
+                          "x": 16,
+                          "y": 102,
+                          "name": "dCC3Nm",
+                          "fill": "#1B5232",
+                          "content": "Drogas Vet.",
+                          "fontFamily": "Inter",
+                          "fontSize": 15,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "a8b7h",
+                          "x": 16,
+                          "y": 124,
+                          "name": "dCC3Cnt",
+                          "fill": "#9CA3AF",
+                          "content": "6 productos",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Vg07c",
+                      "x": 762,
+                      "y": 0,
+                      "name": "Concentrados",
+                      "width": 246,
+                      "height": 160,
+                      "fill": "#F4FAF4",
+                      "cornerRadius": 16,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "kSML6",
+                          "x": 92,
+                          "y": 26,
+                          "name": "dCC4Ico",
+                          "content": "🌾",
+                          "fontFamily": "Inter",
+                          "fontSize": 52,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "2i4Gp",
+                          "x": 16,
+                          "y": 102,
+                          "name": "dCC4Nm",
+                          "fill": "#1B5232",
+                          "content": "Concentrados",
+                          "fontFamily": "Inter",
+                          "fontSize": 15,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "RJ5rT",
+                          "x": 16,
+                          "y": 124,
+                          "name": "dCC4Cnt",
+                          "fill": "#9CA3AF",
+                          "content": "3 productos",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "FCg0Q",
+                      "x": 1016,
+                      "y": 0,
+                      "name": "Sales Min",
+                      "width": 246,
+                      "height": 160,
+                      "fill": "#F4FAF4",
+                      "cornerRadius": 16,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "BAIca",
+                          "x": 92,
+                          "y": 26,
+                          "name": "dCC5Ico",
+                          "content": "🧂",
+                          "fontFamily": "Inter",
+                          "fontSize": 52,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "MsdBx",
+                          "x": 16,
+                          "y": 102,
+                          "name": "dCC5Nm",
+                          "fill": "#1B5232",
+                          "content": "Sales Minerales",
+                          "fontFamily": "Inter",
+                          "fontSize": 15,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "FoRP9",
+                          "x": 16,
+                          "y": 124,
+                          "name": "dCC5Cnt",
+                          "fill": "#9CA3AF",
+                          "content": "3 productos",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "mPMVm",
+              "name": "Productos Dest.",
+              "width": 1440,
+              "height": 524,
+              "fill": "#F8F9FA",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "h1tNq",
+                  "x": 80,
+                  "y": 36,
+                  "name": "dPTitle",
+                  "fill": "#1B5232",
+                  "content": "Productos Destacados",
+                  "fontFamily": "Inter",
+                  "fontSize": 28,
+                  "fontWeight": "800"
+                },
+                {
+                  "type": "rectangle",
+                  "cornerRadius": 2,
+                  "id": "C8GGa",
+                  "x": 80,
+                  "y": 72,
+                  "name": "dPUnder",
+                  "fill": "#F9A825",
+                  "width": 44,
+                  "height": 4
+                },
+                {
+                  "type": "text",
+                  "id": "IZ69M",
+                  "x": 1320,
+                  "y": 38,
+                  "name": "dPLink",
+                  "fill": "#1B5232",
+                  "content": "Ver todos →",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "frame",
+                  "id": "8rnbH",
+                  "x": 80,
+                  "y": 92,
+                  "name": "4col Grid",
+                  "width": 1280,
+                  "height": 416,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "j1xrv",
+                      "x": 0,
+                      "y": 0,
+                      "name": "DP Brachiaria",
+                      "width": 308,
+                      "height": 390,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 16,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "rectangle",
+                          "cornerRadius": 16,
+                          "id": "TS9Ou",
+                          "x": 0,
+                          "y": 0,
+                          "name": "dp1Img",
+                          "fill": "#D4EDD4",
+                          "width": 308,
+                          "height": 200
+                        },
+                        {
+                          "type": "frame",
+                          "id": "yoy9U",
+                          "x": 12,
+                          "y": 12,
+                          "name": "Badge",
+                          "width": 104,
+                          "height": 24,
+                          "fill": "#1B5232",
+                          "cornerRadius": 12,
+                          "layout": "none",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "xLgt6",
+                              "x": 8,
+                              "y": 4,
+                              "name": "dp1BadgeTx",
+                              "fill": "#FFFFFF",
+                              "content": "Agrosemillas",
+                              "fontFamily": "Inter",
+                              "fontSize": 10,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "UG8jQ",
+                          "x": 12,
+                          "y": 214,
+                          "name": "dp1Brand",
+                          "fill": "#9CA3AF",
+                          "content": "AGROSEMILLAS",
+                          "fontFamily": "Inter",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "97CtI",
+                          "x": 12,
+                          "y": 232,
+                          "name": "dp1Name",
+                          "fill": "#1F2937",
+                          "content": "Brachiaria Humidicola x 1kg",
+                          "fontFamily": "Inter",
+                          "fontSize": 15,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "82p9f",
+                          "x": 12,
+                          "y": 262,
+                          "name": "dp1Price",
+                          "fill": "#1B5232",
+                          "content": "$28.000",
+                          "fontFamily": "Inter",
+                          "fontSize": 24,
+                          "fontWeight": "900"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "GGrpV",
+                          "x": 12,
+                          "y": 308,
+                          "name": "WA Btn",
+                          "width": 284,
+                          "height": 48,
+                          "fill": "#25D366",
+                          "cornerRadius": 10,
+                          "layout": "none",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "Iuqip",
+                              "x": 72,
+                              "y": 13,
+                              "name": "dp1WATx",
+                              "fill": "#FFFFFF",
+                              "content": "Pedir por WhatsApp",
+                              "fontFamily": "Inter",
+                              "fontSize": 15,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "fOb0x",
+                      "x": 320,
+                      "y": 0,
+                      "name": "DP Clostrisan",
+                      "width": 308,
+                      "height": 390,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 16,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "rectangle",
+                          "cornerRadius": 16,
+                          "id": "kIq3O",
+                          "x": 0,
+                          "y": 0,
+                          "name": "dp2Img",
+                          "fill": "#D1E0EF",
+                          "width": 308,
+                          "height": 200
+                        },
+                        {
+                          "type": "text",
+                          "id": "Nfzkp",
+                          "x": 12,
+                          "y": 214,
+                          "name": "dp2Brand",
+                          "fill": "#9CA3AF",
+                          "content": "VIRBAC",
+                          "fontFamily": "Inter",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "qqrsD",
+                          "x": 12,
+                          "y": 232,
+                          "name": "dp2Name",
+                          "fill": "#1F2937",
+                          "content": "Clostrisan 11 x 50 dosis",
+                          "fontFamily": "Inter",
+                          "fontSize": 15,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "qdUug",
+                          "x": 12,
+                          "y": 262,
+                          "name": "dp2Price",
+                          "fill": "#1B5232",
+                          "content": "$185.000",
+                          "fontFamily": "Inter",
+                          "fontSize": 24,
+                          "fontWeight": "900"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "2w2f2",
+                          "x": 12,
+                          "y": 308,
+                          "name": "WA Btn",
+                          "width": 284,
+                          "height": 48,
+                          "fill": "#25D366",
+                          "cornerRadius": 10,
+                          "layout": "none",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "8N29X",
+                              "x": 72,
+                              "y": 13,
+                              "name": "dp2WATx",
+                              "fill": "#FFFFFF",
+                              "content": "Pedir por WhatsApp",
+                              "fontFamily": "Inter",
+                              "fontSize": 15,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "2Lq4c",
+                      "x": 640,
+                      "y": 0,
+                      "name": "DP Ivermectina",
+                      "width": 308,
+                      "height": 390,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 16,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "rectangle",
+                          "cornerRadius": 16,
+                          "id": "UbmuE",
+                          "x": 0,
+                          "y": 0,
+                          "name": "dp3Img",
+                          "fill": "#EFDDD4",
+                          "width": 308,
+                          "height": 200
+                        },
+                        {
+                          "type": "text",
+                          "id": "Ws8G4",
+                          "x": 12,
+                          "y": 214,
+                          "name": "dp3Brand",
+                          "fill": "#9CA3AF",
+                          "content": "VECOL",
+                          "fontFamily": "Inter",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "f9yva",
+                          "x": 12,
+                          "y": 232,
+                          "name": "dp3Name",
+                          "fill": "#1F2937",
+                          "content": "Ivermectina 1% x 500ml",
+                          "fontFamily": "Inter",
+                          "fontSize": 15,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "sESQq",
+                          "x": 12,
+                          "y": 262,
+                          "name": "dp3Price",
+                          "fill": "#1B5232",
+                          "content": "$78.000",
+                          "fontFamily": "Inter",
+                          "fontSize": 24,
+                          "fontWeight": "900"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "IHIdA",
+                          "x": 12,
+                          "y": 308,
+                          "name": "WA Btn",
+                          "width": 284,
+                          "height": 48,
+                          "fill": "#25D366",
+                          "cornerRadius": 10,
+                          "layout": "none",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "nsJpX",
+                              "x": 72,
+                              "y": 13,
+                              "name": "dp3WATx",
+                              "fill": "#FFFFFF",
+                              "content": "Pedir por WhatsApp",
+                              "fontFamily": "Inter",
+                              "fontSize": 15,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "vNcL1",
+                      "x": 960,
+                      "y": 0,
+                      "name": "DP Sal Mineral",
+                      "width": 308,
+                      "height": 390,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 16,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "rectangle",
+                          "cornerRadius": 16,
+                          "id": "AYFgt",
+                          "x": 0,
+                          "y": 0,
+                          "name": "dp4Img",
+                          "fill": "#F5ECD5",
+                          "width": 308,
+                          "height": 200
+                        },
+                        {
+                          "type": "text",
+                          "id": "1tiyY",
+                          "x": 12,
+                          "y": 214,
+                          "name": "dp4Brand",
+                          "fill": "#9CA3AF",
+                          "content": "VECOL",
+                          "fontFamily": "Inter",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "Kr2QH",
+                          "x": 12,
+                          "y": 232,
+                          "name": "dp4Name",
+                          "fill": "#1F2937",
+                          "content": "Sal Mineral 10% x 40kg",
+                          "fontFamily": "Inter",
+                          "fontSize": 15,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "F9su7",
+                          "x": 12,
+                          "y": 262,
+                          "name": "dp4Price",
+                          "fill": "#1B5232",
+                          "content": "$120.000",
+                          "fontFamily": "Inter",
+                          "fontSize": 24,
+                          "fontWeight": "900"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "3z6RG",
+                          "x": 12,
+                          "y": 308,
+                          "name": "WA Btn",
+                          "width": 284,
+                          "height": 48,
+                          "fill": "#25D366",
+                          "cornerRadius": 10,
+                          "layout": "none",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "ZDpXj",
+                              "x": 72,
+                              "y": 13,
+                              "name": "dp4WATx",
+                              "fill": "#FFFFFF",
+                              "content": "Pedir por WhatsApp",
+                              "fontFamily": "Inter",
+                              "fontSize": 15,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "bdObo",
+              "name": "B2B Banner",
+              "width": 1440,
+              "height": 320,
+              "fill": "#0f3d22",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "cztmJ",
+                  "x": 80,
+                  "y": 40,
+                  "name": "Badge",
+                  "width": 180,
+                  "height": 28,
+                  "fill": "#f9a8252e",
+                  "cornerRadius": 14,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "jxDvJ",
+                      "x": 10,
+                      "y": 5,
+                      "name": "dB2bBadgeTx",
+                      "fill": "#F9A825",
+                      "content": "PORTAL MAYORISTAS",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "800"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "L0pvk",
+                  "x": 80,
+                  "y": 82,
+                  "name": "dB2bH2",
+                  "fill": "#FFFFFF",
+                  "content": "¿Eres distribuidor o veterinario?",
+                  "fontFamily": "Inter",
+                  "fontSize": 38,
+                  "fontWeight": "900"
+                },
+                {
+                  "type": "text",
+                  "id": "Pk7Oj",
+                  "x": 80,
+                  "y": 140,
+                  "name": "dB2bSub",
+                  "opacity": 0.7,
+                  "fill": "#FFFFFF",
+                  "content": "Accede a precios especiales por volumen, crédito y atención personalizada para tu negocio.",
+                  "fontFamily": "Inter",
+                  "fontSize": 16,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "AcbYt",
+                  "x": 80,
+                  "y": 184,
+                  "name": "dB2bBens",
+                  "opacity": 0.85,
+                  "fill": "#FFFFFF",
+                  "content": "✓ Precios mayoristas exclusivos   ✓ Crédito a 30/60 días   ✓ Despacho directo   ✓ Asesor dedicado",
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "K0ou5",
+                  "x": 80,
+                  "y": 228,
+                  "name": "CTA",
+                  "width": 324,
+                  "height": 54,
+                  "fill": "#F9A825",
+                  "cornerRadius": 10,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "CEy4Q",
+                      "x": 24,
+                      "y": 16,
+                      "name": "dB2bCTATx",
+                      "fill": "#1B5232",
+                      "content": "Registrarme como Mayorista →",
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "800"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "TUswa",
+              "name": "Footer",
+              "width": 1440,
+              "height": 220,
+              "fill": "#0a2a17",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "rectangle",
+                  "id": "oaht7",
+                  "x": 0,
+                  "y": 0,
+                  "name": "dFDiv",
+                  "opacity": 0.08,
+                  "fill": "#FFFFFF",
+                  "width": 1440,
+                  "height": 1
+                },
+                {
+                  "type": "text",
+                  "id": "23KJz",
+                  "x": 80,
+                  "y": 36,
+                  "name": "dFLogo",
+                  "fill": "#FFFFFF",
+                  "content": "DistriMM",
+                  "fontFamily": "Inter",
+                  "fontSize": 26,
+                  "fontWeight": "900"
+                },
+                {
+                  "type": "text",
+                  "id": "FUrQd",
+                  "x": 80,
+                  "y": 70,
+                  "name": "dFDesc",
+                  "opacity": 0.52,
+                  "fill": "#FFFFFF",
+                  "content": "Almacén Agropecuario · Florencia, Caquetá\nDistribuidores de los mejores laboratorios veterinarios.",
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "YCAdT",
+                  "x": 600,
+                  "y": 36,
+                  "name": "dFC1",
+                  "fill": "#FFFFFF",
+                  "content": "Productos",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "DqrNk",
+                  "x": 600,
+                  "y": 60,
+                  "name": "dFC1L",
+                  "opacity": 0.52,
+                  "fill": "#FFFFFF",
+                  "content": "Agrosemillas · Vacunas · Concentrados\nSales Minerales · Drogas Veterinarias",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "xRHfr",
+                  "x": 960,
+                  "y": 36,
+                  "name": "dFC2",
+                  "fill": "#FFFFFF",
+                  "content": "Contacto",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "cSTEV",
+                  "x": 960,
+                  "y": 60,
+                  "name": "dFC2L",
+                  "opacity": 0.52,
+                  "fill": "#FFFFFF",
+                  "content": "📞 313 4835092\n💬 WhatsApp\n📍 Florencia, Caquetá · Colombia",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "6MACi",
+                  "x": 80,
+                  "y": 186,
+                  "name": "dFCopy",
+                  "opacity": 0.28,
+                  "fill": "#FFFFFF",
+                  "content": "© 2026 DistriMM Almacén Agropecuario · Todos los derechos reservados",
+                  "fontFamily": "Inter",
+                  "fontSize": 11,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "QWaZY",
+          "x": 60,
+          "y": 2060,
+          "name": "📱 Catálogo · Mobile",
+          "clip": true,
+          "width": 390,
+          "height": 1060,
+          "fill": "#F8F9FA",
+          "layout": "vertical",
+          "children": [
+            {
+              "type": "frame",
+              "id": "yIXuS",
+              "name": "Navbar",
+              "width": 390,
+              "height": 60,
+              "fill": "#1B5232",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "kyJYa",
+                  "x": 16,
+                  "y": 17,
+                  "name": "mCNavLogo",
+                  "fill": "#FFFFFF",
+                  "content": "DistriMM",
+                  "fontFamily": "Inter",
+                  "fontSize": 22,
+                  "fontWeight": "900"
+                },
+                {
+                  "type": "text",
+                  "id": "aaACL",
+                  "x": 356,
+                  "y": 14,
+                  "name": "mCNavMenu",
+                  "fill": "#FFFFFF",
+                  "content": "☰",
+                  "fontFamily": "Inter",
+                  "fontSize": 22,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "PVfVz",
+              "name": "Header",
+              "width": 390,
+              "height": 76,
+              "fill": "#1B5232",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "AwT8S",
+                  "x": 16,
+                  "y": 16,
+                  "name": "mCHdrT",
+                  "fill": "#FFFFFF",
+                  "content": "Catálogo de Productos",
+                  "fontFamily": "Inter",
+                  "fontSize": 22,
+                  "fontWeight": "800"
+                },
+                {
+                  "type": "text",
+                  "id": "U2qVF",
+                  "x": 16,
+                  "y": 46,
+                  "name": "mCHdrSub",
+                  "opacity": 0.62,
+                  "fill": "#FFFFFF",
+                  "content": "20 productos encontrados",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "hUpQw",
+              "name": "Search",
+              "width": 390,
+              "height": 64,
+              "fill": "#FFFFFF",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "u4G1V",
+                  "x": 16,
+                  "y": 12,
+                  "name": "Input",
+                  "width": 358,
+                  "height": 40,
+                  "fill": "#F3F4F6",
+                  "cornerRadius": 10,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "J8Dz9",
+                      "x": 12,
+                      "y": 11,
+                      "name": "mCSrchTx",
+                      "fill": "#9CA3AF",
+                      "content": "🔍 Buscar por nombre o marca...",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "MxsuP",
+              "name": "Filter Pills",
+              "width": 390,
+              "height": 52,
+              "fill": "#FFFFFF",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "GvQsp",
+                  "x": 16,
+                  "y": 10,
+                  "name": "mCFAll",
+                  "width": 64,
+                  "height": 32,
+                  "fill": "#1B5232",
+                  "cornerRadius": 16,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Q1CGx",
+                      "x": 10,
+                      "y": 8,
+                      "name": "mCFAllTx",
+                      "fill": "#FFFFFF",
+                      "content": "Todos",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "xBVpM",
+                  "x": 88,
+                  "y": 10,
+                  "name": "mCFVac",
+                  "width": 90,
+                  "height": 32,
+                  "fill": "#F3F4F6",
+                  "cornerRadius": 16,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "NulIM",
+                      "x": 10,
+                      "y": 8,
+                      "name": "mCFVacTx",
+                      "fill": "#374151",
+                      "content": "💉 Vacunas",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "1aAgL",
+                  "x": 186,
+                  "y": 10,
+                  "name": "mCFDrg",
+                  "width": 80,
+                  "height": 32,
+                  "fill": "#F3F4F6",
+                  "cornerRadius": 16,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "z6msq",
+                      "x": 10,
+                      "y": 8,
+                      "name": "mCFDrgTx",
+                      "fill": "#374151",
+                      "content": "💊 Drogas",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "TQMPb",
+                  "x": 274,
+                  "y": 10,
+                  "name": "mCFSem",
+                  "width": 96,
+                  "height": 32,
+                  "fill": "#F3F4F6",
+                  "cornerRadius": 16,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "bpiDW",
+                      "x": 10,
+                      "y": 8,
+                      "name": "mCFSemTx",
+                      "fill": "#374151",
+                      "content": "🌱 Semillas",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "oMvNM",
+              "name": "Products Grid",
+              "width": 390,
+              "height": 808,
+              "fill": "#F8F9FA",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "e2VhK",
+                  "x": 16,
+                  "y": 16,
+                  "name": "CCard 1",
+                  "width": 173,
+                  "height": 254,
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 14,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 14,
+                      "id": "QjznJ",
+                      "x": 0,
+                      "y": 0,
+                      "name": "mcg1Img",
+                      "fill": "#D4EDD4",
+                      "width": 173,
+                      "height": 126
+                    },
+                    {
+                      "type": "text",
+                      "id": "09CnV",
+                      "x": 8,
+                      "y": 134,
+                      "name": "mcg1Brand",
+                      "fill": "#9CA3AF",
+                      "content": "AGROSEMILLAS",
+                      "fontFamily": "Inter",
+                      "fontSize": 9,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "fxdTG",
+                      "x": 8,
+                      "y": 148,
+                      "name": "mcg1Name",
+                      "fill": "#1F2937",
+                      "content": "Brachiaria\nHumidicola x 1kg",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "UNVDt",
+                      "x": 8,
+                      "y": 178,
+                      "name": "mcg1Price",
+                      "fill": "#1B5232",
+                      "content": "$28.000",
+                      "fontFamily": "Inter",
+                      "fontSize": 17,
+                      "fontWeight": "900"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "qrsSC",
+                      "x": 8,
+                      "y": 208,
+                      "name": "WA",
+                      "width": 157,
+                      "height": 36,
+                      "fill": "#25D366",
+                      "cornerRadius": 9,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Yephr",
+                          "x": 10,
+                          "y": 9,
+                          "name": "mcg1WATx",
+                          "fill": "#FFFFFF",
+                          "content": "Pedir por WhatsApp",
+                          "fontFamily": "Inter",
+                          "fontSize": 10,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "R8aZV",
+                  "x": 201,
+                  "y": 16,
+                  "name": "CCard 2",
+                  "width": 173,
+                  "height": 254,
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 14,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 14,
+                      "id": "lLA75",
+                      "x": 0,
+                      "y": 0,
+                      "name": "mcg2Img",
+                      "fill": "#D1E0EF",
+                      "width": 173,
+                      "height": 126
+                    },
+                    {
+                      "type": "text",
+                      "id": "qRva3",
+                      "x": 8,
+                      "y": 134,
+                      "name": "mcg2Brand",
+                      "fill": "#9CA3AF",
+                      "content": "VIRBAC",
+                      "fontFamily": "Inter",
+                      "fontSize": 9,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "xRbar",
+                      "x": 8,
+                      "y": 148,
+                      "name": "mcg2Name",
+                      "fill": "#1F2937",
+                      "content": "Clostrisan 11\nx 50 dosis",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "PhupN",
+                      "x": 8,
+                      "y": 178,
+                      "name": "mcg2Price",
+                      "fill": "#1B5232",
+                      "content": "$185.000",
+                      "fontFamily": "Inter",
+                      "fontSize": 17,
+                      "fontWeight": "900"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "zibCX",
+                      "x": 8,
+                      "y": 208,
+                      "name": "WA",
+                      "width": 157,
+                      "height": 36,
+                      "fill": "#25D366",
+                      "cornerRadius": 9,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Rcdn8",
+                          "x": 10,
+                          "y": 9,
+                          "name": "mcg2WATx",
+                          "fill": "#FFFFFF",
+                          "content": "Pedir por WhatsApp",
+                          "fontFamily": "Inter",
+                          "fontSize": 10,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "6TnD8",
+                  "x": 16,
+                  "y": 286,
+                  "name": "CCard 3",
+                  "width": 173,
+                  "height": 254,
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 14,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 14,
+                      "id": "xf1mY",
+                      "x": 0,
+                      "y": 0,
+                      "name": "mcg3Img",
+                      "fill": "#EFDDD4",
+                      "width": 173,
+                      "height": 126
+                    },
+                    {
+                      "type": "text",
+                      "id": "SvQBC",
+                      "x": 8,
+                      "y": 134,
+                      "name": "mcg3Brand",
+                      "fill": "#9CA3AF",
+                      "content": "VECOL",
+                      "fontFamily": "Inter",
+                      "fontSize": 9,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "xXDvC",
+                      "x": 8,
+                      "y": 148,
+                      "name": "mcg3Name",
+                      "fill": "#1F2937",
+                      "content": "Ivermectina 1%\nx 500ml",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "JfIAd",
+                      "x": 8,
+                      "y": 178,
+                      "name": "mcg3Price",
+                      "fill": "#1B5232",
+                      "content": "$78.000",
+                      "fontFamily": "Inter",
+                      "fontSize": 17,
+                      "fontWeight": "900"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "975pG",
+                      "x": 8,
+                      "y": 208,
+                      "name": "WA",
+                      "width": 157,
+                      "height": 36,
+                      "fill": "#25D366",
+                      "cornerRadius": 9,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "mH5CX",
+                          "x": 10,
+                          "y": 9,
+                          "name": "mcg3WATx",
+                          "fill": "#FFFFFF",
+                          "content": "Pedir por WhatsApp",
+                          "fontFamily": "Inter",
+                          "fontSize": 10,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "J1IlY",
+                  "x": 201,
+                  "y": 286,
+                  "name": "CCard 4",
+                  "width": 173,
+                  "height": 254,
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 14,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 14,
+                      "id": "JgwRr",
+                      "x": 0,
+                      "y": 0,
+                      "name": "mcg4Img",
+                      "fill": "#F5ECD5",
+                      "width": 173,
+                      "height": 126
+                    },
+                    {
+                      "type": "text",
+                      "id": "n1u5p",
+                      "x": 8,
+                      "y": 134,
+                      "name": "mcg4Brand",
+                      "fill": "#9CA3AF",
+                      "content": "SOLLA",
+                      "fontFamily": "Inter",
+                      "fontSize": 9,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "YVsRp",
+                      "x": 8,
+                      "y": 148,
+                      "name": "mcg4Name",
+                      "fill": "#1F2937",
+                      "content": "Concentrado\nLechero 16% 40kg",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "pMn6R",
+                      "x": 8,
+                      "y": 178,
+                      "name": "mcg4Price",
+                      "fill": "#1B5232",
+                      "content": "$98.000",
+                      "fontFamily": "Inter",
+                      "fontSize": 17,
+                      "fontWeight": "900"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "FACZA",
+                      "x": 8,
+                      "y": 208,
+                      "name": "WA",
+                      "width": 157,
+                      "height": 36,
+                      "fill": "#25D366",
+                      "cornerRadius": 9,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "5mA5z",
+                          "x": 10,
+                          "y": 9,
+                          "name": "mcg4WATx",
+                          "fill": "#FFFFFF",
+                          "content": "Pedir por WhatsApp",
+                          "fontFamily": "Inter",
+                          "fontSize": 10,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "BubFf",
+                  "x": 16,
+                  "y": 556,
+                  "name": "Load More",
+                  "width": 358,
+                  "height": 48,
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 10,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "CX7fA",
+                      "x": 126,
+                      "y": 14,
+                      "name": "mCLoadMoreTx",
+                      "fill": "#1B5232",
+                      "content": "Ver más productos →",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "700"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "bYDQn",
+          "x": 60,
+          "y": 6120,
+          "name": "📱 Producto · Mobile",
+          "clip": true,
+          "width": 390,
+          "height": 1460,
+          "fill": "#FFFFFF",
+          "layout": "vertical",
+          "children": [
+            {
+              "type": "frame",
+              "id": "ruAdg",
+              "name": "Navbar",
+              "width": 390,
+              "height": 72,
+              "fill": "#FFFFFF",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "LhTjA",
+                  "x": 16,
+                  "y": 20,
+                  "name": "mpNavLogo",
+                  "fill": "#4CAF50",
+                  "content": "DISTRIMM",
+                  "fontFamily": "Inter",
+                  "fontSize": 22,
+                  "fontWeight": "900"
+                },
+                {
+                  "type": "frame",
+                  "id": "lXLUW",
+                  "x": 310,
+                  "y": 20,
+                  "name": "Cart Icon",
+                  "width": 34,
+                  "height": 34,
+                  "fill": "#00000000",
+                  "cornerRadius": 8,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "RKgde",
+                      "x": 6,
+                      "y": 5,
+                      "name": "mpCartIco",
+                      "content": "🛒",
+                      "fontFamily": "Inter",
+                      "fontSize": 18,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "O2a0J",
+                      "x": 22,
+                      "y": -4,
+                      "name": "Badge",
+                      "width": 18,
+                      "height": 18,
+                      "fill": "#F9A825",
+                      "cornerRadius": 9,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Xd1JE",
+                          "x": 5,
+                          "y": 2,
+                          "name": "mpCartBadgeTx",
+                          "fill": "#1B5232",
+                          "content": "3",
+                          "fontFamily": "Inter",
+                          "fontSize": 10,
+                          "fontWeight": "900"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "U4lCF",
+                  "x": 356,
+                  "y": 22,
+                  "name": "mpNavMenu",
+                  "fill": "#333",
+                  "content": "☰",
+                  "fontFamily": "Inter",
+                  "fontSize": 20,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "rectangle",
+                  "id": "xBTxC",
+                  "x": 0,
+                  "y": 71,
+                  "name": "mpNavLine",
+                  "fill": "#e5e7eb",
+                  "width": 390,
+                  "height": 1
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "f4xz7",
+              "name": "Product Image",
+              "width": 390,
+              "height": 340,
+              "fill": "#D4EDD4",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "2LQqN",
+                  "x": 155,
+                  "y": 120,
+                  "name": "mpImgIco",
+                  "content": "🌱",
+                  "fontFamily": "Inter",
+                  "fontSize": 80,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "mCoaJ",
+                  "x": 12,
+                  "y": 12,
+                  "name": "Back Btn",
+                  "width": 34,
+                  "height": 34,
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 17,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "khnO6",
+                      "x": 8,
+                      "y": 5,
+                      "name": "mpImgBackTx",
+                      "fill": "#333",
+                      "content": "←",
+                      "fontFamily": "Inter",
+                      "fontSize": 18,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "LQTos",
+                  "x": 12,
+                  "y": 296,
+                  "name": "Cat Badge",
+                  "width": 100,
+                  "height": 26,
+                  "fill": "#1B5232",
+                  "cornerRadius": 13,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "bYhFW",
+                      "x": 8,
+                      "y": 5,
+                      "name": "mpImgBadgeTx",
+                      "fill": "#FFFFFF",
+                      "content": "Agrosemillas",
+                      "fontFamily": "Inter",
+                      "fontSize": 10,
+                      "fontWeight": "700"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "KpJQo",
+              "name": "Product Info",
+              "width": 390,
+              "height": 480,
+              "fill": "#FFFFFF",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "A9Jqd",
+                  "x": 16,
+                  "y": 16,
+                  "name": "mpBrand",
+                  "fill": "#9CA3AF",
+                  "content": "AGROSEMILLAS",
+                  "fontFamily": "Inter",
+                  "fontSize": 10,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "lsuN9",
+                  "x": 16,
+                  "y": 34,
+                  "name": "mpName",
+                  "fill": "#111",
+                  "content": "Brachiaria Humidicola\nx 1kg",
+                  "fontFamily": "Inter",
+                  "fontSize": 24,
+                  "fontWeight": "800"
+                },
+                {
+                  "type": "text",
+                  "id": "lKl5Q",
+                  "x": 16,
+                  "y": 96,
+                  "name": "mpPrice",
+                  "fill": "#1B5232",
+                  "content": "$28.000",
+                  "fontFamily": "Inter",
+                  "fontSize": 28,
+                  "fontWeight": "900"
+                },
+                {
+                  "type": "text",
+                  "id": "VkrcO",
+                  "x": 136,
+                  "y": 104,
+                  "name": "mpIva",
+                  "fill": "#9CA3AF",
+                  "content": "IVA incluido",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "Kbi6D",
+                  "x": 16,
+                  "y": 140,
+                  "name": "mpDescTitle",
+                  "fill": "#111",
+                  "content": "Descripción",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "E2LeR",
+                  "x": 16,
+                  "y": 164,
+                  "name": "mpDesc",
+                  "fill": "#666",
+                  "content": "Semilla certificada de pasto Brachiaria\nHumidicola, ideal para ganadería en\nzonas tropicales. Alta producción de\nforraje y excelente palatabilidad.",
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "rectangle",
+                  "id": "HAvgb",
+                  "x": 16,
+                  "y": 244,
+                  "name": "mpDiv",
+                  "fill": "#e5e7eb",
+                  "width": 358,
+                  "height": 1
+                },
+                {
+                  "type": "text",
+                  "id": "5W4SP",
+                  "x": 16,
+                  "y": 262,
+                  "name": "mpQtyLabel",
+                  "fill": "#111",
+                  "content": "Cantidad",
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "frame",
+                  "id": "gW94W",
+                  "x": 16,
+                  "y": 286,
+                  "name": "Qty Selector",
+                  "width": 140,
+                  "height": 44,
+                  "fill": "#F3F4F6",
+                  "cornerRadius": 10,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "TuRxr",
+                      "x": 16,
+                      "y": 8,
+                      "name": "mpQtyMinus",
+                      "fill": "#333",
+                      "content": "−",
+                      "fontFamily": "Inter",
+                      "fontSize": 22
+                    },
+                    {
+                      "type": "text",
+                      "id": "lEUW7",
+                      "x": 64,
+                      "y": 12,
+                      "name": "mpQtyNum",
+                      "fill": "#111",
+                      "content": "1",
+                      "fontFamily": "Inter",
+                      "fontSize": 16,
+                      "fontWeight": "800"
+                    },
+                    {
+                      "type": "text",
+                      "id": "MbU1E",
+                      "x": 108,
+                      "y": 10,
+                      "name": "mpQtyPlus",
+                      "fill": "#333",
+                      "content": "+",
+                      "fontFamily": "Inter",
+                      "fontSize": 20
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "fQo3N",
+                  "x": 16,
+                  "y": 348,
+                  "name": "Add to Cart Btn",
+                  "width": 358,
+                  "height": 50,
+                  "fill": "#F9A825",
+                  "cornerRadius": 10,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "a6XCv",
+                      "x": 84,
+                      "y": 14,
+                      "name": "mpBtnCartTx",
+                      "fill": "#1B5232",
+                      "content": "AGREGAR AL CARRITO",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "900"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "SAbvN",
+                  "x": 16,
+                  "y": 408,
+                  "name": "Buy Now Btn",
+                  "width": 358,
+                  "height": 50,
+                  "fill": "#25D366",
+                  "cornerRadius": 10,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "t3j2a",
+                      "x": 102,
+                      "y": 14,
+                      "name": "mpBtnBuyTx",
+                      "fill": "#FFFFFF",
+                      "content": "COMPRAR AHORA",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "800"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "TvOTh",
+              "name": "Related Products",
+              "width": 390,
+              "height": 360,
+              "fill": "#F8F9FA",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "UKxfQ",
+                  "x": 16,
+                  "y": 20,
+                  "name": "mpRelTitle",
+                  "fill": "#1B5232",
+                  "content": "Productos Relacionados",
+                  "fontFamily": "Inter",
+                  "fontSize": 18,
+                  "fontWeight": "800"
+                },
+                {
+                  "type": "rectangle",
+                  "cornerRadius": 2,
+                  "id": "PW0eP",
+                  "x": 16,
+                  "y": 46,
+                  "name": "mpRelUnder",
+                  "fill": "#F9A825",
+                  "width": 36,
+                  "height": 3
+                },
+                {
+                  "type": "frame",
+                  "id": "BnS6I",
+                  "x": 16,
+                  "y": 62,
+                  "name": "Related Grid",
+                  "width": 358,
+                  "height": 280,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "D9was",
+                      "x": 0,
+                      "y": 0,
+                      "name": "Rel Card 1",
+                      "width": 173,
+                      "height": 238,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 14,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "rectangle",
+                          "cornerRadius": 14,
+                          "id": "gRlWE",
+                          "x": 0,
+                          "y": 0,
+                          "name": "mrC1Img",
+                          "fill": "#D1E0EF",
+                          "width": 173,
+                          "height": 120
+                        },
+                        {
+                          "type": "text",
+                          "id": "8wU0y",
+                          "x": 8,
+                          "y": 128,
+                          "name": "mrC1Name",
+                          "fill": "#1F2937",
+                          "content": "Panicum Maximum\nx 1kg",
+                          "fontFamily": "Inter",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "3wLs0",
+                          "x": 8,
+                          "y": 162,
+                          "name": "mrC1Price",
+                          "fill": "#1B5232",
+                          "content": "$22.000",
+                          "fontFamily": "Inter",
+                          "fontSize": 15,
+                          "fontWeight": "900"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "yKCH3",
+                          "x": 8,
+                          "y": 192,
+                          "name": "Cart Btn",
+                          "width": 157,
+                          "height": 34,
+                          "fill": "#F9A825",
+                          "cornerRadius": 8,
+                          "layout": "none",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "N6XOZ",
+                              "x": 14,
+                              "y": 9,
+                              "name": "mrC1BtnTx",
+                              "fill": "#1B5232",
+                              "content": "Agregar al carrito",
+                              "fontFamily": "Inter",
+                              "fontSize": 10,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "nzN9H",
+                      "x": 185,
+                      "y": 0,
+                      "name": "Rel Card 2",
+                      "width": 173,
+                      "height": 238,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 14,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "rectangle",
+                          "cornerRadius": 14,
+                          "id": "FJwPL",
+                          "x": 0,
+                          "y": 0,
+                          "name": "mrC2Img",
+                          "fill": "#F5ECD5",
+                          "width": 173,
+                          "height": 120
+                        },
+                        {
+                          "type": "text",
+                          "id": "uTkuY",
+                          "x": 8,
+                          "y": 128,
+                          "name": "mrC2Name",
+                          "fill": "#1F2937",
+                          "content": "Pasto Estrella\nx 1kg",
+                          "fontFamily": "Inter",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "EGfT9",
+                          "x": 8,
+                          "y": 162,
+                          "name": "mrC2Price",
+                          "fill": "#1B5232",
+                          "content": "$18.500",
+                          "fontFamily": "Inter",
+                          "fontSize": 15,
+                          "fontWeight": "900"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "LVynj",
+          "x": 510,
+          "y": 6120,
+          "name": "📱 Cart Drawer",
+          "clip": true,
+          "width": 390,
+          "height": 700,
+          "fill": "#00000080",
+          "layout": "none",
+          "children": [
+            {
+              "type": "frame",
+              "id": "15q2W",
+              "x": 30,
+              "y": 0,
+              "name": "Drawer Panel",
+              "width": 360,
+              "height": 700,
+              "fill": "#FFFFFF",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "qEZlI",
+                  "x": 0,
+                  "y": 0,
+                  "name": "Header",
+                  "width": 360,
+                  "height": 60,
+                  "fill": "#FFFFFF",
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "id": "f4g0c",
+                      "x": 0,
+                      "y": 59,
+                      "name": "drHeaderLine",
+                      "fill": "#e5e7eb",
+                      "width": 360,
+                      "height": 1
+                    },
+                    {
+                      "type": "text",
+                      "id": "hWhYG",
+                      "x": 20,
+                      "y": 18,
+                      "name": "drTitle",
+                      "fill": "#111",
+                      "content": "Tu carrito (3)",
+                      "fontFamily": "Inter",
+                      "fontSize": 18,
+                      "fontWeight": "800"
+                    },
+                    {
+                      "type": "text",
+                      "id": "ZxblM",
+                      "x": 324,
+                      "y": 16,
+                      "name": "drClose",
+                      "fill": "#666",
+                      "content": "✕",
+                      "fontFamily": "Inter",
+                      "fontSize": 20,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "oCTRX",
+                  "x": 0,
+                  "y": 60,
+                  "name": "Item 1",
+                  "width": 360,
+                  "height": 110,
+                  "fill": "#FFFFFF",
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "id": "UPVqv",
+                      "x": 0,
+                      "y": 109,
+                      "name": "drItem1Line",
+                      "fill": "#f3f4f6",
+                      "width": 360,
+                      "height": 1
+                    },
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 10,
+                      "id": "22fUe",
+                      "x": 16,
+                      "y": 14,
+                      "name": "drItem1Img",
+                      "fill": "#D4EDD4",
+                      "width": 72,
+                      "height": 72
+                    },
+                    {
+                      "type": "text",
+                      "id": "nVgk4",
+                      "x": 100,
+                      "y": 16,
+                      "name": "drItem1Name",
+                      "fill": "#111",
+                      "content": "Brachiaria Humidicola\nx 1kg",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "14LJ6",
+                      "x": 100,
+                      "y": 50,
+                      "name": "drItem1Price",
+                      "fill": "#1B5232",
+                      "content": "$28.000",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "800"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "8p7iv",
+                      "x": 100,
+                      "y": 72,
+                      "name": "Qty",
+                      "width": 90,
+                      "height": 28,
+                      "fill": "#F3F4F6",
+                      "cornerRadius": 6,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "qdeuR",
+                          "x": 8,
+                          "y": 2,
+                          "name": "drItem1QM",
+                          "fill": "#666",
+                          "content": "−",
+                          "fontFamily": "Inter",
+                          "fontSize": 16,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "DQmbo",
+                          "x": 40,
+                          "y": 5,
+                          "name": "drItem1QN",
+                          "fill": "#111",
+                          "content": "1",
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "800"
+                        },
+                        {
+                          "type": "text",
+                          "id": "Gto8K",
+                          "x": 68,
+                          "y": 3,
+                          "name": "drItem1QP",
+                          "fill": "#666",
+                          "content": "+",
+                          "fontFamily": "Inter",
+                          "fontSize": 16,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "IYJLu",
+                      "x": 290,
+                      "y": 78,
+                      "name": "drItem1Del",
+                      "fill": "#EF4444",
+                      "content": "Eliminar",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "MpOXE",
+                  "x": 0,
+                  "y": 170,
+                  "name": "Item 2",
+                  "width": 360,
+                  "height": 110,
+                  "fill": "#FFFFFF",
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "id": "KGj42",
+                      "x": 0,
+                      "y": 109,
+                      "name": "drItem2Line",
+                      "fill": "#f3f4f6",
+                      "width": 360,
+                      "height": 1
+                    },
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 10,
+                      "id": "lPSCS",
+                      "x": 16,
+                      "y": 14,
+                      "name": "drItem2Img",
+                      "fill": "#D1E0EF",
+                      "width": 72,
+                      "height": 72
+                    },
+                    {
+                      "type": "text",
+                      "id": "IQNkW",
+                      "x": 100,
+                      "y": 16,
+                      "name": "drItem2Name",
+                      "fill": "#111",
+                      "content": "Clostrisan 11 x 50 dosis",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "tpxz4",
+                      "x": 100,
+                      "y": 40,
+                      "name": "drItem2Price",
+                      "fill": "#1B5232",
+                      "content": "$185.000 × 2 = $370.000",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "pFQot",
+                      "x": 100,
+                      "y": 64,
+                      "name": "Qty",
+                      "width": 90,
+                      "height": 28,
+                      "fill": "#F3F4F6",
+                      "cornerRadius": 6,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "H3j1t",
+                          "x": 8,
+                          "y": 2,
+                          "name": "drItem2QM",
+                          "fill": "#666",
+                          "content": "−",
+                          "fontFamily": "Inter",
+                          "fontSize": 16,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "87K4T",
+                          "x": 40,
+                          "y": 5,
+                          "name": "drItem2QN",
+                          "fill": "#111",
+                          "content": "2",
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "800"
+                        },
+                        {
+                          "type": "text",
+                          "id": "BA0P4",
+                          "x": 68,
+                          "y": 3,
+                          "name": "drItem2QP",
+                          "fill": "#666",
+                          "content": "+",
+                          "fontFamily": "Inter",
+                          "fontSize": 16,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "X6DG8",
+                      "x": 290,
+                      "y": 72,
+                      "name": "drItem2Del",
+                      "fill": "#EF4444",
+                      "content": "Eliminar",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "MtVcX",
+                  "x": 0,
+                  "y": 560,
+                  "name": "Footer",
+                  "width": 360,
+                  "height": 140,
+                  "fill": "#FFFFFF",
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "id": "C1nP0",
+                      "x": 0,
+                      "y": 0,
+                      "name": "drFootLine",
+                      "fill": "#e5e7eb",
+                      "width": 360,
+                      "height": 1
+                    },
+                    {
+                      "type": "text",
+                      "id": "CNW79",
+                      "x": 20,
+                      "y": 16,
+                      "name": "drSubLabel",
+                      "fill": "#666",
+                      "content": "Subtotal",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "31RPq",
+                      "x": 260,
+                      "y": 12,
+                      "name": "drSubVal",
+                      "fill": "#111",
+                      "content": "$518.000",
+                      "fontFamily": "Inter",
+                      "fontSize": 20,
+                      "fontWeight": "900"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "HrEN2",
+                      "x": 16,
+                      "y": 48,
+                      "name": "Ver Carrito",
+                      "width": 328,
+                      "height": 44,
+                      "fill": "#F3F4F6",
+                      "cornerRadius": 10,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "q2Ldm",
+                          "x": 92,
+                          "y": 12,
+                          "name": "drBtnCartTx",
+                          "fill": "#111",
+                          "content": "Ver carrito completo",
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "v5Y4F",
+                      "x": 16,
+                      "y": 98,
+                      "name": "Checkout Btn",
+                      "width": 328,
+                      "height": 44,
+                      "fill": "#25D366",
+                      "cornerRadius": 10,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Mx9ge",
+                          "x": 92,
+                          "y": 12,
+                          "name": "drBtnCheckTx",
+                          "fill": "#FFFFFF",
+                          "content": "IR AL CHECKOUT",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "800"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "D5ijd",
+          "x": 960,
+          "y": 6120,
+          "name": "📱 Checkout · Mobile",
+          "clip": true,
+          "width": 390,
+          "height": 1300,
+          "fill": "#FFFFFF",
+          "layout": "vertical",
+          "children": [
+            {
+              "type": "frame",
+              "id": "vuhgb",
+              "name": "Navbar",
+              "width": 390,
+              "height": 60,
+              "fill": "#FFFFFF",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "xK3Ao",
+                  "x": 16,
+                  "y": 17,
+                  "name": "ckNavLogo",
+                  "fill": "#4CAF50",
+                  "content": "DISTRIMM",
+                  "fontFamily": "Inter",
+                  "fontSize": 20,
+                  "fontWeight": "900"
+                },
+                {
+                  "type": "rectangle",
+                  "id": "y52N4",
+                  "x": 0,
+                  "y": 59,
+                  "name": "ckNavLine",
+                  "fill": "#e5e7eb",
+                  "width": 390,
+                  "height": 1
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "j4qjU",
+              "name": "Header",
+              "width": 390,
+              "height": 56,
+              "fill": "#FFFFFF",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "Mw7cC",
+                  "x": 16,
+                  "y": 14,
+                  "name": "ckHeaderTx",
+                  "fill": "#111",
+                  "content": "Checkout",
+                  "fontFamily": "Inter",
+                  "fontSize": 24,
+                  "fontWeight": "900"
+                },
+                {
+                  "type": "frame",
+                  "id": "xKroR",
+                  "x": 200,
+                  "y": 18,
+                  "name": "Steps",
+                  "width": 174,
+                  "height": 22,
+                  "fill": "#00000000",
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "SvSL9",
+                      "x": 0,
+                      "y": 2,
+                      "name": "ckStep1",
+                      "fill": "#1B5232",
+                      "content": "Datos",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "lvO2E",
+                      "x": 40,
+                      "y": 2,
+                      "name": "ckStepDot",
+                      "fill": "#ccc",
+                      "content": "→",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "p6Qzm",
+                      "x": 56,
+                      "y": 2,
+                      "name": "ckStep2",
+                      "fill": "#999",
+                      "content": "Resumen",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "LAG1D",
+                      "x": 112,
+                      "y": 2,
+                      "name": "ckStepDot2",
+                      "fill": "#ccc",
+                      "content": "→",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "6d6Kk",
+                      "x": 128,
+                      "y": 2,
+                      "name": "ckStep3",
+                      "fill": "#999",
+                      "content": "Enviar",
+                      "fontFamily": "Inter",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "YhWcY",
+              "name": "Order Summary",
+              "width": 390,
+              "height": 150,
+              "fill": "#F8F9FA",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "Jtpyk",
+                  "x": 16,
+                  "y": 14,
+                  "name": "ckSumTitle",
+                  "fill": "#111",
+                  "content": "Resumen del pedido (3 productos)",
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "Nz5l4",
+                  "x": 16,
+                  "y": 40,
+                  "name": "ckSumItem1",
+                  "fill": "#666",
+                  "content": "1× Brachiaria Humidicola x 1kg",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "xiYis",
+                  "x": 310,
+                  "y": 40,
+                  "name": "ckSumPrice1",
+                  "fill": "#111",
+                  "content": "$28.000",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "uUjDa",
+                  "x": 16,
+                  "y": 60,
+                  "name": "ckSumItem2",
+                  "fill": "#666",
+                  "content": "2× Clostrisan 11 x 50 dosis",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "2WWXo",
+                  "x": 304,
+                  "y": 60,
+                  "name": "ckSumPrice2",
+                  "fill": "#111",
+                  "content": "$370.000",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "mhitO",
+                  "x": 16,
+                  "y": 80,
+                  "name": "ckSumItem3",
+                  "fill": "#666",
+                  "content": "1× Sal Mineral 10% x 40kg",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "fEhhT",
+                  "x": 304,
+                  "y": 80,
+                  "name": "ckSumPrice3",
+                  "fill": "#111",
+                  "content": "$120.000",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "rectangle",
+                  "id": "6Lgb0",
+                  "x": 16,
+                  "y": 106,
+                  "name": "ckSumDiv",
+                  "fill": "#e5e7eb",
+                  "width": 358,
+                  "height": 1
+                },
+                {
+                  "type": "text",
+                  "id": "FVxMB",
+                  "x": 16,
+                  "y": 118,
+                  "name": "ckSumTotal",
+                  "fill": "#111",
+                  "content": "TOTAL",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "900"
+                },
+                {
+                  "type": "text",
+                  "id": "IhoXh",
+                  "x": 286,
+                  "y": 116,
+                  "name": "ckSumTotalVal",
+                  "fill": "#1B5232",
+                  "content": "$518.000",
+                  "fontFamily": "Inter",
+                  "fontSize": 18,
+                  "fontWeight": "900"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "vJCkI",
+              "name": "Form",
+              "width": 390,
+              "height": 880,
+              "fill": "#FFFFFF",
+              "layout": "none",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "lO6lU",
+                  "x": 16,
+                  "y": 14,
+                  "name": "ckFormTitle",
+                  "fill": "#111",
+                  "content": "Datos de envío",
+                  "fontFamily": "Inter",
+                  "fontSize": 16,
+                  "fontWeight": "800"
+                },
+                {
+                  "type": "text",
+                  "id": "rmYvY",
+                  "x": 16,
+                  "y": 48,
+                  "name": "ckF1Label",
+                  "fill": "#555",
+                  "content": "Nombre *",
+                  "fontFamily": "Inter",
+                  "fontSize": 11,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "frame",
+                  "id": "bV3OE",
+                  "x": 16,
+                  "y": 66,
+                  "name": "ckF1Input",
+                  "width": 172,
+                  "height": 40,
+                  "fill": "#F9FAFB",
+                  "cornerRadius": 8,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "id": "obHZQ",
+                      "x": 0,
+                      "y": 39,
+                      "name": "ckF1Line",
+                      "fill": "#D1D5DB",
+                      "width": 172,
+                      "height": 1
+                    },
+                    {
+                      "type": "text",
+                      "id": "av5Jq",
+                      "x": 12,
+                      "y": 11,
+                      "name": "ckF1Placeholder",
+                      "fill": "#9CA3AF",
+                      "content": "Juan",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "hvAWu",
+                  "x": 200,
+                  "y": 48,
+                  "name": "ckF2Label",
+                  "fill": "#555",
+                  "content": "Apellido *",
+                  "fontFamily": "Inter",
+                  "fontSize": 11,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "frame",
+                  "id": "Ajz0j",
+                  "x": 200,
+                  "y": 66,
+                  "name": "ckF2Input",
+                  "width": 174,
+                  "height": 40,
+                  "fill": "#F9FAFB",
+                  "cornerRadius": 8,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "id": "Ngcxg",
+                      "x": 0,
+                      "y": 39,
+                      "name": "ckF2Line",
+                      "fill": "#D1D5DB",
+                      "width": 174,
+                      "height": 1
+                    },
+                    {
+                      "type": "text",
+                      "id": "29Wxs",
+                      "x": 12,
+                      "y": 11,
+                      "name": "ckF2Placeholder",
+                      "fill": "#9CA3AF",
+                      "content": "Pérez",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "89QpU",
+                  "x": 16,
+                  "y": 120,
+                  "name": "ckF3Label",
+                  "fill": "#555",
+                  "content": "Teléfono * (+57)",
+                  "fontFamily": "Inter",
+                  "fontSize": 11,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "frame",
+                  "id": "4H5jc",
+                  "x": 16,
+                  "y": 138,
+                  "name": "ckF3Input",
+                  "width": 358,
+                  "height": 40,
+                  "fill": "#F9FAFB",
+                  "cornerRadius": 8,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "id": "03WeL",
+                      "x": 0,
+                      "y": 39,
+                      "name": "ckF3Line",
+                      "fill": "#D1D5DB",
+                      "width": 358,
+                      "height": 1
+                    },
+                    {
+                      "type": "text",
+                      "id": "l1DPY",
+                      "x": 12,
+                      "y": 11,
+                      "name": "ckF3Placeholder",
+                      "fill": "#9CA3AF",
+                      "content": "313 4835092",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "S2R97",
+                  "x": 16,
+                  "y": 192,
+                  "name": "ckF4Label",
+                  "fill": "#555",
+                  "content": "Email",
+                  "fontFamily": "Inter",
+                  "fontSize": 11,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "frame",
+                  "id": "GCCMo",
+                  "x": 16,
+                  "y": 210,
+                  "name": "ckF4Input",
+                  "width": 358,
+                  "height": 40,
+                  "fill": "#F9FAFB",
+                  "cornerRadius": 8,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "id": "5ZPqP",
+                      "x": 0,
+                      "y": 39,
+                      "name": "ckF4Line",
+                      "fill": "#D1D5DB",
+                      "width": 358,
+                      "height": 1
+                    },
+                    {
+                      "type": "text",
+                      "id": "XQE8G",
+                      "x": 12,
+                      "y": 11,
+                      "name": "ckF4PH",
+                      "fill": "#9CA3AF",
+                      "content": "correo@email.com",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "dxT4a",
+                  "x": 16,
+                  "y": 264,
+                  "name": "ckF5Label",
+                  "fill": "#555",
+                  "content": "Departamento",
+                  "fontFamily": "Inter",
+                  "fontSize": 11,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "frame",
+                  "id": "7UKTr",
+                  "x": 16,
+                  "y": 282,
+                  "name": "ckF5Input",
+                  "width": 172,
+                  "height": 40,
+                  "fill": "#F9FAFB",
+                  "cornerRadius": 8,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "id": "1MEpM",
+                      "x": 0,
+                      "y": 39,
+                      "name": "ckF5Line",
+                      "fill": "#D1D5DB",
+                      "width": 172,
+                      "height": 1
+                    },
+                    {
+                      "type": "text",
+                      "id": "9kwhq",
+                      "x": 12,
+                      "y": 11,
+                      "name": "ckF5PH",
+                      "fill": "#555",
+                      "content": "Caquetá",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "8AbNw",
+                  "x": 200,
+                  "y": 264,
+                  "name": "ckF6Label",
+                  "fill": "#555",
+                  "content": "Ciudad",
+                  "fontFamily": "Inter",
+                  "fontSize": 11,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "frame",
+                  "id": "HO1TU",
+                  "x": 200,
+                  "y": 282,
+                  "name": "ckF6Input",
+                  "width": 174,
+                  "height": 40,
+                  "fill": "#F9FAFB",
+                  "cornerRadius": 8,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "id": "dfawA",
+                      "x": 0,
+                      "y": 39,
+                      "name": "ckF6Line",
+                      "fill": "#D1D5DB",
+                      "width": 174,
+                      "height": 1
+                    },
+                    {
+                      "type": "text",
+                      "id": "bfklZ",
+                      "x": 12,
+                      "y": 11,
+                      "name": "ckF6PH",
+                      "fill": "#555",
+                      "content": "Florencia",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "iRRsu",
+                  "x": 16,
+                  "y": 336,
+                  "name": "ckF7Label",
+                  "fill": "#555",
+                  "content": "Dirección completa *",
+                  "fontFamily": "Inter",
+                  "fontSize": 11,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "frame",
+                  "id": "90A60",
+                  "x": 16,
+                  "y": 354,
+                  "name": "ckF7Input",
+                  "width": 358,
+                  "height": 40,
+                  "fill": "#F9FAFB",
+                  "cornerRadius": 8,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "id": "1HjOE",
+                      "x": 0,
+                      "y": 39,
+                      "name": "ckF7Line",
+                      "fill": "#D1D5DB",
+                      "width": 358,
+                      "height": 1
+                    },
+                    {
+                      "type": "text",
+                      "id": "3qWOF",
+                      "x": 12,
+                      "y": 11,
+                      "name": "ckF7PH",
+                      "fill": "#9CA3AF",
+                      "content": "Cra 10 #15-20",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "HlSkZ",
+                  "x": 16,
+                  "y": 408,
+                  "name": "ckF8Label",
+                  "fill": "#555",
+                  "content": "Barrio",
+                  "fontFamily": "Inter",
+                  "fontSize": 11,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "frame",
+                  "id": "v5EpB",
+                  "x": 16,
+                  "y": 426,
+                  "name": "ckF8Input",
+                  "width": 358,
+                  "height": 40,
+                  "fill": "#F9FAFB",
+                  "cornerRadius": 8,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "id": "bs4dU",
+                      "x": 0,
+                      "y": 39,
+                      "name": "ckF8Line",
+                      "fill": "#D1D5DB",
+                      "width": 358,
+                      "height": 1
+                    },
+                    {
+                      "type": "text",
+                      "id": "FIRQy",
+                      "x": 12,
+                      "y": 11,
+                      "name": "ckF8PH",
+                      "fill": "#9CA3AF",
+                      "content": "Centro",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "Nb1ZC",
+                  "x": 16,
+                  "y": 480,
+                  "name": "ckF9Label",
+                  "fill": "#555",
+                  "content": "Notas / Observaciones",
+                  "fontFamily": "Inter",
+                  "fontSize": 11,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "frame",
+                  "id": "iK6Bl",
+                  "x": 16,
+                  "y": 498,
+                  "name": "ckF9Input",
+                  "width": 358,
+                  "height": 72,
+                  "fill": "#F9FAFB",
+                  "cornerRadius": 8,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "id": "axp3R",
+                      "x": 0,
+                      "y": 71,
+                      "name": "ckF9Line",
+                      "fill": "#D1D5DB",
+                      "width": 358,
+                      "height": 1
+                    },
+                    {
+                      "type": "text",
+                      "id": "doR5w",
+                      "x": 12,
+                      "y": 11,
+                      "name": "ckF9PH",
+                      "fill": "#9CA3AF",
+                      "content": "Ej: Entregar por la tarde...",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "rectangle",
+                  "id": "7ujYe",
+                  "x": 16,
+                  "y": 590,
+                  "name": "ckFormDiv",
+                  "fill": "#e5e7eb",
+                  "width": 358,
+                  "height": 1
+                },
+                {
+                  "type": "frame",
+                  "id": "2p2DS",
+                  "x": 16,
+                  "y": 608,
+                  "name": "Total Row",
+                  "width": 358,
+                  "height": 36,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "qex0a",
+                      "x": 0,
+                      "y": 4,
+                      "name": "ckTotalLabel",
+                      "fill": "#111",
+                      "content": "Total a pagar:",
+                      "fontFamily": "Inter",
+                      "fontSize": 16,
+                      "fontWeight": "800"
+                    },
+                    {
+                      "type": "text",
+                      "id": "9YYhl",
+                      "x": 232,
+                      "y": 0,
+                      "name": "ckTotalVal",
+                      "fill": "#1B5232",
+                      "content": "$518.000",
+                      "fontFamily": "Inter",
+                      "fontSize": 22,
+                      "fontWeight": "900"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "llFIx",
+                  "x": 16,
+                  "y": 660,
+                  "name": "Submit Btn",
+                  "width": 358,
+                  "height": 54,
+                  "fill": "#25D366",
+                  "cornerRadius": 12,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "ngOZR",
+                      "x": 72,
+                      "y": 14,
+                      "name": "ckSubmitIco",
+                      "content": "📲",
+                      "fontFamily": "Inter",
+                      "fontSize": 18,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "nowNI",
+                      "x": 100,
+                      "y": 16,
+                      "name": "ckSubmitTx",
+                      "fill": "#FFFFFF",
+                      "content": "ENVIAR PEDIDO POR WHATSAPP",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "900"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "qvz3f",
+                  "x": 16,
+                  "y": 726,
+                  "name": "ckSecure",
+                  "fill": "#9CA3AF",
+                  "content": "🔒 Tu información es privada y solo se usa para procesar tu pedido",
+                  "fontFamily": "Inter",
+                  "fontSize": 10,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "TxmzF",
+                  "x": 16,
+                  "y": 756,
+                  "name": "ckBack",
+                  "fill": "#1B5232",
+                  "content": "← Volver al carrito",
+                  "fontFamily": "Inter",
+                  "fontSize": 12,
+                  "fontWeight": "600"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "FprK9",
+          "x": 60,
+          "y": 6088,
+          "name": "ckLabel1",
+          "fill": "#555",
+          "content": "📱 Página de Producto",
+          "fontFamily": "Inter",
+          "fontSize": 14,
+          "fontWeight": "700"
+        },
+        {
+          "type": "text",
+          "id": "diELC",
+          "x": 510,
+          "y": 6088,
+          "name": "ckLabel2",
+          "fill": "#555",
+          "content": "📱 Cart Drawer (sidebar)",
+          "fontFamily": "Inter",
+          "fontSize": 14,
+          "fontWeight": "700"
+        },
+        {
+          "type": "text",
+          "id": "l6F3H",
+          "x": 960,
+          "y": 6088,
+          "name": "ckLabel3",
+          "fill": "#555",
+          "content": "📱 Checkout",
+          "fontFamily": "Inter",
+          "fontSize": 14,
+          "fontWeight": "700"
+        }
+      ]
+    }
+  ]
+}

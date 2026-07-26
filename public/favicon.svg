@@ -1,8 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Verdes de la marca DistriMM: lima #87C000 → verde oscuro #438C03 -->
   <defs>
     <linearGradient id="shieldGrad" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#5B6CFF" />
-      <stop offset="100%" stop-color="#3F47F5" />
+      <stop offset="0%" stop-color="#87C000" />
+      <stop offset="100%" stop-color="#438C03" />
     </linearGradient>
   </defs>
   <path

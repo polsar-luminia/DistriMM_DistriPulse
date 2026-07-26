@@ -8,9 +8,11 @@ import {
   ChevronDown,
   ChevronUp,
   CircleAlert,
+  Zap,
 } from "lucide-react";
 import RecaudoTiersEditor from "./RecaudoTiersEditor";
 import MarcaComisionesEditor from "./MarcaComisionesEditor";
+import ReglaNoListadaEditor from "./ReglaNoListadaEditor";
 
 export default function VendorPresupuestoSection({
   vendedor,
@@ -29,6 +31,9 @@ export default function VendorPresupuestoSection({
   collapsed,
   onToggleCollapse,
   hasUnsavedChanges,
+  reglaExtra,
+  onUpdateReglaExtraRow,
+  onAddReglaExtra,
 }) {
   const canGuardarRecaudo = !recaudoValidation || recaudoValidation.isValid;
 
@@ -119,6 +124,21 @@ export default function VendorPresupuestoSection({
               vendedorCodigo={vendedor.codigo}
               numInput={numInput}
               validation={recaudoValidation}
+            />
+          </div>
+
+          {/* Regla marcas no listadas */}
+          <div>
+            <h3 className="text-sm font-black text-slate-900 flex items-center gap-2 mb-4">
+              <Zap size={16} className="text-amber-500" />
+              Regla para Marcas No Listadas
+            </h3>
+            <ReglaNoListadaEditor
+              regla={reglaExtra}
+              onUpdateRow={onUpdateReglaExtraRow}
+              onAdd={() => onAddReglaExtra(vendedor.codigo)}
+              baseInput={baseInput}
+              numInput={numInput}
             />
           </div>
 

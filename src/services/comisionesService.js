@@ -660,6 +660,10 @@ export const saveSnapshot = async ({
   exclusiones,
   catalogoCount,
   catalogo,
+  cargaCreditoId = null,
+  cargaContadoId = null,
+  totalRecaudosCredito = 0,
+  totalRecaudosContado = 0,
 }) => {
   // Usar buildInputHash para consistencia con useComisionesCalculo
   const inputHash = buildInputHash({
@@ -672,6 +676,10 @@ export const saveSnapshot = async ({
     exclusiones,
     catalogoCount,
     catalogo,
+    cargaCreditoId,
+    cargaContadoId,
+    totalRecaudosCredito,
+    totalRecaudosContado,
   });
 
   try {
@@ -725,6 +733,10 @@ export function buildInputHash({
   exclusiones,
   catalogoCount,
   catalogo,
+  cargaCreditoId = null,
+  cargaContadoId = null,
+  totalRecaudosCredito = null,
+  totalRecaudosContado = null,
 }) {
   // Fingerprint de exclusiones: ids + tipo + valor para detectar cambios de reglas
   const exclFingerprint = (exclusiones || [])
@@ -761,12 +773,29 @@ export function buildInputHash({
     .join(",");
 
   // Bump CALC_VERSION cuando cambie la lógica de cálculo para invalidar snapshots
-  const CALC_VERSION = 4; // v4: regla comisión para marcas no listadas
+  const CALC_VERSION = 5; // v5: umbral de no listadas sobre la sumatoria del grupo (no por marca)
+
+  // Tokens nuevos por desglose de origen. Solo se incluyen si HAY información de
+  // contado (para no invalidar snapshots históricos creados antes de este campo).
+  const tieneContado =
+    !!cargaContadoId ||
+    (totalRecaudosContado != null && totalRecaudosContado > 0);
+  const tieneDesglose = tieneContado || cargaCreditoId != null;
+  const tokensOrigen = tieneDesglose
+    ? [
+        `rc_cred:${totalRecaudosCredito ?? totalRecaudos ?? 0}`,
+        `rc_cont:${totalRecaudosContado ?? 0}`,
+        `cgCred:${cargaCreditoId || ""}`,
+        `cgCont:${cargaContadoId || ""}`,
+      ]
+    : [];
+
   return [
     `calcV:${CALC_VERSION}`,
     ...(cargaIds || []).sort(),
     `v:${totalVentas}`,
     `r:${totalRecaudos}`,
+    ...tokensOrigen,
     `pm:${presMarcaFp}`,
     `pr:${presRecaudoFp}`,
     `rx:${reglasExtraFp}`,

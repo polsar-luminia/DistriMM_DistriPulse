@@ -137,11 +137,15 @@ export async function enrichRecaudoExclusions(rows) {
 }
 
 /**
- * Enriquece filas RC con datos de clientes y cartera desde Supabase.
- * @param {Array} rows - Filas transformadas de RC
+ * Enriquece filas de recaudo con clientes, cartera y ventas desde Supabase.
+ * En modo estricto, el vendedor solo sale de un match exacto por factura
+ * contra ventas/cartera; no se usan fallbacks por NIT/cliente.
+ * @param {Array} rows - Filas transformadas de recaudo
+ * @param {object} options
  * @returns {Promise<Array>} Filas con nombre, vendedor, mora
  */
-export async function enrichFromDB(rows) {
+export async function enrichFromDB(rows, options = {}) {
+  const { strictInvoiceMatch = false, failOnError = false } = options;
   const nits = [...new Set(rows.map((r) => r.cliente_nit).filter(Boolean))];
   const facturas = [...new Set(rows.map((r) => r.factura).filter(Boolean))];
   // Buscar con todos los prefijos de factura del ERP (FELE- y FCI-)
@@ -180,6 +184,7 @@ export async function enrichFromDB(rows) {
         : [],
     ]);
   } catch (err) {
+    if (failOnError) throw err;
     if (import.meta.env.DEV)
       console.warn("[enrichFromDB] Error cargando datos:", err.message);
   }
@@ -220,6 +225,7 @@ export async function enrichFromDB(rows) {
     const c = clienteMap[row.cliente_nit];
     const f = carteraMap[row.factura];
     const venta = ventaInfoMap[row.factura];
+    const hasFacturaMatch = !!f || !!venta;
 
     let diasMora;
     let sinMatch = !f;
@@ -252,21 +258,25 @@ export async function enrichFromDB(rows) {
     // Vendedor prioridad: ventas (por factura) → cartera (por factura) → cartera (por NIT) → clientes maestro
     const vendedorVenta = venta?.vendedor_codigo;
     const vendedorCarteraNit = nitVendedorCartera[row.cliente_nit];
+    const vendedorCodigo = strictInvoiceMatch
+      ? vendedorVenta || f?.vendedor_codigo || ""
+      : vendedorVenta ||
+        f?.vendedor_codigo ||
+        vendedorCarteraNit ||
+        c?.vendedor_codigo ||
+        "";
 
     // Mantener valor_recaudo del RC (lo que realmente se pagó, no el saldo total de la factura)
     return {
       ...row,
-      cliente_nombre: c?.nombre_completo || row.cliente_nit,
-      vendedor_codigo:
-        vendedorVenta ||
-        f?.vendedor_codigo ||
-        vendedorCarteraNit ||
-        c?.vendedor_codigo ||
-        "",
-      fecha_cxc: f?.fecha_emision || venta?.fecha || null,
+      cliente_nombre:
+        c?.nombre_completo || row.cliente_nombre || row.cliente_nit,
+      vendedor_codigo: vendedorCodigo,
+      fecha_cxc: f?.fecha_emision || venta?.fecha || row.fecha_cxc || null,
       fecha_vence: f?.fecha_vencimiento || null,
       dias_mora: diasMora,
-      _sinMatchCartera: sinMatch,
+      _sinMatchCartera: strictInvoiceMatch ? !hasFacturaMatch : sinMatch,
+      _sinMatchFactura: !hasFacturaMatch,
     };
   });
 }

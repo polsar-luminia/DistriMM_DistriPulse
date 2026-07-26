@@ -139,6 +139,41 @@ export default function VentasUploadModal({ isOpen, onClose, onSuccess }) {
         );
       }
 
+      // Detectar si este archivo tiene muchas menos filas que otras cargas del mismo mes
+      const [mesYear, mesMonth] = fechaVentas.split("-").map(Number);
+      const mesStart = `${mesYear}-${String(mesMonth).padStart(2, "0")}-01`;
+      const mesEnd =
+        mesMonth === 12
+          ? `${mesYear + 1}-01-01`
+          : `${mesYear}-${String(mesMonth + 1).padStart(2, "0")}-01`;
+      const { data: cargasMes } = await supabase
+        .from("distrimm_comisiones_cargas")
+        .select("nombre_archivo, total_registros")
+        .gte("fecha_ventas", mesStart)
+        .lt("fecha_ventas", mesEnd);
+      if (cargasMes?.length > 0) {
+        const maxExistente = Math.max(
+          ...cargasMes.map((c) => c.total_registros || 0),
+        );
+        if (maxExistente > 0 && fullData.length < maxExistente * 0.5) {
+          const mayorCarga = cargasMes.reduce((best, c) =>
+            (c.total_registros || 0) > (best.total_registros || 0) ? c : best,
+          );
+          const ok = await confirm({
+            title: "Posible archivo no acumulativo",
+            message: `Este archivo tiene ${fullData.length.toLocaleString("es-CO")} filas, pero ya existe una carga en este mes con ${maxExistente.toLocaleString("es-CO")} filas (${mayorCarga.nombre_archivo}).\n\nLos archivos del ERP son acumulativos mes a mes. ¿Este archivo incluye todas las ventas del mes hasta la fecha?`,
+            confirmText: "Sí, continuar",
+            cancelText: "Cancelar",
+            variant: "warning",
+          });
+          if (!ok) {
+            setStep("preview");
+            setUploading(false);
+            return;
+          }
+        }
+      }
+
       // Parse fecha for each row (usa parseFlexibleDate compartido con ajuste timezone)
       const parseDate = (raw) => {
         if (!raw) return fechaVentas;

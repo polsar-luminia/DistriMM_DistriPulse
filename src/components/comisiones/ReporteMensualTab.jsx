@@ -1074,6 +1074,7 @@ export default function ReporteMensualTab({ hook }) {
                     <th className="px-4 py-3 text-right">Sin comisión</th>
                     <th className="px-4 py-3 text-right">Con comisión</th>
                     <th className="px-4 py-3 text-right">Costo</th>
+                    <th className="px-4 py-3 text-right">Rentabilidad</th>
                     <th className="px-4 py-3 text-center">Facturas</th>
                     <th className="px-4 py-3 w-8"></th>
                   </tr>
@@ -1115,6 +1116,21 @@ export default function ReporteMensualTab({ hook }) {
                           <td className="px-4 py-3 text-right font-mono text-slate-700">
                             {formatFullCurrency(v.costoComisionable)}
                           </td>
+                          <td className="px-4 py-3 text-right font-mono">
+                            <span
+                              className={cn(
+                                "font-bold",
+                                v.margenComisionable >= 0
+                                  ? "text-emerald-700"
+                                  : "text-rose-600",
+                              )}
+                            >
+                              {formatFullCurrency(v.margenComisionable)}
+                            </span>
+                            <span className="block text-xs text-slate-400">
+                              {v.margenPct.toFixed(1)}%
+                            </span>
+                          </td>
                           <td className="px-4 py-3 text-center text-xs font-bold text-slate-600">
                             {v.numFacturas}
                           </td>
@@ -1131,7 +1147,7 @@ export default function ReporteMensualTab({ hook }) {
                         </tr>
                         {isExp && (
                           <tr>
-                            <td colSpan={9} className="p-0">
+                            <td colSpan={10} className="p-0">
                               <ReporteVendedorDetail vendedor={v} />
                             </td>
                           </tr>
@@ -1155,6 +1171,20 @@ export default function ReporteMensualTab({ hook }) {
                     </td>
                     <td className="px-4 py-3 text-right font-mono text-slate-900">
                       {formatFullCurrency(displayTotals.costoComisionable)}
+                    </td>
+                    <td className="px-4 py-3 text-right font-mono">
+                      <span
+                        className={cn(
+                          displayTotals.margenComisionable >= 0
+                            ? "text-emerald-700"
+                            : "text-rose-600",
+                        )}
+                      >
+                        {formatFullCurrency(displayTotals.margenComisionable)}
+                      </span>
+                      <span className="block text-xs text-slate-400 font-normal">
+                        {displayTotals.margenPct.toFixed(1)}%
+                      </span>
                     </td>
                     <td className="px-4 py-3"></td>
                     <td className="px-4 py-3"></td>

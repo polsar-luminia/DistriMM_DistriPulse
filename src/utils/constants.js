@@ -10,14 +10,14 @@ export const COLORS = {
 
   // Chart colors (hex for Recharts)
   CHART: {
-    PRIMARY: "#10B981", // Emerald-500 �?" "Al Día" / success
-    SECONDARY: "#6366F1", // Indigo-500 �?" primary brand
+    PRIMARY: "#538000", // Emerald-500 �?" "Al Día" / success
+    SECONDARY: "#87C000", // Verde lima DistriMM �?" primary brand
     DANGER: "#EF4444", // Rose-500 �?" "Vencida" / overdue
     WARNING: "#F59E0B", // Amber-500 �?" moderate risk
     NEUTRAL: "#64748B", // Slate-500 �?" axis labels
     // 10-color palette for pie/bar charts with multiple series
     PALETTE: [
-      "#6366F1", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6",
+      "#87C000", "#10B981", "#F59E0B", "#EF4444", "#438C03",
       "#EC4899", "#14B8A6", "#F97316", "#06B6D4", "#84CC16",
     ],
   },

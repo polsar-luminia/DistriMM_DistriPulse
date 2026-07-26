@@ -214,6 +214,206 @@ describe("calcularComisionVentas", () => {
     expect(result.detalleMarcas[0].cumpleMeta).toBe(true);
     expect(result.detalleMarcas[0].comision).toBe(500); // 10000*0.05
   });
+
+  // ── Regla No Listadas ──
+
+  test("sin reglaNoListadas → marcas sin presupuesto dan comisión 0 (regresión)", () => {
+    const ventas = [makeVenta("P1", 25000000)];
+    const presupuestosMarca = [];
+    const productBrandMap = { P1: "CORONA" };
+
+    const result = calcularComisionVentas({
+      ventas,
+      presupuestosMarca,
+      productBrandMap,
+    });
+
+    expect(result.totalComisionVentas).toBe(0);
+    expect(result.detalleMarcas[0].comision).toBe(0);
+    expect(result.detalleMarcas[0].tienePresupuesto).toBe(false);
+    expect(result.detalleMarcas[0].reglaNoListadas).toBe(false);
+  });
+
+  test("reglaNoListadas con umbral no alcanzado → comisión 0", () => {
+    const ventas = [makeVenta("P1", 15000000)];
+    const presupuestosMarca = [];
+    const productBrandMap = { P1: "CORONA" };
+
+    const result = calcularComisionVentas({
+      ventas,
+      presupuestosMarca,
+      productBrandMap,
+      reglaNoListadas: { umbral: 20000000, pct_comision: 0.005 },
+    });
+
+    expect(result.totalComisionVentas).toBe(0);
+    expect(result.detalleMarcas[0].comision).toBe(0);
+    expect(result.detalleMarcas[0].cumpleMeta).toBe(false);
+    expect(result.detalleMarcas[0].reglaNoListadas).toBe(false);
+  });
+
+  test("reglaNoListadas con umbral alcanzado → comisión = totalVenta * pct", () => {
+    const ventas = [makeVenta("P1", 24500000)];
+    const presupuestosMarca = [];
+    const productBrandMap = { P1: "CORONA" };
+
+    const result = calcularComisionVentas({
+      ventas,
+      presupuestosMarca,
+      productBrandMap,
+      reglaNoListadas: { umbral: 20000000, pct_comision: 0.005 },
+    });
+
+    expect(result.totalComisionVentas).toBe(122500); // 24500000 * 0.005
+    expect(result.detalleMarcas[0].comision).toBe(122500);
+    expect(result.detalleMarcas[0].cumpleMeta).toBe(true);
+    expect(result.detalleMarcas[0].reglaNoListadas).toBe(true);
+    expect(result.detalleMarcas[0].tienePresupuesto).toBe(false);
+  });
+
+  test("múltiples marcas no listadas — umbral se evalúa sobre la SUMATORIA del grupo", () => {
+    const ventas = [
+      makeVenta("P1", 24500000), // CORONA
+      makeVenta("P2", 11200000), // ETERNIT — sola no supera, pero el grupo sí
+      makeVenta("P3", 21800000), // DURMAN
+    ];
+    const presupuestosMarca = [];
+    const productBrandMap = {
+      P1: "CORONA",
+      P2: "ETERNIT",
+      P3: "DURMAN",
+    };
+
+    // Grupo: 24.5M + 11.2M + 21.8M = 57.5M ≥ 20M → todas comisionan
+    const result = calcularComisionVentas({
+      ventas,
+      presupuestosMarca,
+      productBrandMap,
+      reglaNoListadas: { umbral: 20000000, pct_comision: 0.005 },
+    });
+
+    const corona = result.detalleMarcas.find((d) => d.marca === "CORONA");
+    const eternit = result.detalleMarcas.find((d) => d.marca === "ETERNIT");
+    const durman = result.detalleMarcas.find((d) => d.marca === "DURMAN");
+
+    expect(corona.comision).toBe(122500); // 24500000 * 0.005
+    expect(corona.reglaNoListadas).toBe(true);
+    expect(eternit.comision).toBe(56000); // 11200000 * 0.005 — comisiona por el grupo
+    expect(eternit.reglaNoListadas).toBe(true);
+    expect(durman.comision).toBe(109000); // 21800000 * 0.005
+    expect(durman.reglaNoListadas).toBe(true);
+    expect(corona.grupoNoListadasTotal).toBe(57500000);
+    expect(result.totalComisionVentas).toBe(287500); // 57500000 * 0.005
+  });
+
+  test("sumatoria alcanza umbral aunque ninguna marca individual lo alcance → todas comisionan", () => {
+    const ventas = [
+      makeVenta("P1", 4000000), // CORONA
+      makeVenta("P2", 3500000), // ETERNIT
+      makeVenta("P3", 3000000), // DURMAN
+    ];
+    const presupuestosMarca = [];
+    const productBrandMap = { P1: "CORONA", P2: "ETERNIT", P3: "DURMAN" };
+
+    // Grupo: 4M + 3.5M + 3M = 10.5M ≥ 10M → comisiona aunque la mayor marca es 4M
+    const result = calcularComisionVentas({
+      ventas,
+      presupuestosMarca,
+      productBrandMap,
+      reglaNoListadas: { umbral: 10000000, pct_comision: 0.005 },
+    });
+
+    result.detalleMarcas.forEach((dm) => {
+      expect(dm.reglaNoListadas).toBe(true);
+      expect(dm.cumpleMeta).toBe(true);
+      expect(dm.grupoNoListadasTotal).toBe(10500000);
+    });
+    expect(result.totalComisionVentas).toBe(52500); // 10500000 * 0.005
+  });
+
+  test("sumatoria del grupo por debajo del umbral → ninguna marca comisiona", () => {
+    const ventas = [
+      makeVenta("P1", 4000000), // CORONA
+      makeVenta("P2", 3500000), // ETERNIT
+    ];
+    const presupuestosMarca = [];
+    const productBrandMap = { P1: "CORONA", P2: "ETERNIT" };
+
+    // Grupo: 7.5M < 10M → nada
+    const result = calcularComisionVentas({
+      ventas,
+      presupuestosMarca,
+      productBrandMap,
+      reglaNoListadas: { umbral: 10000000, pct_comision: 0.005 },
+    });
+
+    result.detalleMarcas.forEach((dm) => {
+      expect(dm.comision).toBe(0);
+      expect(dm.reglaNoListadas).toBe(false);
+    });
+    expect(result.totalComisionVentas).toBe(0);
+  });
+
+  test("marcas con presupuesto NO cuentan para la sumatoria del grupo de no listadas", () => {
+    const ventas = [
+      makeVenta("P1", 9000000), // TECNOGLASS — tiene presupuesto, no suma al grupo
+      makeVenta("P2", 5000000), // CORONA — no listada
+    ];
+    const presupuestosMarca = [
+      makePresupuestoMarca("TECNOGLASS", 5000000, 0.015),
+    ];
+    const productBrandMap = { P1: "TECNOGLASS", P2: "CORONA" };
+
+    // Grupo no listadas = solo CORONA 5M < 10M → no comisiona por regla
+    const result = calcularComisionVentas({
+      ventas,
+      presupuestosMarca,
+      productBrandMap,
+      reglaNoListadas: { umbral: 10000000, pct_comision: 0.005 },
+    });
+
+    const corona = result.detalleMarcas.find((d) => d.marca === "CORONA");
+    expect(corona.reglaNoListadas).toBe(false);
+    expect(corona.comision).toBe(0);
+    // TECNOGLASS comisiona por su propio presupuesto (9M ≥ 5M)
+    const tecnoglass = result.detalleMarcas.find(
+      (d) => d.marca === "TECNOGLASS",
+    );
+    expect(tecnoglass.comision).toBe(135000); // 9000000 * 0.015
+  });
+
+  test("reglaNoListadas no afecta marcas con presupuesto configurado", () => {
+    const ventas = [
+      makeVenta("P1", 25000000), // TECNOGLASS — tiene presupuesto
+      makeVenta("P2", 25000000), // CORONA — no tiene presupuesto
+    ];
+    const presupuestosMarca = [
+      makePresupuestoMarca("TECNOGLASS", 15000000, 0.015),
+    ];
+    const productBrandMap = {
+      P1: "TECNOGLASS",
+      P2: "CORONA",
+    };
+
+    const result = calcularComisionVentas({
+      ventas,
+      presupuestosMarca,
+      productBrandMap,
+      reglaNoListadas: { umbral: 20000000, pct_comision: 0.005 },
+    });
+
+    const tecnoglass = result.detalleMarcas.find((d) => d.marca === "TECNOGLASS");
+    const corona = result.detalleMarcas.find((d) => d.marca === "CORONA");
+
+    // TECNOGLASS usa su propia regla de presupuesto, no reglaNoListadas
+    expect(tecnoglass.tienePresupuesto).toBe(true);
+    expect(tecnoglass.comision).toBe(375000); // 25000000 * 0.015
+    expect(tecnoglass.reglaNoListadas).toBeUndefined();
+    // CORONA usa reglaNoListadas
+    expect(corona.tienePresupuesto).toBe(false);
+    expect(corona.comision).toBe(125000); // 25000000 * 0.005
+    expect(corona.reglaNoListadas).toBe(true);
+  });
 });
 
 describe("calcularComisionRecaudo", () => {
@@ -512,6 +712,33 @@ describe("calcularComisionesCompletas", () => {
     expect(v1.comisionVentas.totalComisionVentas).toBe(expectedVentas);
     expect(v1.comisionRecaudo.comisionRecaudo).toBe(expectedRecaudo);
     expect(v1.totalComision).toBe(expectedVentas + expectedRecaudo);
+  });
+
+  test("reglasExtra con activa=false es ignorada — marcas no listadas dan comisión 0", () => {
+    const ventas = [makeVenta("P1", 25000000, { vendedor_codigo: "V1" })];
+    const recaudos = [];
+    const presupuestosMarca = [];
+    const presupuestosRecaudo = [];
+    const productBrandMap = { P1: "CORONA" };
+    const reglasExtra = [
+      {
+        vendedor_codigo: "V1",
+        umbral: 20000000,
+        pct_comision: 0.005,
+        activa: false, // desactivada — debe ignorarse
+      },
+    ];
+
+    const result = calcularComisionesCompletas({
+      ventas,
+      recaudos,
+      presupuestosMarca,
+      presupuestosRecaudo,
+      productBrandMap,
+      reglasExtra,
+    });
+
+    expect(result[0].comisionVentas.totalComisionVentas).toBe(0);
   });
 });
 

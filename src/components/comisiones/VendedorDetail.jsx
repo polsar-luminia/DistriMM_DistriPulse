@@ -8,7 +8,7 @@ import {
   formatNumber,
 } from "../../utils/formatters";
 
-const DONUT_COLORS = ["#34d399", "#d1d5db"];
+const DONUT_COLORS = ["#538000", "#d1d5db"];
 
 export default function VendedorDetail({
   vendedor,

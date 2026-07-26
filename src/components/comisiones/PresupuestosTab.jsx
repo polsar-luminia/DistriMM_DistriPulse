@@ -48,14 +48,26 @@ const EMPTY_MARCA = (year, month) => ({
   activo: true,
 });
 
+const EMPTY_REGLA_EXTRA = (year, month) => ({
+  _isNew: true,
+  vendedor_codigo: "",
+  periodo_year: year,
+  periodo_month: month,
+  umbral: 0,
+  pct_comision: 0,
+  activa: true,
+});
+
 export default function PresupuestosTab({ hook }) {
   const {
     presupuestosRecaudo,
     presupuestosMarca,
+    presupuestosReglaExtra,
     loadingPresupuestos,
     fetchPresupuestos,
     savePresupuestoRecaudo,
     savePresupuestoMarca,
+    saveReglaExtra,
     removePresupuestoRecaudo,
     removePresupuestoMarca,
     copiarPresupuestos,
@@ -87,6 +99,7 @@ export default function PresupuestosTab({ hook }) {
   // Local editable copies (kept in sync with hook data)
   const [editRecaudo, setEditRecaudo] = useState([]);
   const [editMarca, setEditMarca] = useState([]);
+  const [editReglaExtra, setEditReglaExtra] = useState([]);
 
   // Vendor name lookup
   const [vendedoresMap, setVendedoresMap] = useState({});
@@ -169,7 +182,11 @@ export default function PresupuestosTab({ hook }) {
     setDirtyVendors(new Set());
   }, [presupuestosMarca]);
 
-  // Group both arrays by vendedor_codigo for per-vendor card rendering
+  useEffect(() => {
+    setEditReglaExtra((presupuestosReglaExtra || []).map((r) => ({ ...r })));
+  }, [presupuestosReglaExtra]);
+
+  // Group all arrays by vendedor_codigo for per-vendor card rendering
   const vendedoresAgrupados = useMemo(() => {
     const codigosSet = new Set();
     editRecaudo.forEach((r) => codigosSet.add(r.vendedor_codigo));
@@ -184,18 +201,26 @@ export default function PresupuestosTab({ hook }) {
         const marcasConIdx = editMarca
           .map((m, globalIdx) => ({ ...m, _globalIdx: globalIdx }))
           .filter((m) => m.vendedor_codigo === codigo);
+        const reglaExtraIdx = editReglaExtra.findIndex(
+          (r) => r.vendedor_codigo === codigo,
+        );
+        const reglaExtra =
+          reglaExtraIdx !== -1
+            ? { ...editReglaExtra[reglaExtraIdx], _globalIdx: reglaExtraIdx }
+            : null;
         return {
           codigo,
           nombre: getNombreVendedor(codigo),
           recaudo: recaudoIdx !== -1 ? editRecaudo[recaudoIdx] : null,
           recaudoIdx,
           marcas: marcasConIdx,
+          reglaExtra,
           key: String(codigo || `new-${recaudoIdx}`),
         };
       })
       .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editRecaudo, editMarca, vendedoresMap]);
+  }, [editRecaudo, editMarca, editReglaExtra, vendedoresMap]);
 
   useEffect(() => {
     setExpandedVendors(new Set(vendedoresAgrupados.map((v) => v.key)));
@@ -361,6 +386,20 @@ export default function PresupuestosTab({ hook }) {
       }
     }
 
+    // 3. Save regla extra (if exists for this vendor)
+    const reglaVendedor = editReglaExtra.find(
+      (r) => r.vendedor_codigo === vendedorCodigo,
+    );
+    if (reglaVendedor) {
+      const { _isNew, _globalIdx, ...reglaPayload } = reglaVendedor;
+      const { error } = await saveReglaExtra(reglaPayload);
+      if (error) {
+        if (import.meta.env.DEV)
+          console.error("Error saving regla extra:", error);
+        hasError = true;
+      }
+    }
+
     setSavingId(null);
     if (hasError) {
       sileo.error("Algunos datos no pudieron guardarse");
@@ -465,6 +504,27 @@ export default function PresupuestosTab({ hook }) {
     setDirtyVendors((prev) => new Set(prev).add(String(codigo)));
     setSelectedAvailableVendor("");
     sileo.success("Vendedor agregado. Ya puedes configurar su cuota.");
+  };
+
+  const updateReglaExtraRow = (idx, field, value) => {
+    setEditReglaExtra((prev) => {
+      const next = [...prev];
+      next[idx] = { ...next[idx], [field]: value };
+      const codigo = next[idx].vendedor_codigo;
+      if (codigo) setDirtyVendors((d) => new Set(d).add(String(codigo)));
+      return next;
+    });
+  };
+
+  const handleAddReglaExtra = (vendedorCodigo) => {
+    setEditReglaExtra((prev) => [
+      ...prev,
+      {
+        ...EMPTY_REGLA_EXTRA(selectedYear, selectedMonth),
+        vendedor_codigo: vendedorCodigo,
+      },
+    ]);
+    setDirtyVendors((d) => new Set(d).add(String(vendedorCodigo || "")));
   };
 
   // ── Add new marca row pre-filled with vendor code ──
@@ -755,6 +815,9 @@ export default function PresupuestosTab({ hook }) {
               hasUnsavedChanges={dirtyVendors.has(
                 String(vendedor.codigo || ""),
               )}
+              reglaExtra={vendedor.reglaExtra}
+              onUpdateReglaExtraRow={updateReglaExtraRow}
+              onAddReglaExtra={handleAddReglaExtra}
             />
           ))}
 

@@ -10,8 +10,9 @@
   --card-foreground: oklch(0.15 0.03 250);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.15 0.03 250);
-  --primary: oklch(0.45 0.18 270);
-  --primary-foreground: oklch(0.97 0.01 270);
+  /* Marca DistriMM: primary/ring/chart-1 en verde del logo */
+  --primary: #538000;
+  --primary-foreground: #f6faeb;
   --secondary: oklch(0.95 0.005 250);
   --secondary-foreground: oklch(0.2 0.03 250);
   --muted: oklch(0.95 0.005 250);
@@ -21,20 +22,20 @@
   --destructive: oklch(0.6 0.2 25);
   --border: oklch(0.88 0.01 250);
   --input: oklch(0.88 0.01 250);
-  --ring: oklch(0.45 0.18 270);
-  --chart-1: oklch(0.45 0.18 270);
+  --ring: #538000;
+  --chart-1: #87c000;
   --chart-2: oklch(0.6 0.18 160);
   --chart-3: oklch(0.55 0.15 250);
   --chart-4: oklch(0.7 0.15 80);
   --chart-5: oklch(0.65 0.2 25);
   --sidebar-background: oklch(0.98 0.005 250);
   --sidebar-foreground: oklch(0.5 0.02 250);
-  --sidebar-primary: oklch(0.45 0.18 270);
-  --sidebar-primary-foreground: oklch(0.97 0.01 270);
+  --sidebar-primary: #538000;
+  --sidebar-primary-foreground: #f6faeb;
   --sidebar-accent: oklch(0.95 0.005 250);
   --sidebar-accent-foreground: oklch(0.2 0.03 250);
   --sidebar-border: oklch(0.88 0.01 250);
-  --sidebar-ring: oklch(0.45 0.18 270);
+  --sidebar-ring: #538000;
 }
 
 .dark {
@@ -44,8 +45,8 @@
   --card-foreground: oklch(0.97 0.005 250);
   --popover: oklch(0.15 0.03 250);
   --popover-foreground: oklch(0.97 0.005 250);
-  --primary: oklch(0.6 0.18 270);
-  --primary-foreground: oklch(0.15 0.03 250);
+  --primary: #9fcb2e;
+  --primary-foreground: #172502;
   --secondary: oklch(0.22 0.03 250);
   --secondary-foreground: oklch(0.97 0.005 250);
   --muted: oklch(0.22 0.03 250);
@@ -55,20 +56,20 @@
   --destructive: oklch(0.55 0.2 25);
   --border: oklch(0.22 0.03 250);
   --input: oklch(0.22 0.03 250);
-  --ring: oklch(0.35 0.15 270);
-  --chart-1: oklch(0.5 0.2 270);
+  --ring: #3f6500;
+  --chart-1: #87c000;
   --chart-2: oklch(0.55 0.18 160);
   --chart-3: oklch(0.6 0.15 250);
   --chart-4: oklch(0.65 0.15 80);
   --chart-5: oklch(0.6 0.2 25);
   --sidebar-background: oklch(0.15 0.03 250);
   --sidebar-foreground: oklch(0.65 0.02 250);
-  --sidebar-primary: oklch(0.6 0.18 270);
-  --sidebar-primary-foreground: oklch(0.15 0.03 250);
+  --sidebar-primary: #9fcb2e;
+  --sidebar-primary-foreground: #172502;
   --sidebar-accent: oklch(0.22 0.03 250);
   --sidebar-accent-foreground: oklch(0.97 0.005 250);
   --sidebar-border: oklch(0.22 0.03 250);
-  --sidebar-ring: oklch(0.35 0.15 270);
+  --sidebar-ring: #3f6500;
 }
 
 /* Register shadcn colors as Tailwind tokens */
@@ -127,24 +128,122 @@
   --color-navy-100: #dce1ed;
   --color-navy-50: #f0f2f7;
 
-  --color-mint-500: #34d399;
-  --color-mint-400: #6ee7b7;
+  --color-mint-500: #87c000;
+  --color-mint-400: #9fcb2e;
   --color-coral-500: #f87171;
   --color-coral-400: #fca5a5;
   --color-gold-500: #fbbf24;
   --color-gold-400: #fde68a;
 
-  --color-indigo-50: #eef2ff;
-  --color-indigo-100: #e0e7ff;
-  --color-indigo-200: #c7d2fe;
-  --color-indigo-300: #a5b4fc;
-  --color-indigo-400: #818cf8;
-  --color-indigo-500: #6366f1;
-  --color-indigo-600: #4f46e5;
-  --color-indigo-700: #4338ca;
-  --color-indigo-800: #3730a3;
-  --color-emerald-500: #10b981;
-  --color-cyan-500: #06b6d4;
+  /* ══════════════════════════════════════════════════════════════════
+     Marca DistriMM — la escala `indigo` renderiza la rampa VERDE de la
+     marca (logo: lima #87C000, verde oscuro #438C03). Así los ~450 usos
+     de *-indigo-* en JSX toman el color de marca sin tocar componentes.
+     Tonos 600+ oscurecidos para contraste AA (≥4.5:1) con texto blanco.
+     Revertir = restaurar la escala indigo default de Tailwind aquí.
+     ══════════════════════════════════════════════════════════════════ */
+  --color-indigo-50: #f6faeb;
+  --color-indigo-100: #eaf4d3;
+  --color-indigo-200: #d5e9a8;
+  --color-indigo-300: #b9db6e;
+  --color-indigo-400: #9fcb2e;
+  --color-indigo-500: #87c000;
+  --color-indigo-600: #538000;
+  --color-indigo-700: #3f6500;
+  --color-indigo-800: #345208;
+  --color-indigo-900: #2c440b;
+  --color-indigo-950: #172502;
+
+  /* ══════════════════════════════════════════════════════════════════
+     Todos los acentos "fríos" (emerald/teal/cyan/sky/blue/violet/purple)
+     también renderizan la rampa VERDE de la marca, para una identidad
+     100% DistriMM en KPIs, íconos, gradientes y botones secundarios.
+     Se conservan a propósito: rose/red (peligro), amber/yellow/orange
+     (advertencia) y slate (neutro) — colores semánticos de cartera.
+     ══════════════════════════════════════════════════════════════════ */
+  --color-emerald-50: #f6faeb;
+  --color-emerald-100: #eaf4d3;
+  --color-emerald-200: #d5e9a8;
+  --color-emerald-300: #b9db6e;
+  --color-emerald-400: #9fcb2e;
+  --color-emerald-500: #87c000;
+  --color-emerald-600: #538000;
+  --color-emerald-700: #3f6500;
+  --color-emerald-800: #345208;
+  --color-emerald-900: #2c440b;
+  --color-emerald-950: #172502;
+
+  --color-teal-50: #f6faeb;
+  --color-teal-100: #eaf4d3;
+  --color-teal-200: #d5e9a8;
+  --color-teal-300: #b9db6e;
+  --color-teal-400: #9fcb2e;
+  --color-teal-500: #87c000;
+  --color-teal-600: #538000;
+  --color-teal-700: #3f6500;
+  --color-teal-800: #345208;
+  --color-teal-900: #2c440b;
+  --color-teal-950: #172502;
+
+  --color-cyan-50: #f6faeb;
+  --color-cyan-100: #eaf4d3;
+  --color-cyan-200: #d5e9a8;
+  --color-cyan-300: #b9db6e;
+  --color-cyan-400: #9fcb2e;
+  --color-cyan-500: #87c000;
+  --color-cyan-600: #538000;
+  --color-cyan-700: #3f6500;
+  --color-cyan-800: #345208;
+  --color-cyan-900: #2c440b;
+  --color-cyan-950: #172502;
+
+  --color-sky-50: #f6faeb;
+  --color-sky-100: #eaf4d3;
+  --color-sky-200: #d5e9a8;
+  --color-sky-300: #b9db6e;
+  --color-sky-400: #9fcb2e;
+  --color-sky-500: #87c000;
+  --color-sky-600: #538000;
+  --color-sky-700: #3f6500;
+  --color-sky-800: #345208;
+  --color-sky-900: #2c440b;
+  --color-sky-950: #172502;
+
+  --color-blue-50: #f6faeb;
+  --color-blue-100: #eaf4d3;
+  --color-blue-200: #d5e9a8;
+  --color-blue-300: #b9db6e;
+  --color-blue-400: #9fcb2e;
+  --color-blue-500: #87c000;
+  --color-blue-600: #538000;
+  --color-blue-700: #3f6500;
+  --color-blue-800: #345208;
+  --color-blue-900: #2c440b;
+  --color-blue-950: #172502;
+
+  --color-violet-50: #f6faeb;
+  --color-violet-100: #eaf4d3;
+  --color-violet-200: #d5e9a8;
+  --color-violet-300: #b9db6e;
+  --color-violet-400: #9fcb2e;
+  --color-violet-500: #87c000;
+  --color-violet-600: #538000;
+  --color-violet-700: #3f6500;
+  --color-violet-800: #345208;
+  --color-violet-900: #2c440b;
+  --color-violet-950: #172502;
+
+  --color-purple-50: #f6faeb;
+  --color-purple-100: #eaf4d3;
+  --color-purple-200: #d5e9a8;
+  --color-purple-300: #b9db6e;
+  --color-purple-400: #9fcb2e;
+  --color-purple-500: #87c000;
+  --color-purple-600: #538000;
+  --color-purple-700: #3f6500;
+  --color-purple-800: #345208;
+  --color-purple-900: #2c440b;
+  --color-purple-950: #172502;
 }
 
 @layer base {
@@ -187,7 +286,7 @@
 }
 
 .text-gradient-brand {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-indigo-500 to-emerald-500;
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-indigo-600 to-indigo-700;
 }
 
 /* Scrollbar Hide */

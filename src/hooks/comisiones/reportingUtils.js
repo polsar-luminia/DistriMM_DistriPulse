@@ -22,6 +22,7 @@ export function buildReporteMensualState({
   isSnapshot,
   isStale = false,
   snapshotDate = null,
+  anomalyWarning = null,
 }) {
   return {
     cargas,
@@ -36,5 +37,6 @@ export function buildReporteMensualState({
     isSnapshot,
     isStale: isSnapshot ? isStale : false,
     snapshotDate: isSnapshot ? snapshotDate : null,
+    anomalyWarning,
   };
 }

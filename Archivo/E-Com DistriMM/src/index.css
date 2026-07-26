@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+:root {
+  --green-deep: #1B5232;
+  --green-dark: #0f3d22;
+  --green-mid: #2d7a4f;
+  --green-lime: #4CAF50;
+  --gold: #F9A825;
+  --red-brand: #C62828;
+  --gray-bg: #f8f9fa;
+}
+
+* { font-family: 'Inter', sans-serif; }
+body { margin: 0; }
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee 28s linear infinite;
+  display: flex;
+  width: max-content;
+}

@@ -4,6 +4,7 @@ export function calcularComisionVentas({
   ventas,
   presupuestosMarca,
   productBrandMap,
+  reglaNoListadas,
 }) {
   // 1. Agrupar ventas por marca usando productBrandMap
   //    Para cada venta: marca = productBrandMap[venta.producto_codigo] || "SIN MARCA"
@@ -48,19 +49,39 @@ export function calcularComisionVentas({
     });
   });
 
-  // 3. Agregar marcas con ventas pero sin presupuesto (informativo, comisión = 0)
-  Object.entries(ventasPorMarca).forEach(([marca, totalVenta]) => {
-    if (!marcasConPresupuesto.has(marca)) {
-      detalleMarcas.push({
-        marca,
-        totalVenta,
-        metaVentas: 0,
-        pctComision: 0,
-        cumpleMeta: false,
-        comision: 0,
-        tienePresupuesto: false,
-      });
-    }
+  // 3. Agregar marcas con ventas pero sin presupuesto.
+  //    Regla de negocio: el umbral se evalúa sobre la SUMATORIA de todas las
+  //    marcas no listadas del vendedor (no marca por marca). Si el grupo
+  //    alcanza el umbral, cada marca del grupo comisiona pct sobre su venta
+  //    (equivale a pct sobre la sumatoria, distribuido por marca).
+  const marcasNoListadas = Object.entries(ventasPorMarca)
+    .filter(([marca]) => !marcasConPresupuesto.has(marca))
+    // Mismo guard que rama con presupuesto: DV negativa → 0 (no penalizar)
+    .map(([marca, rawVenta]) => ({ marca, totalVenta: Math.max(0, rawVenta) }));
+
+  const totalGrupoNoListadas = marcasNoListadas.reduce(
+    (s, m) => s + m.totalVenta,
+    0,
+  );
+  const umbral = Number(reglaNoListadas?.umbral || 0);
+  const pct = Number(reglaNoListadas?.pct_comision || 0);
+  const aplicaRegla =
+    !!reglaNoListadas && umbral > 0 && totalGrupoNoListadas >= umbral;
+
+  marcasNoListadas.forEach(({ marca, totalVenta }) => {
+    const comision = aplicaRegla ? Math.round(totalVenta * pct) : 0;
+    detalleMarcas.push({
+      marca,
+      totalVenta,
+      metaVentas: umbral,
+      pctComision: aplicaRegla ? pct : 0,
+      cumpleMeta: aplicaRegla,
+      comision,
+      tienePresupuesto: false,
+      reglaNoListadas: aplicaRegla,
+      // Total del grupo para que la UI pueda mostrar contra qué se comparó el umbral
+      grupoNoListadasTotal: totalGrupoNoListadas,
+    });
   });
 
   detalleMarcas.sort((a, b) => b.comision - a.comision);
@@ -70,11 +91,55 @@ export function calcularComisionVentas({
   return { detalleMarcas, totalComisionVentas };
 }
 
-export function calcularComisionRecaudo({ recaudos, presupuestoRecaudo }) {
-  const toFinite = (v) => {
-    const n = Number(v);
-    return Number.isFinite(n) ? n : 0;
+function toFiniteVal(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function buildDesgloseOrigen(recaudos, origenKey) {
+  const filtrados = recaudos.filter(
+    (r) => (r.origen || "credito") === origenKey,
+  );
+  const bruto = filtrados.reduce(
+    (s, r) => s + toFiniteVal(r.valor_recaudo),
+    0,
+  );
+  const aplican = filtrados.filter((r) => r.aplica_comision);
+  const noAplican = filtrados.filter((r) => !r.aplica_comision);
+  const excluidoMarca = aplican.reduce(
+    (s, r) => s + toFiniteVal(r.valor_excluido_marca),
+    0,
+  );
+  const ivaDescontado = aplican.reduce(
+    (s, r) => s + toFiniteVal(r.valor_iva),
+    0,
+  );
+  const noComisionableMora = noAplican.reduce(
+    (s, r) => s + toFiniteVal(r.valor_recaudo),
+    0,
+  );
+  const comisionable = aplican.reduce(
+    (s, r) =>
+      s +
+      toFiniteVal(r.valor_recaudo) -
+      toFiniteVal(r.valor_excluido_marca) -
+      toFiniteVal(r.valor_iva),
+    0,
+  );
+  return {
+    count: filtrados.length,
+    countAplican: aplican.length,
+    countNoAplican: noAplican.length,
+    bruto,
+    excluidoMarca,
+    ivaDescontado,
+    noComisionableMora,
+    comisionable,
   };
+}
+
+export function calcularComisionRecaudo({ recaudos, presupuestoRecaudo }) {
+  const toFinite = toFiniteVal;
   const totalRecaudado = recaudos.reduce(
     (s, r) => s + toFinite(r.valor_recaudo),
     0,
@@ -95,6 +160,11 @@ export function calcularComisionRecaudo({ recaudos, presupuestoRecaudo }) {
   }, 0);
   const totalExcluido = totalRecaudado - totalComisionable;
 
+  const desglose = {
+    credito: buildDesgloseOrigen(recaudos, "credito"),
+    contado: buildDesgloseOrigen(recaudos, "contado"),
+  };
+
   // Si no hay presupuesto configurado, no se calcula comisión
   const metaVal = Number(presupuestoRecaudo?.meta_recaudo);
   if (!presupuestoRecaudo || !metaVal || metaVal <= 0) {
@@ -108,6 +178,7 @@ export function calcularComisionRecaudo({ recaudos, presupuestoRecaudo }) {
       tramoAplicado: null,
       pctComision: 0,
       comisionRecaudo: 0,
+      desglose,
     };
   }
 
@@ -179,6 +250,7 @@ export function calcularComisionRecaudo({ recaudos, presupuestoRecaudo }) {
     tramoAplicado,
     pctComision,
     comisionRecaudo,
+    desglose,
   };
 }
 
@@ -188,6 +260,7 @@ export function calcularComisionesCompletas({
   presupuestosMarca,
   presupuestosRecaudo,
   productBrandMap,
+  reglasExtra = [],
 }) {
   // Obtener lista única de vendedores (union de ventas + recaudos)
   const vendedoresSet = new Set();
@@ -220,10 +293,21 @@ export function calcularComisionesCompletas({
       presupuestosRecaudo.find((p) => p.vendedor_codigo === vendedorCodigo) ||
       null;
 
+    const reglaVendedor = reglasExtra.find(
+      (r) => r.vendedor_codigo === vendedorCodigo && r.activa,
+    );
+    const reglaNoListadas = reglaVendedor
+      ? {
+          umbral: Number(reglaVendedor.umbral),
+          pct_comision: Number(reglaVendedor.pct_comision),
+        }
+      : undefined;
+
     const comisionVentas = calcularComisionVentas({
       ventas: ventasVendedor,
       presupuestosMarca: presupuestosMarcaVendedor,
       productBrandMap,
+      reglaNoListadas,
     });
 
     const comisionRecaudo = calcularComisionRecaudo({

@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS distrimm_comisiones_cargas_recaudo (
   total_comisionable      numeric     DEFAULT 0,
   registros_excluidos_mora integer    DEFAULT 0,
   total_iva          NUMERIC     DEFAULT 0,
+  origen                  text        NOT NULL DEFAULT 'credito',
   created_at              timestamptz DEFAULT timezone('utc', now())
 );
 
@@ -69,6 +70,7 @@ CREATE TABLE IF NOT EXISTS distrimm_comisiones_recaudos (
   valor_iva          NUMERIC     DEFAULT 0,
   dias_mora        integer     DEFAULT 0,
   aplica_comision  boolean     DEFAULT true,
+  origen           text        NOT NULL DEFAULT 'credito',
   periodo_year     integer,
   periodo_month    integer,
   created_at       timestamptz DEFAULT timezone('utc', now())

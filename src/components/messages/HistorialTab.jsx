@@ -159,6 +159,7 @@ function LoteDetalleView({ loteId, messaging, onBack }) {
               <tr>
                 <th className="px-4 py-3">Cliente</th>
                 <th className="px-4 py-3">Teléfono</th>
+                <th className="px-4 py-3 text-center">Canal</th>
                 <th className="px-4 py-3 text-center">Estado</th>
                 <th className="px-4 py-3">Enviado</th>
                 <th className="px-4 py-3">Error</th>
@@ -178,6 +179,18 @@ function LoteDetalleView({ loteId, messaging, onBack }) {
                     </td>
                     <td className="px-4 py-3 text-[11px] font-mono text-slate-500">
                       {d.telefono}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span
+                        className={cn(
+                          "px-2 py-0.5 rounded-full text-[10px] font-bold",
+                          d.canal === "sms"
+                            ? "bg-sky-100 text-sky-700"
+                            : "bg-emerald-100 text-emerald-700",
+                        )}
+                      >
+                        {d.canal === "sms" ? "SMS" : "WhatsApp"}
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-center">
                       <EstadoBadge estado={d.estado_envio} />
@@ -202,7 +215,7 @@ function LoteDetalleView({ loteId, messaging, onBack }) {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="5" className="px-8 py-16 text-center">
+                  <td colSpan="6" className="px-8 py-16 text-center">
                     <Loader size={24} className="animate-spin text-slate-300 mx-auto mb-2" />
                     <p className="text-sm font-bold text-slate-400">
                       Cargando detalle...

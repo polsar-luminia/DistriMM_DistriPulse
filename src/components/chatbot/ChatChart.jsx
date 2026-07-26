@@ -16,11 +16,11 @@ import {
 } from "recharts";
 
 const DEFAULT_COLORS = [
-  "#6366f1", // indigo
+  "#87c000", // verde lima DistriMM (marca)
   "#10b981", // emerald
   "#f59e0b", // amber
   "#ef4444", // red
-  "#8b5cf6", // violet
+  "#438c03", // verde oscuro DistriMM (marca)
   "#06b6d4", // cyan
   "#ec4899", // pink
   "#84cc16", // lime

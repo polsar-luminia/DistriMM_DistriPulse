@@ -16,6 +16,8 @@ import {
   ChevronRight,
   Globe,
   Briefcase,
+  Download,
+  Loader2,
 } from "lucide-react";
 import { Card, StatCard } from "../components/dashboard/DashboardShared";
 import { useClientAnalytics } from "../hooks/useClientAnalytics";
@@ -49,6 +51,7 @@ export default function DirectorioClientesPage() {
   const [filterTelefono, setFilterTelefono] = useState("ALL");
   const [filterVendedor, setFilterVendedor] = useState("ALL");
   const [vendedoresDB, setVendedoresDB] = useState([]);
+  const [exportando, setExportando] = useState(false);
 
   // Fetch vendedores for name resolution
   useEffect(() => {
@@ -80,6 +83,23 @@ export default function DirectorioClientesPage() {
     const set = new Set(clientes.map((c) => c.municipio).filter(Boolean));
     return [...set].sort();
   }, [clientes]);
+
+  // Vendedores presentes en los clientes (con nombre si está disponible)
+  const vendedoresEnClientes = useMemo(() => {
+    const map = {};
+    clientes.forEach((c) => {
+      if (c.vendedor_codigo && !map[c.vendedor_codigo]) {
+        map[c.vendedor_codigo] = vendedorNombreMap[c.vendedor_codigo] || null;
+      }
+    });
+    return Object.entries(map)
+      .map(([codigo, nombre]) => ({ codigo, nombre }))
+      .sort((a, b) => {
+        const na = a.nombre || a.codigo;
+        const nb = b.nombre || b.codigo;
+        return na.localeCompare(nb);
+      });
+  }, [clientes, vendedorNombreMap]);
 
   // Filter
   const filtered = useMemo(() => {
@@ -141,6 +161,70 @@ export default function DirectorioClientesPage() {
     (effectivePage - 1) * itemsPerPage,
     effectivePage * itemsPerPage,
   );
+
+  const exportarClientes = async () => {
+    if (exportando || filtered.length === 0) return;
+    setExportando(true);
+    try {
+      const XLSX = await import("xlsx-js-style");
+      const rows = [...filtered].sort((a, b) => {
+        const va = (
+          vendedorNombreMap[a.vendedor_codigo] ||
+          a.vendedor_codigo ||
+          "ZZZ"
+        ).localeCompare(
+          vendedorNombreMap[b.vendedor_codigo] ||
+            b.vendedor_codigo ||
+            "ZZZ",
+        );
+        if (va !== 0) return va;
+        return (a.nombre_completo || "").localeCompare(b.nombre_completo || "");
+      });
+      const data = rows.map((c) => {
+        const tieneTel = !!(c.telefono_1 || c.telefono_2 || c.celular);
+        return {
+          Vendedor:
+            vendedorNombreMap[c.vendedor_codigo] ||
+            (c.vendedor_codigo ? `Cod. ${c.vendedor_codigo}` : "Sin vendedor"),
+          NIT: c.no_identif || "",
+          Nombre: c.nombre_completo || "",
+          Tipo: c.tipo_persona || "",
+          Ciudad: c.municipio || "",
+          Direccion: c.direccion || "",
+          "Tiene Telefono": tieneTel ? "Sí" : "No",
+          Telefono1: c.telefono_1 || "",
+          Telefono2: c.telefono_2 || "",
+          Celular: c.celular || "",
+          Correo: c.correo_electronico || "",
+        };
+      });
+      const ws = XLSX.utils.json_to_sheet(data);
+      // AutoFiltro en todas las columnas
+      ws["!autofilter"] = { ref: ws["!ref"] };
+      // Anchos de columna
+      ws["!cols"] = [
+        { wch: 22 }, // Vendedor
+        { wch: 14 }, // NIT
+        { wch: 36 }, // Nombre
+        { wch: 12 }, // Tipo
+        { wch: 18 }, // Ciudad
+        { wch: 30 }, // Direccion
+        { wch: 14 }, // Tiene Telefono
+        { wch: 14 }, // Telefono1
+        { wch: 14 }, // Telefono2
+        { wch: 14 }, // Celular
+        { wch: 28 }, // Correo
+      ];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Clientes");
+      XLSX.writeFile(
+        wb,
+        `clientes_directorio_${new Date().toISOString().slice(0, 10)}.xlsx`,
+      );
+    } finally {
+      setExportando(false);
+    }
+  };
 
   // Chart data
   const tipoPersonaData = [
@@ -347,9 +431,9 @@ export default function DirectorioClientesPage() {
           >
             <option value="ALL">Todos los Vendedores</option>
             <option value="SIN">Sin Vendedor Asignado</option>
-            {vendedoresDB.map((v) => (
+            {vendedoresEnClientes.map((v) => (
               <option key={v.codigo} value={v.codigo}>
-                {v.nombre} ({v.codigo})
+                {v.nombre ? `${v.nombre} (${v.codigo})` : `Cod. ${v.codigo}`}
               </option>
             ))}
           </select>
@@ -375,6 +459,20 @@ export default function DirectorioClientesPage() {
         <span className="text-xs text-slate-400 font-bold">
           Mostrando {paginatedClients.length} de {filtered.length} clientes
         </span>
+        {filtered.length > 0 && (
+          <button
+            onClick={exportarClientes}
+            disabled={exportando}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 disabled:opacity-50 transition-colors"
+          >
+            {exportando ? (
+              <Loader2 size={13} className="animate-spin" />
+            ) : (
+              <Download size={13} />
+            )}
+            Descargar Excel ({filtered.length})
+          </button>
+        )}
       </div>
 
       {/* Client List */}

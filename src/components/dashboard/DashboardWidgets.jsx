@@ -7,11 +7,11 @@ import { formatFullCurrency } from "../../utils/formatters";
 /* Widget-specific colors with light/dark pairs for fills+strokes.
    Not in global COLORS.CHART because these are component-internal UI shades. */
 const COLORS = {
-  emerald: "#34d399",
-  emeraldDark: "#10b981",
+  emerald: "#9fcb2e",
+  emeraldDark: "#538000",
   rose: "#fb7185",
   roseDark: "#f43f5e",
-  sky: "#38bdf8",
+  sky: "#87c000",
   amber: "#fbbf24",
   navy: "#1e2746",
   navyLight: "#3d4a6b",

@@ -12,7 +12,7 @@ export const triggerCfoAnalysis = async (payload) => {
 
     if (error) throw error;
 
-    // The n8n workflow returns { dashboard: {...}, success, periodo, ... }
+    // Edge Function returns { dashboard: {...}, success, periodo, ... }
     const analysisData = result?.dashboard || result?.analisis || result || {};
 
     return { data: analysisData, error: null };

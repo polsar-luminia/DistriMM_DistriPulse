@@ -13,7 +13,7 @@ export default function HealthScoreRing({ score, semaforo }) {
     score >= 80
       ? COLORS.CHART.PRIMARY
       : score >= 60
-        ? "#3B82F6"
+        ? "#9fcb2e"
         : score >= 40
           ? COLORS.CHART.WARNING
           : score >= 20

@@ -1,0 +1,20 @@
+{
+  "name": "distrimm-sms",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Servicio SMS de recordatorios de cobranza (LabsMobile) — fallback de WhatsApp. Autocontenido en el VPS.",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "node --test src/mensaje.test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2"
+  }
+}

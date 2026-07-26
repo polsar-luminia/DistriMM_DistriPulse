@@ -351,3 +351,83 @@ describe("Integración: calcularComisionesCompletas (ventas + recaudo)", () => {
     expect(result[0].comisionRecaudo.comisionRecaudo).toBeGreaterThan(0);
   });
 });
+
+describe("calcularComisionRecaudo: desglose por origen", () => {
+  const presupuestoBase = {
+    meta_recaudo: 1000000,
+    tramo1_max: 200,
+    tramo1_pct: 0.02,
+  };
+
+  test("mix crédito + contado: brutos suman totalRecaudado", () => {
+    const recaudos = [
+      makeRecaudo({ origen: "credito", valor_recaudo: 600000, valor_iva: 0 }),
+      makeRecaudo({ origen: "contado", valor_recaudo: 400000, valor_iva: 0 }),
+    ];
+    const result = calcularComisionRecaudo({ recaudos, presupuestoRecaudo: presupuestoBase });
+    expect(result.desglose.credito.bruto).toBe(600000);
+    expect(result.desglose.contado.bruto).toBe(400000);
+    expect(result.desglose.credito.bruto + result.desglose.contado.bruto).toBe(
+      result.totalRecaudado,
+    );
+  });
+
+  test("recaudo legacy sin origen cae en bucket crédito", () => {
+    const recaudos = [
+      makeRecaudo({ valor_recaudo: 500000, valor_iva: 0 }), // sin campo origen
+    ];
+    const result = calcularComisionRecaudo({ recaudos, presupuestoRecaudo: presupuestoBase });
+    expect(result.desglose.credito.count).toBe(1);
+    expect(result.desglose.contado.count).toBe(0);
+  });
+
+  test("mora > 70 días aparece en noComisionableMora y no en comisionable", () => {
+    const recaudos = [
+      makeRecaudo({ origen: "credito", valor_recaudo: 300000, aplica_comision: true, valor_iva: 0 }),
+      makeRecaudo({ origen: "credito", valor_recaudo: 200000, aplica_comision: false, valor_iva: 0 }),
+    ];
+    const result = calcularComisionRecaudo({ recaudos, presupuestoRecaudo: presupuestoBase });
+    expect(result.desglose.credito.noComisionableMora).toBe(200000);
+    expect(result.desglose.credito.comisionable).toBe(300000);
+    expect(result.desglose.credito.countNoAplican).toBe(1);
+  });
+
+  test("excluido por marca resta del comisionable", () => {
+    const recaudos = [
+      makeRecaudo({
+        origen: "credito",
+        valor_recaudo: 1000000,
+        valor_excluido_marca: 150000,
+        valor_iva: 0,
+        aplica_comision: true,
+      }),
+    ];
+    const result = calcularComisionRecaudo({ recaudos, presupuestoRecaudo: presupuestoBase });
+    expect(result.desglose.credito.excluidoMarca).toBe(150000);
+    expect(result.desglose.credito.comisionable).toBe(850000);
+  });
+
+  test("solo crédito: contado queda con count 0 y todos los valores en 0", () => {
+    const recaudos = [
+      makeRecaudo({ origen: "credito", valor_recaudo: 500000, valor_iva: 0 }),
+    ];
+    const result = calcularComisionRecaudo({ recaudos, presupuestoRecaudo: presupuestoBase });
+    const d = result.desglose.contado;
+    expect(d.count).toBe(0);
+    expect(d.bruto).toBe(0);
+    expect(d.comisionable).toBe(0);
+    expect(d.excluidoMarca).toBe(0);
+    expect(d.noComisionableMora).toBe(0);
+  });
+
+  test("comisionable crédito + contado === totalComisionable", () => {
+    const recaudos = [
+      makeRecaudo({ origen: "credito", valor_recaudo: 800000, valor_excluido_marca: 50000, valor_iva: 30000, aplica_comision: true }),
+      makeRecaudo({ origen: "contado", valor_recaudo: 200000, valor_excluido_marca: 0, valor_iva: 0, aplica_comision: true }),
+    ];
+    const result = calcularComisionRecaudo({ recaudos, presupuestoRecaudo: presupuestoBase });
+    const sumaDesglose =
+      result.desglose.credito.comisionable + result.desglose.contado.comisionable;
+    expect(sumaDesglose).toBeCloseTo(result.totalComisionable, 0);
+  });
+});

@@ -135,14 +135,18 @@ export function useLotes() {
         };
       }
 
-      // Pre-flight: verify active WhatsApp instance
+      // Pre-flight: instancia WhatsApp (opcional si hay canal SMS de respaldo).
+      // Si no hay WhatsApp activo pero el SMS está configurado, se continúa y
+      // todo el lote saldrá por SMS (fallback). Solo se aborta si no hay ningún canal.
       const { data: activeInstance } = await getActiveInstance();
-      if (!activeInstance?.id) {
+      const whatsappId = activeInstance?.id || null;
+      const smsConfigurado = Boolean(import.meta.env.VITE_VPS_API_URL);
+      if (!whatsappId && !smsConfigurado) {
         return {
           success: false,
           loteId: null,
           error:
-            "No hay instancia de WhatsApp activa. Conecta tu numero en la pestana WhatsApp.",
+            "No hay WhatsApp activo ni canal SMS configurado. Conecta WhatsApp o configura el servicio SMS.",
         };
       }
 
@@ -176,6 +180,14 @@ export function useLotes() {
         };
       }
 
+      if (cappedDestinatarios.length > 500) {
+        return {
+          success: false,
+          loteId: null,
+          error: "Máximo 500 destinatarios por lote. Divide en múltiples envíos.",
+        };
+      }
+
       creatingLoteRef.current = true;
       setCreatingLote(true);
       try {
@@ -190,10 +202,13 @@ export function useLotes() {
         const loteId = loteData.lote.id;
         const detalleRows = loteData.detalle || [];
 
-        // 2. Build destinatarios with detalle IDs for n8n
-        const destinatariosConIds = cappedDestinatarios.map((d, i) => ({
+        // 2. Build destinatarios with detalle IDs usando Map para evitar desalineación por índice
+        const detalleByKey = new Map(
+          detalleRows.map((r) => [`${r.cliente_nit}_${r.telefono}`, r.id]),
+        );
+        const destinatariosConIds = cappedDestinatarios.map((d) => ({
           ...d,
-          detalle_id: detalleRows[i]?.id || null,
+          detalle_id: detalleByKey.get(`${d.cliente_nit}_${d.telefono}`) || null,
         }));
 
         // 3. Mark lote as en_proceso
@@ -217,11 +232,11 @@ export function useLotes() {
           );
         }
 
-        // 4. Trigger n8n webhook with ALL recipients (pass instance_id)
+        // 4. Procesar lote: WhatsApp (si hay instancia) + fallback SMS automático.
         const triggerResult = await triggerLoteProcessing(
           loteId,
           destinatariosConIds,
-          activeInstance.id,
+          whatsappId,
         );
 
         if (!triggerResult.success) {

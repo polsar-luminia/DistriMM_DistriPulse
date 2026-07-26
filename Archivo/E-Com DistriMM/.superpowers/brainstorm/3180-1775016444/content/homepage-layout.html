@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DistriMM — Homepage Preview</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:#f0f0f0; }
+
+  .preview-label {
+    background:#1a1a1a; color:white; text-align:center;
+    padding:10px; font-size:13px; font-weight:600; letter-spacing:1px;
+  }
+  .preview-label span { color:#F9A825; }
+
+  /* ===== NAVBAR ===== */
+  .nav {
+    background:#1B5232; color:white;
+    padding:0 32px; display:flex; align-items:center;
+    justify-content:space-between; height:64px; position:sticky; top:0; z-index:100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+  .nav-logo { display:flex; align-items:center; gap:10px; }
+  .nav-logo-circle {
+    width:42px; height:42px; background:#F9A825; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:900; font-size:14px; color:#1B5232; letter-spacing:-1px;
+  }
+  .nav-logo-text { display:flex; flex-direction:column; }
+  .nav-logo-text .top { font-size:9px; color:#a8d5b8; letter-spacing:2px; text-transform:uppercase; }
+  .nav-logo-text .main { font-size:16px; font-weight:800; letter-spacing:1px; }
+  .nav-links { display:flex; gap:24px; font-size:13px; }
+  .nav-links a { color:rgba(255,255,255,0.85); text-decoration:none; }
+  .nav-links a:hover { color:#F9A825; }
+  .nav-right { display:flex; align-items:center; gap:16px; }
+  .nav-search { background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:white; padding:6px 14px; border-radius:20px; font-size:12px; width:180px; }
+  .nav-search::placeholder { color:rgba(255,255,255,0.5); }
+  .nav-cart { background:#F9A825; color:#1B5232; border:none; padding:7px 16px; border-radius:20px; font-weight:700; font-size:12px; cursor:pointer; display:flex; align-items:center; gap:6px; }
+  .nav-b2b { background:transparent; color:#F9A825; border:1px solid #F9A825; padding:6px 14px; border-radius:20px; font-size:12px; font-weight:600; cursor:pointer; }
+
+  /* ===== HERO ===== */
+  .hero {
+    background: linear-gradient(135deg, #0f3d22 0%, #1B5232 50%, #2d7a4f 100%);
+    color:white; padding:60px 32px; display:flex; align-items:center; gap:48px;
+    min-height:420px; position:relative; overflow:hidden;
+  }
+  .hero::before {
+    content:''; position:absolute; right:-40px; top:-40px;
+    width:400px; height:400px; background:rgba(249,168,37,0.07);
+    border-radius:50%;
+  }
+  .hero-content { flex:1; max-width:520px; position:relative; z-index:1; }
+  .hero-badge { background:#F9A825; color:#1B5232; font-size:11px; font-weight:700; padding:4px 12px; border-radius:20px; display:inline-block; margin-bottom:16px; letter-spacing:1px; text-transform:uppercase; }
+  .hero h1 { font-size:42px; font-weight:900; line-height:1.1; margin-bottom:16px; }
+  .hero h1 span { color:#F9A825; }
+  .hero p { font-size:16px; color:rgba(255,255,255,0.8); margin-bottom:28px; line-height:1.6; }
+  .hero-btns { display:flex; gap:12px; }
+  .btn-primary { background:#F9A825; color:#1B5232; border:none; padding:14px 28px; border-radius:6px; font-weight:800; font-size:15px; cursor:pointer; }
+  .btn-secondary { background:transparent; color:white; border:2px solid rgba(255,255,255,0.4); padding:14px 28px; border-radius:6px; font-weight:600; font-size:15px; cursor:pointer; }
+  .hero-stats { display:flex; gap:32px; margin-top:32px; padding-top:24px; border-top:1px solid rgba(255,255,255,0.15); }
+  .stat { text-align:center; }
+  .stat .num { font-size:24px; font-weight:900; color:#F9A825; }
+  .stat .lbl { font-size:11px; color:rgba(255,255,255,0.6); }
+  .hero-image-area {
+    flex:0 0 320px; height:280px; background:rgba(255,255,255,0.07);
+    border-radius:12px; display:flex; align-items:center; justify-content:center;
+    border:1px solid rgba(255,255,255,0.1); position:relative; overflow:hidden;
+  }
+  .hero-image-area img { width:100%; height:100%; object-fit:cover; border-radius:12px; opacity:0.7; }
+  .hero-image-placeholder { text-align:center; color:rgba(255,255,255,0.3); font-size:13px; }
+
+  /* ===== MARQUEE ===== */
+  .marquee { background:#F9A825; padding:10px 0; overflow:hidden; }
+  .marquee-inner { display:flex; gap:32px; white-space:nowrap; font-size:12px; font-weight:700; color:#1B5232; }
+  .marquee-inner span { padding:0 16px; }
+  .marquee-inner .sep { opacity:0.4; }
+
+  /* ===== CATEGORÍAS ===== */
+  .section { padding:48px 32px; }
+  .section-header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:28px; }
+  .section-title { font-size:22px; font-weight:800; color:#1B5232; }
+  .section-title::after { content:''; display:block; width:40px; height:3px; background:#F9A825; margin-top:6px; }
+  .see-all { font-size:13px; color:#1B5232; text-decoration:none; font-weight:600; }
+
+  .cat-grid { display:grid; grid-template-columns: repeat(5, 1fr); gap:12px; }
+  .cat-card {
+    background:white; border-radius:10px; padding:20px 12px; text-align:center;
+    box-shadow:0 1px 4px rgba(0,0,0,0.08); cursor:pointer; transition:all 0.2s;
+    border:2px solid transparent;
+  }
+  .cat-card:hover { border-color:#1B5232; transform:translateY(-2px); }
+  .cat-icon { font-size:32px; margin-bottom:8px; }
+  .cat-name { font-size:12px; font-weight:700; color:#1a1a1a; }
+  .cat-count { font-size:11px; color:#888; margin-top:2px; }
+
+  /* ===== PRODUCTOS DESTACADOS ===== */
+  .prod-grid { display:grid; grid-template-columns: repeat(4, 1fr); gap:16px; }
+  .prod-card {
+    background:white; border-radius:10px; overflow:hidden;
+    box-shadow:0 1px 4px rgba(0,0,0,0.08); cursor:pointer; transition:all 0.2s;
+  }
+  .prod-card:hover { box-shadow:0 4px 16px rgba(0,0,0,0.15); transform:translateY(-2px); }
+  .prod-img {
+    height:160px; background:linear-gradient(135deg, #e8f5e9, #f1f8e9);
+    display:flex; align-items:center; justify-content:center; font-size:48px; position:relative;
+  }
+  .prod-badge { position:absolute; top:10px; left:10px; background:#C62828; color:white; font-size:10px; font-weight:700; padding:3px 8px; border-radius:4px; }
+  .prod-body { padding:14px; }
+  .prod-brand { font-size:10px; color:#888; text-transform:uppercase; letter-spacing:1px; font-weight:600; }
+  .prod-name { font-size:13px; font-weight:700; color:#1a1a1a; margin:4px 0; line-height:1.3; }
+  .prod-price-row { display:flex; justify-content:space-between; align-items:center; margin-top:10px; }
+  .prod-price { font-size:16px; font-weight:800; color:#1B5232; }
+  .prod-price .old { font-size:11px; color:#aaa; text-decoration:line-through; display:block; font-weight:400; }
+  .btn-add { background:#1B5232; color:white; border:none; padding:7px 14px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer; }
+
+  /* ===== BANNER B2B ===== */
+  .b2b-banner {
+    background:linear-gradient(135deg, #0f3d22 0%, #1B5232 100%);
+    color:white; padding:48px 32px; display:flex; align-items:center; gap:48px;
+  }
+  .b2b-content { flex:1; }
+  .b2b-tag { background:rgba(249,168,37,0.15); color:#F9A825; border:1px solid rgba(249,168,37,0.3); font-size:11px; font-weight:700; padding:4px 12px; border-radius:20px; display:inline-block; margin-bottom:12px; letter-spacing:1px; }
+  .b2b-content h2 { font-size:30px; font-weight:900; margin-bottom:12px; }
+  .b2b-content p { color:rgba(255,255,255,0.75); font-size:15px; line-height:1.6; margin-bottom:20px; }
+  .b2b-benefits { display:flex; flex-direction:column; gap:8px; margin-bottom:24px; }
+  .b2b-benefit { display:flex; align-items:center; gap:10px; font-size:14px; }
+  .b2b-benefit::before { content:'✓'; background:#F9A825; color:#1B5232; width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:11px; flex-shrink:0; }
+  .btn-b2b { background:#F9A825; color:#1B5232; border:none; padding:14px 32px; border-radius:6px; font-weight:800; font-size:15px; cursor:pointer; }
+  .b2b-card-area { flex:0 0 280px; }
+  .b2b-card {
+    background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);
+    border-radius:12px; padding:20px; font-size:13px;
+  }
+  .b2b-card .tag { background:#F9A825; color:#1B5232; font-size:10px; font-weight:700; padding:2px 8px; border-radius:4px; display:inline-block; margin-bottom:12px; }
+  .b2b-price-compare { display:flex; flex-direction:column; gap:8px; margin-top:12px; }
+  .price-row { display:flex; justify-content:space-between; align-items:center; padding:8px 12px; border-radius:6px; font-size:12px; }
+  .price-row.minorista { background:rgba(255,255,255,0.05); }
+  .price-row.mayorista { background:rgba(249,168,37,0.15); border:1px solid rgba(249,168,37,0.3); }
+  .price-row .label { color:rgba(255,255,255,0.7); }
+  .price-row .price { font-weight:800; color:#F9A825; }
+  .price-row.minorista .price { color:rgba(255,255,255,0.6); }
+
+  /* ===== FOOTER ===== */
+  .footer { background:#0f3d22; color:rgba(255,255,255,0.7); padding:32px; display:flex; justify-content:space-between; gap:32px; font-size:13px; }
+  .footer-col h4 { color:white; font-weight:700; margin-bottom:12px; font-size:14px; }
+  .footer-col p, .footer-col a { display:block; color:rgba(255,255,255,0.6); text-decoration:none; margin-bottom:6px; }
+  .footer-bottom { background:#091f12; color:rgba(255,255,255,0.4); padding:14px 32px; font-size:12px; display:flex; justify-content:space-between; }
+
+  /* Scroll indicator */
+  .scroll-hint { text-align:center; padding:8px; font-size:12px; color:#888; background:#f0f0f0; }
+</style>
+</head>
+<body>
+
+<div class="preview-label">👁 PREVIEW — <span>DistriMM eCommerce</span> · Tema: Campo Profesional · Haz scroll para ver toda la página</div>
+
+<!-- NAVBAR -->
+<nav class="nav">
+  <div class="nav-logo">
+    <div class="nav-logo-circle">DM</div>
+    <div class="nav-logo-text">
+      <span class="top">Almacén Agropecuario</span>
+      <span class="main">DISTRI<span style="color:#F9A825">MM</span></span>
+    </div>
+  </div>
+  <div class="nav-links">
+    <a href="#">Catálogo</a>
+    <a href="#">Vacunas</a>
+    <a href="#">Concentrados</a>
+    <a href="#">Sales Minerales</a>
+    <a href="#">Ofertas</a>
+  </div>
+  <div class="nav-right">
+    <input class="nav-search" placeholder="🔍 Buscar producto...">
+    <button class="nav-b2b">Portal B2B</button>
+    <button class="nav-cart">🛒 Carrito (0)</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-badge">🌿 Florencia, Caquetá · Envío a toda la región</div>
+    <h1>Tu almacén<br><span>agropecuario</span><br>ahora en línea</h1>
+    <p>Vacunas, concentrados, sales minerales y más de 500 productos de los mejores laboratorios veterinarios del país.</p>
+    <div class="hero-btns">
+      <button class="btn-primary">Ver Catálogo →</button>
+      <button class="btn-secondary">Portal Mayoristas</button>
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><div class="num">500+</div><div class="lbl">Productos</div></div>
+      <div class="stat"><div class="num">20+</div><div class="lbl">Marcas</div></div>
+      <div class="stat"><div class="num">B2B</div><div class="lbl">Precios Mayorista</div></div>
+      <div class="stat"><div class="num">📦</div><div class="lbl">Envío a domicilio</div></div>
+    </div>
+  </div>
+  <div class="hero-image-area">
+    <img src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=640&q=80" alt="Campo agrícola">
+  </div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee">
+  <div class="marquee-inner">
+    <span>🏆 VIRBAC</span><span class="sep">·</span>
+    <span>🔬 VECOL</span><span class="sep">·</span>
+    <span>🌾 CONTEGRAL</span><span class="sep">·</span>
+    <span>🧪 OUROFINO</span><span class="sep">·</span>
+    <span>🐄 ITALCOL</span><span class="sep">·</span>
+    <span>🌿 SOLLA</span><span class="sep">·</span>
+    <span>⚗️ BIOGENESIS</span><span class="sep">·</span>
+    <span>💊 LHAURA</span><span class="sep">·</span>
+    <span>🏆 VIRBAC</span><span class="sep">·</span>
+    <span>🔬 VECOL</span><span class="sep">·</span>
+    <span>🌾 CONTEGRAL</span><span class="sep">·</span>
+  </div>
+</div>
+
+<!-- CATEGORÍAS -->
+<section class="section" style="background:white;">
+  <div class="section-header">
+    <div class="section-title">Categorías</div>
+    <a href="#" class="see-all">Ver todas →</a>
+  </div>
+  <div class="cat-grid">
+    <div class="cat-card"><div class="cat-icon">💉</div><div class="cat-name">Vacunas</div><div class="cat-count">14 productos</div></div>
+    <div class="cat-card"><div class="cat-icon">🧂</div><div class="cat-name">Sales Minerales</div><div class="cat-count">15 productos</div></div>
+    <div class="cat-card"><div class="cat-icon">🌾</div><div class="cat-name">Concentrados</div><div class="cat-count">14 productos</div></div>
+    <div class="cat-card"><div class="cat-icon">🐄</div><div class="cat-name">Bovinos</div><div class="cat-count">5 productos</div></div>
+    <div class="cat-card"><div class="cat-icon">🧪</div><div class="cat-name">Drogas / Fármacos</div><div class="cat-count">80+ productos</div></div>
+  </div>
+</section>
+
+<!-- PRODUCTOS DESTACADOS -->
+<section class="section" style="background:#f8f9fa;">
+  <div class="section-header">
+    <div class="section-title">Productos Destacados</div>
+    <a href="#" class="see-all">Ver catálogo completo →</a>
+  </div>
+  <div class="prod-grid">
+    <div class="prod-card">
+      <div class="prod-img">💊<div class="prod-badge">TOP VENTAS</div></div>
+      <div class="prod-body">
+        <div class="prod-brand">VIRBAC</div>
+        <div class="prod-name">Vacuna Clostrisan 11 x 50 dosis</div>
+        <div class="prod-price-row">
+          <div class="prod-price"><span class="old">$95.000</span>$85.000</div>
+          <button class="btn-add">+ Carrito</button>
+        </div>
+      </div>
+    </div>
+    <div class="prod-card">
+      <div class="prod-img">🧂</div>
+      <div class="prod-body">
+        <div class="prod-brand">SOMEX</div>
+        <div class="prod-name">Sal Mineralizada Leche 10% x Bulto</div>
+        <div class="prod-price-row">
+          <div class="prod-price">$120.000</div>
+          <button class="btn-add">+ Carrito</button>
+        </div>
+      </div>
+    </div>
+    <div class="prod-card">
+      <div class="prod-img">🌾<div class="prod-badge">OFERTA</div></div>
+      <div class="prod-body">
+        <div class="prod-brand">ITALCOL</div>
+        <div class="prod-name">Concentrado Vacas en Producción x 40 kg</div>
+        <div class="prod-price-row">
+          <div class="prod-price"><span class="old">$108.000</span>$98.000</div>
+          <button class="btn-add">+ Carrito</button>
+        </div>
+      </div>
+    </div>
+    <div class="prod-card">
+      <div class="prod-img">🐄</div>
+      <div class="prod-body">
+        <div class="prod-brand">OUROFINO</div>
+        <div class="prod-name">Ferappease Bovino x 1000 ml</div>
+        <div class="prod-price-row">
+          <div class="prod-price">$74.000</div>
+          <button class="btn-add">+ Carrito</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BANNER B2B -->
+<section class="b2b-banner">
+  <div class="b2b-content">
+    <div class="b2b-tag">🏢 PORTAL MAYORISTAS</div>
+    <h2>¿Eres distribuidor<br>o ganadero?</h2>
+    <p>Regístrate como cliente mayorista y accede a precios preferenciales, descuentos por volumen y asesoría especializada de nuestro equipo.</p>
+    <div class="b2b-benefits">
+      <div class="b2b-benefit">Precios exclusivos mayorista (10–25% menos)</div>
+      <div class="b2b-benefit">Descuentos por volumen desde 10 unidades</div>
+      <div class="b2b-benefit">Asesoría técnica personalizada</div>
+      <div class="b2b-benefit">Historial de pedidos y facturas</div>
+    </div>
+    <button class="btn-b2b">Solicitar cuenta mayorista →</button>
+  </div>
+  <div class="b2b-card-area">
+    <div class="b2b-card">
+      <span class="tag">EJEMPLO DE PRECIO</span>
+      <div style="font-size:13px; color:rgba(255,255,255,0.8); margin-bottom:8px;">Clostrisan 11 x 50 dosis</div>
+      <div class="b2b-price-compare">
+        <div class="price-row minorista">
+          <span class="label">Precio público</span>
+          <span class="price">$85.000</span>
+        </div>
+        <div class="price-row mayorista">
+          <span class="label">🏆 Precio mayorista</span>
+          <span class="price">$71.250</span>
+        </div>
+      </div>
+      <div style="font-size:10px; color:rgba(249,168,37,0.7); margin-top:8px; text-align:right;">Ahorra $13.750 por unidad</div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-col">
+    <h4>🌿 DISTRIMM</h4>
+    <p>Almacén Agropecuario con más de 10 años sirviendo a Florencia y el Caquetá.</p>
+    <p style="margin-top:12px;">📍 La Consolata, Calle 21 #14-83<br>📞 313 4835092</p>
+  </div>
+  <div class="footer-col">
+    <h4>Catálogo</h4>
+    <a href="#">Vacunas</a>
+    <a href="#">Sales Minerales</a>
+    <a href="#">Concentrados</a>
+    <a href="#">Drogas Veterinarias</a>
+    <a href="#">Todos los productos</a>
+  </div>
+  <div class="footer-col">
+    <h4>Empresa</h4>
+    <a href="#">Sobre DistriMM</a>
+    <a href="#">Portal Mayoristas</a>
+    <a href="#">Política de envíos</a>
+    <a href="#">Devoluciones</a>
+  </div>
+  <div class="footer-col">
+    <h4>Contacto</h4>
+    <a href="#">📱 WhatsApp</a>
+    <a href="#">📧 distrimmpetshop@gmail.com</a>
+    <a href="#">📘 Facebook</a>
+    <p style="margin-top:12px; font-size:11px;">Horario: Siempre disponible en línea</p>
+  </div>
+</footer>
+<div class="footer-bottom">
+  <span>© 2025 Almacén Agropecuario DistriMM · Florencia, Caquetá</span>
+  <span>Desarrollado por Luminia Tech Solutions</span>
+</div>
+
+</body>
+</html>

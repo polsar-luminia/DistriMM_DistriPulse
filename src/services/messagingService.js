@@ -1,5 +1,10 @@
 import { supabase, fetchAllRows } from "../lib/supabase";
-import { COLOMBIA_OFFSET, DAILY_LIMIT } from "../constants";
+import {
+  COLOMBIA_OFFSET,
+  DAILY_LIMIT,
+  CHUNK_SIZE_WHATSAPP,
+  CHUNK_DELAY_MS_WHATSAPP,
+} from "../constants";
 
 export const getColombiaHour = () => {
   const now = new Date();
@@ -35,9 +40,10 @@ export const checkDailyLimit = async () => {
         (now.getTimezoneOffset() + COLOMBIA_OFFSET * 60) * 60000,
     );
     const { count, error } = await supabase
-      .from("distrimm_mensajes_log")
+      .from("distrimm_recordatorios_detalle")
       .select("id", { count: "exact", head: true })
-      .gte("created_at", todayStartUTC.toISOString());
+      .eq("estado_envio", "enviado")
+      .gte("enviado_at", todayStartUTC.toISOString());
 
     if (error) throw error;
     return {
@@ -87,13 +93,13 @@ export const normalizePhone = (raw) => {
   return { phone: valid ? digits : null, valid, original: raw };
 };
 
-// Priority: celular > telefono_1 > cartera telefono
+// Priority: celular > telefono_1 > telefono_2 > cartera telefono
 
 export const resolveClientPhone = (client) => {
-  // Try celular first (best for WhatsApp)
   const sources = [
     { field: "celular", label: "celular" },
     { field: "telefono_1", label: "telefono_1" },
+    { field: "telefono_2", label: "telefono_2" },
     { field: "telefono", label: "cartera" },
   ];
 
@@ -170,6 +176,8 @@ export const buildInvoiceDetail = (items = []) => {
  */
 export const getActiveInstance = async () => {
   try {
+    // Instancia compartida: cualquier usuario autenticado usa la única instancia activa
+    // de la organización (decisión de producto — ver commit d20bda7).
     const { data, error } = await supabase
       .from("distrimm_whatsapp_instances")
       .select("id, phone_number_id, phone_display, business_name, status")
@@ -188,11 +196,11 @@ export const getActiveInstance = async () => {
 };
 
 // ============================================================================
-// WHATSAPP SEND (via n8n webhook)
+// WHATSAPP SEND (via Edge Function → Meta Cloud API)
 // ============================================================================
 
 /**
- * Sends a WhatsApp message via n8n webhook.
+ * Sends a WhatsApp message via Edge Function (Meta Cloud API).
  * Includes instance_id so the Edge Function can resolve credentials.
  * @param {{ phone: string, message: string, clientName: string, tipo: string, instance_id?: string }} payload
  * @returns {{ success: boolean, error: string|null }}
@@ -387,7 +395,7 @@ export const getMessageLog = async (filters = {}) => {
   }
 };
 
-// Returns a map: { [nit]: { celular, telefono_1, nombre_completo } }
+// Returns a map: { [nit]: { celular, telefono_1, telefono_2, nombre_completo } }
 
 export const getClientPhones = async (nits) => {
   if (!nits || nits.length === 0) return { data: {}, error: null };
@@ -398,7 +406,9 @@ export const getClientPhones = async (nits) => {
     for (let i = 0; i < nits.length; i += BATCH) {
       const { data, error } = await supabase
         .from("distrimm_clientes")
-        .select("no_identif, celular, telefono_1, nombre_completo, municipio")
+        .select(
+          "no_identif, celular, telefono_1, telefono_2, nombre_completo, municipio",
+        )
         .in("no_identif", nits.slice(i, i + BATCH));
       if (error) throw error;
       if (data) allData.push(...data);
@@ -564,9 +574,84 @@ export async function getLoteById(loteId) {
   }
 }
 
+// URL base del servicio VPS (Express) que envía SMS vía LabsMobile.
+// Ej: https://distrimm.luminiatech.digital/api  (nginx proxya /api -> :3103)
+const VPS_API_URL = import.meta.env.VITE_VPS_API_URL;
+
 /**
- * Triggers lote processing by sending all recipients to the n8n webhook.
- * n8n uses Split in Batches to loop through each item.
+ * Fallback SMS: envía por LabsMobile (servicio VPS) los destinatarios del lote
+ * que NO quedaron 'enviado' (fallido o pendiente). Idempotente: no reenvía a los
+ * que ya salieron por WhatsApp. Solo móviles válidos; las fijas se omiten.
+ * @param {string} loteId
+ * @param {string} smsTipo - 'vencido' (morosos) | 'cobro' (por vencer)
+ * @returns {{ enviados: number, fallidos: number, omitidos: number, skipped?: boolean }}
+ */
+export async function enviarFallbackSms(loteId, smsTipo) {
+  if (!VPS_API_URL) {
+    if (import.meta.env.DEV)
+      console.warn(
+        "[messagingService] VITE_VPS_API_URL no configurado; fallback SMS omitido.",
+      );
+    return { enviados: 0, fallidos: 0, omitidos: 0, skipped: true };
+  }
+
+  // 1. Detalle no enviado (fallido = falló WhatsApp; pendiente = no se intentó WhatsApp)
+  const { data: rows, error } = await supabase
+    .from("distrimm_recordatorios_detalle")
+    .select(
+      "id, telefono, cliente_nombre, template_params, facturas_ids, estado_envio",
+    )
+    .eq("lote_id", loteId)
+    .in("estado_envio", ["fallido", "pendiente"]);
+
+  if (error) throw error;
+  if (!rows || rows.length === 0)
+    return { enviados: 0, fallidos: 0, omitidos: 0 };
+
+  // 2. Mapear a items SMS (solo móviles válidos)
+  const items = rows
+    .map((r) => {
+      const norm = normalizePhone(r.telefono);
+      if (!norm.valid) return null;
+      return {
+        detalle_id: r.id,
+        telefono: norm.phone,
+        cliente_nombre: r.cliente_nombre,
+        total: r.template_params?.[2] || "",
+        n_facturas: (r.facturas_ids || []).length,
+        tipo: smsTipo,
+      };
+    })
+    .filter(Boolean);
+
+  if (items.length === 0)
+    return { enviados: 0, fallidos: 0, omitidos: rows.length };
+
+  // 3. Token del usuario para autenticar contra el VPS
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const token = session?.access_token;
+  if (!token) throw new Error("Sesión no válida para enviar SMS");
+
+  // 4. POST al servicio VPS
+  const resp = await fetch(`${VPS_API_URL}/sms/enviar-lote`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ lote_id: loteId, items }),
+  });
+
+  const json = await resp.json().catch(() => ({}));
+  if (!resp.ok) throw new Error(json.error || `Error SMS (HTTP ${resp.status})`);
+  return json.data || { enviados: 0, fallidos: 0, omitidos: 0 };
+}
+
+/**
+ * Triggers lote processing by sending all recipients to the Edge Function.
+ * La Edge Function hace loop secuencial sobre cada destinatario.
  * @param {string} loteId - UUID of the lote (for tracking)
  * @param {object[]} destinatarios - Array of { cliente_nombre, cliente_nit, telefono, mensaje_personalizado, detalle_id }
  * @param {string} [instanceId] - UUID of the WhatsApp instance. If omitted, resolved automatically.
@@ -576,43 +661,112 @@ export async function triggerLoteProcessing(
   loteId,
   destinatarios = [],
   instanceId,
+  onChunkProgress,
 ) {
   try {
-    // Resolve instance_id if not provided
+    // Resolver instance_id (puede no existir: el fallback SMS cubre ese caso).
     let resolvedInstanceId = instanceId;
     if (!resolvedInstanceId) {
       const { data: inst } = await getActiveInstance();
-      resolvedInstanceId = inst?.id;
+      resolvedInstanceId = inst?.id || null;
     }
 
-    if (!resolvedInstanceId) {
-      return {
-        success: false,
-        data: null,
-        error:
-          "No hay instancia de WhatsApp activa. Conecta tu numero primero.",
-      };
+    let totalEnviados = 0;
+    let totalFallidos = 0;
+    let firstError = null;
+    let chunksCount = 0;
+
+    // --- 1. Intento por WhatsApp (solo si hay instancia activa) ---
+    if (resolvedInstanceId) {
+      const items = destinatarios.map((d) => ({
+        phone: d.telefono,
+        message: d.mensaje_personalizado,
+        clientName: d.cliente_nombre,
+        tipo: "recordatorio",
+        detalle_id: d.detalle_id || null,
+        lote_id: loteId,
+        instance_id: resolvedInstanceId,
+        template_var2: d.template_var2 ?? d.template_params?.[1] ?? null,
+        template_var3: d.template_var3 ?? d.template_params?.[2] ?? null,
+      }));
+
+      // Chunking para evitar timeout del Edge Function (~150s wall-clock).
+      const chunks = [];
+      for (let i = 0; i < items.length; i += CHUNK_SIZE_WHATSAPP) {
+        chunks.push(items.slice(i, i + CHUNK_SIZE_WHATSAPP));
+      }
+      chunksCount = chunks.length;
+
+      for (let i = 0; i < chunks.length; i++) {
+        const { data, error } = await supabase.functions.invoke(
+          "proxy-n8n-whatsapp",
+          { body: chunks[i] },
+        );
+
+        if (error) {
+          firstError = firstError || error;
+          if (import.meta.env.DEV)
+            console.error(
+              `[messagingService] Chunk ${i + 1}/${chunks.length} falló:`,
+              error,
+            );
+        } else if (data?.data) {
+          totalEnviados += data.data.enviados || 0;
+          totalFallidos += data.data.fallidos || 0;
+        }
+
+        if (onChunkProgress) {
+          onChunkProgress({
+            chunkIndex: i + 1,
+            totalChunks: chunks.length,
+            enviados: totalEnviados,
+            fallidos: totalFallidos,
+          });
+        }
+
+        if (i < chunks.length - 1 && CHUNK_DELAY_MS_WHATSAPP > 0) {
+          await new Promise((resolve) =>
+            setTimeout(resolve, CHUNK_DELAY_MS_WHATSAPP),
+          );
+        }
+      }
+    } else if (import.meta.env.DEV) {
+      console.warn(
+        "[messagingService] Sin instancia WhatsApp activa; el lote se intenta solo por SMS.",
+      );
     }
 
-    const items = destinatarios.map((d) => ({
-      phone: d.telefono,
-      message: d.mensaje_personalizado,
-      clientName: d.cliente_nombre,
-      tipo: "recordatorio",
-      detalle_id: d.detalle_id || null,
-      lote_id: loteId,
-      instance_id: resolvedInstanceId,
-      template_var2: d.template_var2 ?? d.template_params?.[1] ?? null,
-      template_var3: d.template_var3 ?? d.template_params?.[2] ?? null,
-    }));
+    // --- 2. Fallback SMS automático para los no enviados (fallido/pendiente) ---
+    let sms = { enviados: 0, fallidos: 0, omitidos: 0 };
+    try {
+      const { data: lote } = await getLoteById(loteId);
+      const smsTipo = lote?.tipo === "morosos" ? "vencido" : "cobro";
+      sms = await enviarFallbackSms(loteId, smsTipo);
+    } catch (smsErr) {
+      firstError = firstError || smsErr;
+      if (import.meta.env.DEV)
+        console.error("[messagingService] Fallback SMS falló:", smsErr);
+    }
 
-    const { data, error } = await supabase.functions.invoke(
-      "proxy-n8n-whatsapp",
-      { body: items },
-    );
+    const enviadosTotal = totalEnviados + (sms.enviados || 0);
 
-    if (error) throw error;
-    return { success: true, data, error: null };
+    // Si nada salió por ningún canal y hubo error, propágalo.
+    if (enviadosTotal === 0 && firstError) {
+      throw firstError;
+    }
+
+    return {
+      success: true,
+      data: {
+        enviados: enviadosTotal,
+        enviadosWhatsapp: totalEnviados,
+        enviadosSms: sms.enviados || 0,
+        fallidos: Math.max(0, destinatarios.length - enviadosTotal),
+        total: destinatarios.length,
+        chunks: chunksCount,
+      },
+      error: firstError,
+    };
   } catch (err) {
     if (import.meta.env.DEV)
       console.error(

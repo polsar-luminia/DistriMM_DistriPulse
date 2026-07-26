@@ -232,7 +232,7 @@ export const HealthGauge = ({ value = 0 }) => {
   const progress = (value / 100) * circumference;
 
   const getColor = (val) => {
-    if (val >= 80) return "#34d399";
+    if (val >= 80) return "#538000";
     if (val >= 60) return "#fbbf24";
     if (val >= 40) return "#f59e0b";
     return "#f87171";
@@ -241,7 +241,7 @@ export const HealthGauge = ({ value = 0 }) => {
   const getBgRing = () => "#e2e8f0";
 
   const getStatus = (val) => {
-    if (val >= 80) return { text: "Excelente", color: "#34d399" };
+    if (val >= 80) return { text: "Excelente", color: "#538000" };
     if (val >= 60) return { text: "Bueno", color: "#fbbf24" };
     if (val >= 40) return { text: "Regular", color: "#f59e0b" };
     return { text: "Crítico", color: "#f87171" };

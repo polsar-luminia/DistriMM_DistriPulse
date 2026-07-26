@@ -25,14 +25,13 @@ import ChatMessage from "../components/chatbot/ChatMessage";
 import ChatInput from "../components/chatbot/ChatInput";
 
 const WELCOME_CONTENT =
-  "Hola! Soy **DistriBot**, tu asesor CFO virtual experto en cartera. Consulto los datos en tiempo real. Puedo ayudarte con:\n\n" +
-  "- **Resumen general** — cartera total, vencida vs vigente, % morosidad\n" +
-  "- **Ranking morosos** — top clientes con mayor deuda vencida\n" +
-  "- **Detalle por cliente** — facturas, saldos, dias mora de un cliente especifico\n" +
-  "- **Aging de cartera** — distribucion por rangos de mora con montos\n" +
-  "- **Por municipio** — distribucion geografica (62% de cobertura)\n" +
-  "- **Indicadores** — DSO estimado, mora promedio, facturas criticas\n\n" +
-  "Preguntame lo que necesites!";
+  "Hola! Soy **DistriBot**, tu analista virtual de gerencia. Consulto los datos en tiempo real. Ahora puedo ayudarte con:\n\n" +
+  "- **Cartera** — morosidad, aging, top deudores, detalle por cliente\n" +
+  "- **Ventas y márgenes** — top vendedores, productos más rentables, ventas por municipio\n" +
+  "- **Inventario** — stock valorizado, rotación, stock por marca/bodega\n" +
+  "- **Comisiones** — ventas comisionables, márgenes por vendedor\n" +
+  "- **Comparativos** — evolución entre periodos y cruces entre módulos\n\n" +
+  "Recuerdo el contexto de la conversación, así que puedes preguntar de seguido. ¿Qué necesitas?";
 
 const createWelcomeMessage = () => ({
   id: "welcome",
@@ -110,7 +109,6 @@ export default function ChatbotPage() {
     searchResults,
     startNewSession,
     loadSession,
-    persistMessage,
     autoTitle,
     removeSession,
   } = useChatSessions(user?.id);
@@ -159,16 +157,12 @@ export default function ChatbotPage() {
 
       // Ensure we have an active session — prefer activeSession.session_id over state
       let currentSessionId = activeSession?.session_id || sessionId;
-      let currentActiveSession = activeSession;
-
-      // Track the DB id for persistMessage in case activeSession hasn't updated yet
-      let sessionDbId = currentActiveSession?.id || null;
+      const currentActiveSession = activeSession;
 
       if (!currentActiveSession) {
         const result = await startNewSession();
         if (!result?.sessionId) return;
         currentSessionId = result.sessionId;
-        sessionDbId = result.dbId;
         setSessionId(result.sessionId);
         // Store in sessionStorage for backward compat
         sessionStorage.setItem("distribot_session_id", result.sessionId);
@@ -196,12 +190,8 @@ export default function ChatbotPage() {
         });
       }
 
-      // Persist user message (fire-and-forget with warning)
-      // Pass sessionDbId to handle the case where activeSession state hasn't updated yet
-      persistMessage("user", text, false, sessionDbId).catch(() => {
-        sileo.warning("No se pudo guardar el mensaje en el historial");
-      });
-
+      // La persistencia (pregunta + respuesta) la hace la Edge Function, que es
+      // la dueña única del historial. El frontend solo renderiza de forma optimista.
       try {
         const { data, error } = await sendChatMessage(currentSessionId, text);
 
@@ -217,7 +207,6 @@ export default function ChatbotPage() {
               isError: true,
             },
           ]);
-          persistMessage("assistant", errorContent, true).catch(() => {});
           sileo.error({ title: "Error al comunicarse con DistriBot" });
         } else {
           setMessages((prev) => [
@@ -229,9 +218,6 @@ export default function ChatbotPage() {
               timestamp: new Date(),
             },
           ]);
-          persistMessage("assistant", data).catch(() => {
-            sileo.warning("No se pudo guardar la respuesta en el historial");
-          });
         }
       } catch (err) {
         const errorContent = `Error inesperado: ${err.message}`;
@@ -245,7 +231,6 @@ export default function ChatbotPage() {
             isError: true,
           },
         ]);
-        persistMessage("assistant", errorContent, true).catch(() => {});
       } finally {
         setIsLoading(false);
       }
@@ -257,7 +242,6 @@ export default function ChatbotPage() {
       activeSession,
       startNewSession,
       autoTitle,
-      persistMessage,
     ],
   );
 

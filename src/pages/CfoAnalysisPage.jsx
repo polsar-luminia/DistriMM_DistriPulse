@@ -12,6 +12,10 @@ import {
   ListChecks,
   FileText,
   DollarSign,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Gauge,
 } from "lucide-react";
 import { Card } from "../components/dashboard/DashboardShared";
 import { getCfoAnalyses, triggerCfoAnalysis } from "../services/cfoService";
@@ -118,6 +122,8 @@ export default function CfoAnalysisPage() {
     semaforo_general,
     health_score,
     kpis_cartera,
+    tendencia,
+    analisis_ventas,
     analisis_aging,
     ranking_deudores,
     analisis_vendedores,
@@ -167,8 +173,12 @@ export default function CfoAnalysisPage() {
         </div>
       </Card>
 
+      <TendenciaSection data={tendencia} />
+
       <KpisGrid kpis={kpis_cartera} />
       <KpiExtras kpis={kpis_cartera} />
+
+      <AnalisisVentasSection data={analisis_ventas} />
 
       {analisis_aging && (
         <CollapsibleSection title="Analisis de Antiguedad" icon={BarChart3}>
@@ -557,6 +567,125 @@ function ClientHealthSection({ data }) {
           />
         )}
       </div>
+      {obs && <AgingNote text={obs} />}
+    </CollapsibleSection>
+  );
+}
+
+const TREND_CONFIG = {
+  MEJORA: {
+    icon: TrendingUp, label: "Mejora",
+    bg: "bg-emerald-50", border: "border-emerald-200",
+    text: "text-emerald-700", badge: "bg-emerald-100 text-emerald-800",
+  },
+  ESTABLE: {
+    icon: Minus, label: "Estable",
+    bg: "bg-slate-50", border: "border-slate-200",
+    text: "text-slate-600", badge: "bg-slate-100 text-slate-700",
+  },
+  DETERIORO: {
+    icon: TrendingDown, label: "Deterioro",
+    bg: "bg-rose-50", border: "border-rose-200",
+    text: "text-rose-700", badge: "bg-rose-100 text-rose-800",
+  },
+};
+
+function TendenciaSection({ data }) {
+  if (!data || (!data.resumen && !data.detalle?.length)) return null;
+  const cfg = TREND_CONFIG[data.direccion] || TREND_CONFIG.ESTABLE;
+  const TrendIcon = cfg.icon;
+  return (
+    <Card className={cn(cfg.bg, cfg.border, "border-2")}>
+      <div className="flex items-center gap-2 mb-3">
+        <TrendIcon size={20} className={cfg.text} />
+        <h3 className="font-black text-slate-900">Tendencia vs mes anterior</h3>
+        <span
+          className={cn(
+            "px-2.5 py-0.5 rounded-full text-xs font-bold",
+            cfg.badge,
+          )}
+        >
+          {cfg.label}
+        </span>
+      </div>
+      {data.resumen && (
+        <p className="text-sm text-slate-600 leading-relaxed mb-3">
+          {data.resumen}
+        </p>
+      )}
+      {data.detalle?.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {data.detalle.map((d, i) => (
+            <div
+              key={d.metrica || i}
+              className="bg-white/70 rounded-xl p-3 border border-slate-100"
+            >
+              <p className="text-xs text-slate-400 font-semibold uppercase tracking-wide">
+                {d.metrica}
+              </p>
+              <div className="flex items-baseline gap-2 mt-1">
+                <span className="text-sm font-bold text-slate-800">
+                  {d.actual}
+                </span>
+                {d.variacion && (
+                  <span className={cn("text-xs font-bold", cfg.text)}>
+                    {d.variacion}
+                  </span>
+                )}
+              </div>
+              {d.anterior && (
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  antes: {d.anterior}
+                </p>
+              )}
+              {d.lectura && (
+                <p className="text-xs text-slate-500 mt-1.5 italic">
+                  {d.lectura}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function AnalisisVentasSection({ data }) {
+  if (!data) return null;
+  const obs = data.observacion || data.lectura_dso;
+  return (
+    <CollapsibleSection title="Ventas y DSO" icon={Gauge}>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3">
+        {data.dso_real_dias != null && (
+          <KpiMini
+            label="DSO Real"
+            value={`${parseNumericValue(data.dso_real_dias)}d`}
+            sub="días en cobrarse"
+            semaforo={
+              parseNumericValue(data.dso_real_dias) > 60
+                ? "CRITICO"
+                : parseNumericValue(data.dso_real_dias) > 45
+                  ? "EN_RIESGO"
+                  : parseNumericValue(data.dso_real_dias) > 30
+                    ? "ACEPTABLE"
+                    : "SALUDABLE"
+            }
+          />
+        )}
+        {data.ventas_netas_30d != null && (
+          <KpiMini
+            label="Ventas netas 30d"
+            value={displayCurrency(data.ventas_netas_30d)}
+          />
+        )}
+        {data.cartera_vs_ventas && (
+          <KpiMini label="Cartera / Ventas" value={data.cartera_vs_ventas} />
+        )}
+      </div>
+      {data.lectura_dso && data.lectura_dso !== obs && (
+        <AgingNote text={data.lectura_dso} />
+      )}
       {obs && <AgingNote text={obs} />}
     </CollapsibleSection>
   );

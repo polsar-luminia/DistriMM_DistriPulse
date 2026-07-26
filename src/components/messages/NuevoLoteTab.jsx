@@ -79,12 +79,13 @@ export default function NuevoLoteTab({ currentLoadId, messaging }) {
     renderTemplate,
   } = messaging;
 
-  // Enrich segmented clients with phone data (RPC already returns celular/telefono_1)
+  // Enrich segmented clients with phone data (RPC returns celular/telefono_1/telefono_2)
   const enrichedClients = useMemo(() => {
     return (segmentedClients || []).map((client) => {
       const phoneResult = resolveClientPhone({
         celular: client.celular,
         telefono_1: client.telefono_1,
+        telefono_2: client.telefono_2,
       });
 
       return {
