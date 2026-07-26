@@ -411,19 +411,93 @@ efecto en dinero pagado es mucho menor porque las tasas de comisión son de 0,5%
   siete meses de historia reconstruida— vive solo ahí.
 - **No hay SMTP**, así que **no existe "olvidé mi contraseña"**. Para reponer una clave hay que
   hacerlo por base. GoTrue quedó con `MAILER_AUTOCONFIRM` y `DISABLE_SIGNUP`.
-- **Rotar `OPENAI_API_KEY` y `META_APP_SECRET`**: pasaron por un archivo y por el chat. Conviene
-  también reemplazar por un marcador la llave `anon` real que `.env.example` trae desde `5262f79`
-  (es pública por diseño, pero no debería estar versionada).
+- **Rotar `META_APP_SECRET`**: pasó por un archivo y por el chat.
 - **Las 42 filas de junio** con diferencia de valor quedaron sin explicación de por qué el Excel las
   trataba distinto (ver arriba). Ya no bloquea: el Excel dejó de ser la fuente.
 
-**RIESGO CONOCIDO — hay RPCs en producción que NO están en el repo.** Al corregir
-`fn_cfo_historico_cartera` se descubrió que vivía solo en la base; se exportó a
-`sql/fn_cfo_historico_cartera.sql`. Un inventario posterior encontró que **10 de 35 funciones
-`fn_*` siguen sin versionar**: `fn_actualizar_estado_envio`, `fn_check_upload_rate_limit`,
-`fn_clientes_cartera_filtrados`, `fn_delete_all_rutas`, `fn_delete_ventas_carga`,
-`fn_finalizar_lote_envio`, `fn_get_wa_instance`, `fn_get_wa_instance_name`, `fn_log_upload`,
-`fn_user_role`. Si se recrea la base desde el repo, esas se pierden.
+**RESUELTO — las RPCs que vivían solo en la base ya están versionadas.** El inventario contra la
+base real encontró **11**, no 10: faltaba `fn_distribot_consulta_cartera` en la lista. Están en
+`sql/fn_no_versionadas.sql`, validado con `BEGIN … ROLLBACK` contra la base. Dos de las once
+(`fn_get_wa_instance` y `fn_get_wa_instance_name`) **están rotas en producción** —referencian
+columnas que desaparecieron cuando `distrimm_whatsapp_instances` se rehízo para Embedded Signup— y
+quedan comentadas en ese archivo; nadie las llama, son código muerto.
+
+### Cierre de Supabase — hecho y pendiente (26/07/2026)
+
+**Verificación integral contra el ERP, no contra sí mismo** (todo cuadra):
+
+| Módulo | Esperado | ERP (SAMIT) | VPS |
+|---|---|---|---|
+| Ventas 2026 | 17.957 líneas | 17.957 | 17.957 |
+| Comisiones junio | 818.036.093 | 818.036.093,01 | 818.036.093,01 |
+| — comisionables / ítems | 526.927.377 / 2.311 | — | 526.927.376,65 / 2.311 |
+| Cartera julio | al peso | 1.295.446.226,01 | 1.295.446.226,01 |
+| Inventario mes en curso | 1.533 filas | 1.533 | 1.533 |
+| Recaudos: IVA excluido 2026 | 44.513.793 | — | 44.513.793 |
+
+Dos precisiones para no volver a perseguirlas: los **2.311 ítems** son los *comisionables* (los
+totales son 2.651), y un conteo crudo de `IN_Movimiento` da **17.961** — las 4 de más son
+documentos anulados, que el agente excluye con `ISNULL(d.Anulado,0)=0`. No es un descuadre.
+
+Los 41 datasets de `distrimm_sync_estado` están en `ok`, ninguno `sospechoso`; las diferencias son
+de centavos por redondeo. El bundle desplegado y `/etc/distrimm/*.env` no tienen **ni una**
+referencia a `supabase.co`, y navegando la app todas las peticiones van al VPS. El sugerido de
+pedidos responde (exige sesión: `fn_sugerido_pedidos` lanza "No autenticado" si se llama sin
+`request.jwt.claims`). El MCP responde en `/mcp/health` y `resumen_ejecutivo` devuelve cifras
+coherentes con lo de arriba.
+
+**Apagado ya:**
+- **`pg_cron` `refresh-whatsapp-tokens` DESACTIVADO** (`cron.alter_job(1, active := false)`; la
+  tabla `cron.job` no acepta `UPDATE` directo ni como `postgres`). El cron equivalente del VPS está
+  **probado**: devuelve `HTTP 200 {"processed":0}`. La carrera entre los dos nunca llegó a existir
+  —ninguna credencial califica para refresco: dos tienen `token_expires_at` nulo y la activa expira
+  en 2099 (token de System User, permanente)—, pero apagarlo era lo correcto igual.
+- **Webhook de Meta CONFIRMADO** en el VPS, no asumido: la suscripción de la app apunta a
+  `https://distrimm.luminiatech.digital/functions/v1/whatsapp-webhook` y está `active`. El archivo
+  desplegado es byte-idéntico al del repo (mismo md5) y responde al challenge (200 con el token
+  correcto, 403 con uno falso). Sigue enrutando a los tres inquilinos: Club del Licor, DistriPolsar
+  y DistriMM.
+- **Rol `distrimm_migracion` eliminado** y **6 sesiones residuales de `auth.sessions` borradas**.
+  Verificado después: la base de rollback sigue intacta (62 tablas, 110.107 ventas, 77 políticas).
+
+**ROTO EN PRODUCCIÓN — `OPENAI_API_KEY` es inválida. CFO y DistriBot no funcionan.** OpenAI
+responde `401 invalid_api_key`. La clave del VPS está bien formada (164 chars, prefijo `sk-proj-`,
+sin comillas ni espacios): está **revocada**, no corrompida — encaja con que se rotara tras haber
+pasado por el chat, sin reponerla en el servidor. Se arregla escribiendo la nueva en
+`/etc/distrimm/functions.env` y `pm2 restart distrimm-functions`. Todo lo demás del stack está sano;
+esto es lo único caído.
+
+**ATENCIÓN — los snapshots de comisiones de marzo a junio son de la era manual.** Julio se
+regeneró hoy con datos sincronizados y **cuadra exacto** con el cálculo en vivo. Los anteriores no:
+
+| Mes | Comisión recaudo *guardada* | Según los datos del ERP |
+|---|---|---|
+| Marzo | 5.805.272 | 8.891.388 |
+| Abril | 1.630.244 | 4.498.596 |
+| Mayo | **0** | 1.651.770 |
+| Junio | **0** | 2.779.307 |
+| Julio | 0 | **0** ✅ |
+
+Mayo y junio muestran cero porque se congelaron antes de que existiera el dato de recaudo. El
+cálculo en vivo está **verificado correcto**: vendedor 4 en junio llega al 115,8% de su meta →
+tramo 4 (1,2%) → 2.779.307, y el impacto del IVA sale exacto (`910.080 × 1,2% = 10.921`, el mismo
+número de la tabla de arriba). Vendedor 14 en 0 sí es correcto: 74,7%, por debajo del primer tramo.
+**Recalcular sobrescribe una liquidación congelada, así que es decisión del dueño**, no un arreglo
+técnico. `useComisionesCalculo` ya trae ambas modalidades (crédito y contado) y filtra
+`fuente === 'erp'`; ahí no hay nada que corregir.
+
+**Falsa alarma corregida:** `.env.example` **nunca** tuvo la llave `anon` real. Se revisaron los
+cuatro commits que lo tocan y todo el historial del archivo: siempre fue el marcador truncado
+`eyJhbGciOiJIUzI1NiIsInR5cCI6...`. El archivo se actualizó para reflejar que el backend es el VPS.
+
+**PENDIENTE — las 9 Edge Functions siguen desplegadas en Supabase.** No se pudieron retirar desde
+esta sesión: el MCP de Supabase no expone un `delete_edge_function` y no hay CLI instalado. Hay que
+borrarlas a mano (Dashboard → Edge Functions) o con `supabase functions delete <slug>`. Ninguna
+recibe tráfico, pero seis tienen `verify_jwt: false` y quedan públicamente invocables.
+Tres **no existen en el repo** y morirán con ellas — a propósito, son de la era n8n:
+`whatsapp-proxy`, `proxy-n8n-chat` y `tmp-subscribe-waba` (esta última ya es un stub `410 Gone`).
+**`whatsapp-proxy` trae un JWT de n8n hardcodeado en el fuente** como valor por defecto: conviene
+revocarlo en esa instancia de n8n aunque ya no se use.
 
 ## Health Stack
 
