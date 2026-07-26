@@ -492,17 +492,44 @@ regeneró hoy con datos sincronizados y **cuadra exacto** con el cálculo en viv
 | Junio | **0** | 2.779.307 |
 | Julio | 0 | **0** ✅ |
 
-Mayo y junio muestran cero porque se congelaron antes de que existiera el dato de recaudo. El
-cálculo en vivo está **verificado correcto**: vendedor 4 en junio llega al 115,8% de su meta →
-tramo 4 (1,2%) → 2.779.307, y el impacto del IVA sale exacto (`910.080 × 1,2% = 10.921`, el mismo
-número de la tabla de arriba). Vendedor 14 en 0 sí es correcto: 74,7%, por debajo del primer tramo.
-`useComisionesCalculo` ya trae ambas modalidades (crédito y contado) y filtra `fuente === 'erp'`;
-ahí no hay nada que corregir.
+**⚠️ ESA COLUMNA "Según los datos del ERP" ESTÁ MAL — ver la corrección justo abajo.** Se calculó
+sin el filtro de mora, que es el más grande de todos. Se deja a la vista para que nadie la vuelva a
+derivar igual.
+
+**BUG ABIERTO — la sincronización pierde el filtro de mora de los recaudos.**
+
+`aplica_comision` es el candado que impide comisionar un abono cobrado tarde. La regla vive en
+`RecaudoUploadModal.jsx:129`: `dias_mora >= 0 AND dias_mora <= DIAS_MORA_LIMITE` (72, en
+`src/constants/thresholds.js:57`). La calculaba **el modal de carga manual**, que ya no está
+montado. **`fn_sync_recaudos` no la escribe** y la columna toma su default `true`:
+
+| Fuente | Filas | Con `aplica_comision = false` |
+|---|---|---|
+| manual | 4.095 | **449** |
+| erp | 5.794 | **0** ← el candado no existe |
+
+El `dias_mora` **sí se sincroniza** (2.294 filas con mora, hasta 360 días); lo único que falta es
+derivar la marca. Mientras no se arregle, **cualquier "Recalcular" sobre un mes con datos del ERP
+sobreestima la comisión por recaudo**: en marzo el vendedor 14 pasaría de 0 a 5.607.828 COP.
+
+Aplicando la regla a mano sobre los datos sincronizados, esto es lo que corresponde de verdad:
+
+| Mes | Guardada | Con el filtro de mora aplicado |
+|---|---|---|
+| Marzo | 5.805.272 | 1.789.036 |
+| Abril | 1.630.244 | 0 |
+| Mayo | 0 | **0** ✅ |
+| Junio | 0 | **0** ✅ |
+| Julio | 0 | **0** ✅ |
+
+**Mayo, junio y julio cuadran: los ceros son correctos, ahí nadie quedó mal pagado.** Marzo y abril
+son de la era manual y no son comparables fila a fila (el ERP suma NC y CE, que el Excel no traía).
+
+> Al arreglarlo, ojo con duplicar el umbral: 72 vive hoy en `thresholds.js`. Escribirlo también en
+> SQL deja el mismo riesgo que `normalize_brand` — dos copias que divergen en silencio.
 
 **DECISIÓN DEL DUEÑO (26/07/2026): los snapshots de marzo a junio se dejan como están.** Son el
-registro de lo que efectivamente se liquidó y se pagó en la era manual; de julio en adelante todo
-sale del ERP. **No pulsar "Recalcular" en esos meses** — no es un bug pendiente, es una decisión
-tomada.
+registro de lo que se liquidó en la era manual. **No pulsar "Recalcular" en esos meses.**
 
 **Falsa alarma corregida:** `.env.example` **nunca** tuvo la llave `anon` real. Se revisaron los
 cuatro commits que lo tocan y todo el historial del archivo: siempre fue el marcador truncado
