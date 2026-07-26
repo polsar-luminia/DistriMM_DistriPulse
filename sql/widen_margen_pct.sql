@@ -44,8 +44,17 @@ ALTER TABLE distrimm_comisiones_ventas
     END
   ) STORED;
 
+-- ⚠️ `security_invoker = true` NO ES OPCIONAL. Sin él la vista corre con los
+-- permisos de su dueño (postgres) y SE SALTA LA RLS de la tabla: cualquiera con
+-- la llave `anon` —que es pública y viaja en el bundle— podría leer el
+-- historial de ventas completo, con nombres de clientes y montos.
+-- Pasó de verdad el 26/07/2026: al recrear estas dos vistas se perdió el ajuste,
+-- porque `pg_get_viewdef` devuelve la consulta pero NO las `reloptions`. Las
+-- otras 21 vistas del esquema sí lo traen. Al recrear una vista, comprobar
+-- siempre `SELECT relname, reloptions FROM pg_class WHERE relkind='v'`.
+
 -- Vista de compatibilidad: espejo plano de la tabla.
-CREATE VIEW comisiones_ventas AS
+CREATE VIEW comisiones_ventas WITH (security_invoker = true) AS
  SELECT id, carga_id, vendedor_codigo, vendedor_nit, vendedor_nombre,
         producto_codigo, producto_descripcion, cliente_nit, cliente_nombre,
         municipio, fecha, factura, precio, descuento, valor_unidad, cantidad,
@@ -55,7 +64,7 @@ CREATE VIEW comisiones_ventas AS
 -- Vista DEDUPLICADA: una sola carga por mes, siempre la del ERP.
 -- Es la que hay que usar para cualquier agregado; la tabla cruda tiene cargas
 -- solapadas de la era manual y multiplica los totales ~10x.
-CREATE VIEW distrimm_ventas_vigentes AS
+CREATE VIEW distrimm_ventas_vigentes WITH (security_invoker = true) AS
  SELECT v.id, v.carga_id, v.vendedor_codigo, v.vendedor_nit, v.vendedor_nombre,
         v.producto_codigo, v.producto_descripcion, v.cliente_nit, v.cliente_nombre,
         v.municipio, v.fecha, v.factura, v.precio, v.descuento, v.valor_unidad,

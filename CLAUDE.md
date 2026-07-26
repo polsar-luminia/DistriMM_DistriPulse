@@ -521,7 +521,36 @@ regeneró hoy con datos sincronizados y **cuadra exacto** con el cálculo en viv
 sin el filtro de mora, que es el más grande de todos. Se deja a la vista para que nadie la vuelva a
 derivar igual.
 
-**BUG ABIERTO — la sincronización de recaudos pierde DOS candados de comisión, no uno.**
+**RESUELTO (26/07/2026) con la vista `distrimm_recaudos_comisionables`** — ver
+`sql/recaudos_comisionables.sql`. `getRecaudosByCarga` y `getRecaudosByPeriodo` leen de ella, no de
+la tabla. Deriva los dos candados al vuelo para las filas del ERP y **deja las manuales intactas**
+(verificado: 0 filas manuales cambian). Efecto: 697 filas excluidas por mora y 1.793 con exclusión
+de marca, donde antes había 0 y 0.
+
+**LA TRAMPA MÁS CARA DE TODO ESTE MÓDULO — `dias_mora` no mide lo mismo en las dos fuentes.** El
+Excel contaba los días **desde la emisión de la factura**; `fn_sync_recaudos` los cuenta **desde el
+vencimiento** (`Doc_FechaDoc − Mov_FecVcto`). La diferencia es el plazo de pago: de 3.702 filas
+comparables, 846 difieren en exactamente 30 días y otras en 45 o 60. **Aplicar el umbral de 72
+sobre la columna del ERP es mucho más laxo**: en marzo el vendedor 14 pasaría de 54% a 102% de su
+meta y cobraría 4,3 millones de más — unos 9 millones en 2026.
+
+**Decisión del dueño: los 72 días cuentan desde la emisión de la factura.** La vista por tanto
+**ignora `r.dias_mora`** y recalcula `fecha_abono − fecha de la venta`, que reproduce la medida
+histórica en 3.582 de 3.702 filas (96,8%). Contado comisiona siempre (se cobra en el acto) y las 35
+filas sin fecha de factura no comisionan, por la misma política conservadora del modal manual.
+
+> Si algún día se sincroniza `fecha_cxc` —hoy llega NULL en las 5.794 filas—, sería la fuente
+> natural para esto y la vista podría dejar de depender del cruce por factura.
+
+Liquidación resultante contra lo que efectivamente se pagó: marzo 6.785.456 (pagado 5.805.272),
+abril 892.801 (pagado 1.630.244), y **mayo, junio y julio en 0, igual que los snapshots**. Marzo y
+abril no son comparables fila a fila: el ERP suma NC y CE que el Excel no traía, y ahora sí se
+excluye el IVA.
+
+<details>
+<summary>Diagnóstico original del bug (histórico)</summary>
+
+**La sincronización de recaudos perdía DOS candados de comisión, no uno.**
 
 La base comisionable de un recaudo es
 `valor_recaudo − valor_excluido_marca − valor_iva`, contando solo las filas con
@@ -601,8 +630,23 @@ son de la era manual y no son comparables fila a fila (el ERP suma NC y CE, que 
 > comportamientos distintos, hay que elegir a propósito. (El snapshot ya congela la liquidación por
 > su cuenta, así que congelar además en la fila es congelar dos veces.)
 
+</details>
+
 **DECISIÓN DEL DUEÑO (26/07/2026): los snapshots de marzo a junio se dejan como están.** Son el
 registro de lo que se liquidó en la era manual. **No pulsar "Recalcular" en esos meses.**
+
+**RIESGO DE SEGURIDAD YA CORREGIDO — vistas sin `security_invoker`.** Una vista sin ese ajuste
+corre con los permisos de su dueño y **se salta la RLS**: con la llave `anon` —pública, va en el
+bundle— se podía leer el historial de ventas completo con nombres de clientes y montos, mientras la
+tabla base devolvía `[]`. Pasó al recrear `distrimm_ventas_vigentes` y `comisiones_ventas`, porque
+`pg_get_viewdef` devuelve la consulta pero **no** las `reloptions`. Ya está corregido y las 23
+vistas del esquema lo tienen. **Al crear o recrear una vista, verificarlo siempre:**
+
+```sql
+SELECT relname, reloptions FROM pg_class c
+JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE c.relkind = 'v' AND n.nspname = 'public' AND c.reloptions IS NULL;
+```
 
 **Falsa alarma corregida:** `.env.example` **nunca** tuvo la llave `anon` real. Se revisaron los
 cuatro commits que lo tocan y todo el historial del archivo: siempre fue el marcador truncado

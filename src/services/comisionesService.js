@@ -312,11 +312,19 @@ export const deleteRecaudoCarga = async (id) => {
   }
 };
 
+/**
+ * Los recaudos se leen de `distrimm_recaudos_comisionables`, NO de la tabla.
+ *
+ * La vista deriva `aplica_comision` (mora) y `valor_excluido_marca` para las
+ * filas del ERP; la sincronización no los escribe y la tabla los deja en
+ * `true` y `0`, es decir, comisionando todo. Las filas manuales pasan intactas.
+ * Ver sql/recaudos_comisionables.sql.
+ */
 export const getRecaudosByPeriodo = async (year, month) => {
   try {
     const data = await fetchAllRows((from, to) =>
       supabase
-        .from("distrimm_comisiones_recaudos")
+        .from("distrimm_recaudos_comisionables")
         .select("*")
         .eq("periodo_year", year)
         .eq("periodo_month", month)
@@ -338,7 +346,7 @@ export const getRecaudosByCarga = async (cargaId) => {
   try {
     const data = await fetchAllRows((from, to) =>
       supabase
-        .from("distrimm_comisiones_recaudos")
+        .from("distrimm_recaudos_comisionables")
         .select("*")
         .eq("carga_id", cargaId)
         .order("id")
