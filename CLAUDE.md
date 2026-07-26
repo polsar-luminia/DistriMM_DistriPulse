@@ -496,37 +496,50 @@ regeneró hoy con datos sincronizados y **cuadra exacto** con el cálculo en viv
 sin el filtro de mora, que es el más grande de todos. Se deja a la vista para que nadie la vuelva a
 derivar igual.
 
-**BUG ABIERTO — la sincronización pierde el filtro de mora de los recaudos.**
+**BUG ABIERTO — la sincronización de recaudos pierde DOS candados de comisión, no uno.**
 
-`aplica_comision` es el candado que impide comisionar un abono cobrado tarde. La regla vive en
-`RecaudoUploadModal.jsx:129`: `dias_mora >= 0 AND dias_mora <= DIAS_MORA_LIMITE` (72, en
-`src/constants/thresholds.js:57`). La calculaba **el modal de carga manual**, que ya no está
-montado. **`fn_sync_recaudos` no la escribe** y la columna toma su default `true`:
+La base comisionable de un recaudo es
+`valor_recaudo − valor_excluido_marca − valor_iva`, contando solo las filas con
+`aplica_comision`. De los tres descuentos, **la sincronización solo implementó el del IVA**:
 
-| Fuente | Filas | Con `aplica_comision = false` |
-|---|---|---|
-| manual | 4.095 | **449** |
-| erp | 5.794 | **0** ← el candado no existe |
+| Candado | Dónde se calculaba | manual | erp |
+|---|---|---|---|
+| **Mora** (`aplica_comision`) | `RecaudoUploadModal.jsx:129` | 449 filas fuera | **0** ← perdido |
+| **Marca** (`valor_excluido_marca`) | `recaudoEnrichment.js:100` | 1.234 filas · 942.967.569 COP | **0** ← perdido |
+| **IVA** (`valor_iva`) | `fn_sync_recaudos` | 0 | 1.687 filas ✅ |
 
-El `dias_mora` **sí se sincroniza** (2.294 filas con mora, hasta 360 días); lo único que falta es
-derivar la marca. Mientras no se arregle, **cualquier "Recalcular" sobre un mes con datos del ERP
-sobreestima la comisión por recaudo**: en marzo el vendedor 14 pasaría de 0 a 5.607.828 COP.
+Los dos que faltan los calculaba **el modal de carga manual**, que ya no está montado. Nadie los
+reemplazó, y las columnas se quedan en su default (`true` y `0`).
 
-Aplicando la regla a mano sobre los datos sincronizados, esto es lo que corresponde de verdad:
+- **Mora:** la regla es `dias_mora >= 0 AND dias_mora <= DIAS_MORA_LIMITE` (72, en
+  `src/constants/thresholds.js:57`). El `dias_mora` **sí se sincroniza** (2.294 filas con mora,
+  hasta 360 días); solo falta derivar la marca.
+- **Marca:** se cruza `recaudo.factura` → `distrimm_ventas_vigentes` (con prefijo `FELE-`/`FCI-`)
+  → catálogo → exclusiones, y se descuenta del abono la **proporción** que en esa factura
+  correspondía a marcas excluidas. Hoy hay 3 activas —ADAMA, AGROCENTRO y CONTEGRAL— que pesan el
+  **21,3%** de las ventas. La comparación va con `normalize_brand()` a ambos lados.
 
-| Mes | Guardada | Con el filtro de mora aplicado |
-|---|---|---|
-| Marzo | 5.805.272 | 1.789.036 |
-| Abril | 1.630.244 | 0 |
-| Mayo | 0 | **0** ✅ |
-| Junio | 0 | **0** ✅ |
-| Julio | 0 | **0** ✅ |
+Mientras no se arregle, **cualquier "Recalcular" sobre un mes con datos del ERP sobreestima la
+comisión por recaudo**: en marzo el vendedor 14 pasaría de 0 a 5.607.828 COP.
+
+Aplicando los dos candados a mano sobre los datos sincronizados:
+
+| Mes | Guardada | Solo mora | Mora **+ marca** (correcto) |
+|---|---|---|---|
+| Marzo | 5.805.272 | 1.789.036 | **1.668.049** |
+| Abril | 1.630.244 | 0 | **0** |
+| Mayo | 0 | 0 | **0** ✅ |
+| Junio | 0 | 0 | **0** ✅ |
+| Julio | 0 | 0 | **0** ✅ |
 
 **Mayo, junio y julio cuadran: los ceros son correctos, ahí nadie quedó mal pagado.** Marzo y abril
 son de la era manual y no son comparables fila a fila (el ERP suma NC y CE, que el Excel no traía).
 
-> Al arreglarlo, ojo con duplicar el umbral: 72 vive hoy en `thresholds.js`. Escribirlo también en
-> SQL deja el mismo riesgo que `normalize_brand` — dos copias que divergen en silencio.
+> Al arreglarlo hay dos decisiones de diseño abiertas: **(1)** el umbral 72 vive en
+> `thresholds.js`; escribirlo también en SQL deja el mismo riesgo que `normalize_brand` — dos
+> copias que divergen en silencio. **(2)** el modal guardaba estos valores *congelados* al cargar;
+> si en vez de eso se calculan al liquidar, cambiar una exclusión de marca recalcularía también los
+> meses viejos. Son comportamientos distintos, hay que elegir a propósito.
 
 **DECISIÓN DEL DUEÑO (26/07/2026): los snapshots de marzo a junio se dejan como están.** Son el
 registro de lo que se liquidó en la era manual. **No pulsar "Recalcular" en esos meses.**
