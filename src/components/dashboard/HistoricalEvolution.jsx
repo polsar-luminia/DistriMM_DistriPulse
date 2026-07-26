@@ -44,25 +44,85 @@ function fullCurrency(val) {
   return formatFullCurrency(n);
 }
 
-function HistTooltip({ active, payload, label }) {
+/** Eje Y de dinero: los millones completos no caben y no aportan. */
+function compactCurrency(val) {
+  const n = typeof val === "number" ? val : parseNumericValue(val);
+  if (Math.abs(n) >= 1e9) return `$${(n / 1e9).toFixed(1).replace(".", ",")} MM`;
+  if (Math.abs(n) >= 1e6) return `$${Math.round(n / 1e6)} M`;
+  if (Math.abs(n) >= 1e3) return `$${Math.round(n / 1e3)} k`;
+  return `$${n}`;
+}
+
+const MESES_CORTOS = ["ene", "feb", "mar", "abr", "may", "jun",
+                      "jul", "ago", "sep", "oct", "nov", "dic"];
+
+/** "2026-06-30" -> "jun". Una carga por mes: el día no aporta al eje. */
+function etiquetaMes(fechaCorte) {
+  if (!fechaCorte) return "";
+  const [, m] = String(fechaCorte).split("-");
+  const idx = parseInt(m, 10) - 1;
+  return MESES_CORTOS[idx] ?? String(fechaCorte);
+}
+
+/**
+ * Tooltip con la unidad declarada por serie, no adivinada por el nombre.
+ * (Antes "Mora Promedio" y "% Morosidad" caían en la misma rama por substring.)
+ */
+function HistTooltip({ active, payload, label, unidad = "moneda", total = false }) {
   if (!active || !payload || payload.length === 0) return null;
+  const fmt = (v) =>
+    unidad === "moneda" ? fullCurrency(v)
+    : unidad === "pct"  ? `${v}%`
+    : `${v} días`;
+  const suma = payload.reduce((s, e) => s + (Number(e.value) || 0), 0);
   return (
     <div className="bg-white border border-slate-200 rounded-xl shadow-lg p-3 text-xs">
-      <p className="font-bold text-slate-800 mb-1">{label}</p>
-      {payload.map((entry, i) => (
-        <div key={i} className="flex items-center gap-2">
-          <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
-          <span className="text-slate-500">{entry.name}:</span>
-          <span className="font-bold text-slate-800">
-            {entry.name.includes("%") || entry.name.includes("Mora") || entry.name.includes("DSO")
-              ? `${entry.value}`
-              : fullCurrency(entry.value)}
-          </span>
+      <p className="font-bold text-slate-800 mb-1.5">{label}</p>
+      <div className="space-y-1">
+        {payload.map((entry, i) => (
+          <div key={i} className="flex items-center gap-2">
+            <span
+              className="w-2.5 h-2.5 rounded-sm shrink-0"
+              style={{ backgroundColor: entry.color }}
+            />
+            <span className="text-slate-500">{entry.name}</span>
+            <span className="ml-auto font-bold text-slate-800 tabular-nums">
+              {fmt(entry.value)}
+            </span>
+          </div>
+        ))}
+      </div>
+      {total && payload.length > 1 && (
+        <div className="flex items-center gap-2 mt-1.5 pt-1.5 border-t border-slate-100">
+          <span className="text-slate-500">Total</span>
+          <span className="ml-auto font-black text-slate-900 tabular-nums">{fmt(suma)}</span>
         </div>
-      ))}
+      )}
     </div>
   );
 }
+
+/** Contenedor común de gráfica: título, subtítulo de unidad y lienzo. */
+function ChartBox({ titulo, unidad, children, className = "" }) {
+  return (
+    <div className={cn("bg-white rounded-xl p-4 border border-slate-200", className)}>
+      <div className="flex items-baseline justify-between mb-3">
+        <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+          {titulo}
+        </h4>
+        <span className="text-[10px] font-medium text-slate-400">{unidad}</span>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+// Ejes y grilla recesivos: la tinta la gastan los datos, no el andamiaje.
+const EJE = { fontSize: 11, fill: "#94A3B8" };
+const GRILLA = { stroke: "#E2E8F0", strokeDasharray: "3 3", vertical: false };
+// #0891B2 (cian) en vez del lima original: contra el ámbar el lima daba
+// ΔE 3.8 en deuteranopía (falla); el cian da 22.1 y pasa limpio.
+const COLOR_DSO = "#0891B2";
 
 function DeltaBadge({ current, previous, suffix = "", inverse = false, format = "number" }) {
   if (previous == null || current == null) return null;
@@ -170,7 +230,8 @@ export default function HistoricalEvolution({ historico: externalHistorico }) {
 
   // Prepare chart data with readable date labels
   const chartData = historico.map((h) => ({
-    fecha: h.fecha_corte,
+    fecha: etiquetaMes(h.fecha_corte),
+    fechaCompleta: h.fecha_corte,
     "Cartera Total": h.cartera_total,
     "Cartera Vencida": h.cartera_vencida,
     "Cartera Al Dia": h.cartera_al_dia,
@@ -241,46 +302,112 @@ export default function HistoricalEvolution({ historico: externalHistorico }) {
         })}
       </div>
 
-      {/* Charts */}
+      {/* Gráficas.
+          Antes eran dos: una de barras y otra que metía en un mismo eje el
+          % de morosidad (0-100) junto a mora promedio (~86 días) y DSO (~15).
+          Eso aplastaba el DSO contra el suelo y hacía ilegible la comparación.
+          Ahora son tres, y cada eje tiene UNA sola unidad. */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Cartera Evolution Chart */}
-        <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-          <h4 className="text-xs font-bold text-slate-600 mb-3 uppercase tracking-wider">
-            Evolucion de Cartera
-          </h4>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={chartData} barGap={4}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-              <XAxis dataKey="fecha" tick={{ fontSize: 11, fill: "#94A3B8" }} />
-              <YAxis tick={{ fontSize: 10, fill: "#94A3B8" }} tickFormatter={fullCurrency} width={100} />
-              <Tooltip content={<HistTooltip />} />
-              <Legend wrapperStyle={{ fontSize: 11 }} />
-              <Bar dataKey="Cartera Al Dia" fill={COLORS.CHART.PRIMARY} radius={[4, 4, 0, 0]} />
-              <Bar dataKey="Cartera Vencida" fill={COLORS.CHART.DANGER} radius={[4, 4, 0, 0]} />
+        {/* Cartera: apilada, porque al día + vencida ES el total. */}
+        <ChartBox titulo="Evolución de Cartera" unidad="COP" className="lg:col-span-2">
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+              <CartesianGrid {...GRILLA} />
+              <XAxis dataKey="fecha" tick={EJE} tickLine={false} axisLine={false} />
+              <YAxis
+                tick={EJE}
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={compactCurrency}
+                width={64}
+              />
+              <Tooltip
+                content={<HistTooltip unidad="moneda" total />}
+                cursor={{ fill: "#0F172A", fillOpacity: 0.04 }}
+              />
+              <Legend wrapperStyle={{ fontSize: 11 }} iconType="circle" iconSize={8} />
+              <Bar dataKey="Cartera Al Dia" stackId="c" fill={COLORS.CHART.PRIMARY} maxBarSize={44} />
+              {/* El contorno blanco de 2px separa los dos segmentos apilados.
+                  Contra el fondo blanco de la tarjeta solo se ve donde el rojo
+                  toca al verde, que es justo donde hace falta: el par
+                  verde/rojo queda en ΔE 6.5 para protanopía y necesita esa
+                  codificación secundaria además de la leyenda. */}
+              <Bar
+                dataKey="Cartera Vencida"
+                stackId="c"
+                fill={COLORS.CHART.DANGER}
+                maxBarSize={44}
+                radius={[4, 4, 0, 0]}
+                stroke="#FFFFFF"
+                strokeWidth={2}
+              />
             </BarChart>
           </ResponsiveContainer>
-        </div>
+        </ChartBox>
 
-        {/* Morosidad Trend Chart */}
-        <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-          <h4 className="text-xs font-bold text-slate-600 mb-3 uppercase tracking-wider">
-            Indicadores de Mora
-          </h4>
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-              <XAxis dataKey="fecha" tick={{ fontSize: 11, fill: "#94A3B8" }} />
-              <YAxis tick={{ fontSize: 10, fill: "#94A3B8" }} width={35} />
-              <Tooltip content={<HistTooltip />} />
-              <Legend wrapperStyle={{ fontSize: 11 }} />
-              <Line type="monotone" dataKey="% Morosidad" stroke={COLORS.CHART.DANGER} strokeWidth={2.5} dot={{ fill: COLORS.CHART.DANGER, r: 5 }} />
-              <Line type="monotone" dataKey="Mora Promedio" stroke={COLORS.CHART.WARNING} strokeWidth={2.5} dot={{ fill: COLORS.CHART.WARNING, r: 5 }} />
-              <Line type="monotone" dataKey="DSO" stroke={COLORS.CHART.SECONDARY} strokeWidth={2.5} dot={{ fill: COLORS.CHART.SECONDARY, r: 5 }} />
+        {/* % Morosidad: serie única, sin leyenda — el título la nombra. */}
+        <ChartBox titulo="% de Morosidad" unidad="% de la cartera">
+          <ResponsiveContainer width="100%" height={190}>
+            <LineChart data={chartData} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+              <CartesianGrid {...GRILLA} />
+              <XAxis dataKey="fecha" tick={EJE} tickLine={false} axisLine={false} />
+              <YAxis
+                tick={EJE}
+                tickLine={false}
+                axisLine={false}
+                width={38}
+                domain={[0, 100]}
+                ticks={[0, 25, 50, 75, 100]}
+                tickFormatter={(v) => `${v}%`}
+              />
+              <Tooltip content={<HistTooltip unidad="pct" />} />
+              <Line
+                type="monotone"
+                dataKey="% Morosidad"
+                stroke={COLORS.CHART.DANGER}
+                strokeWidth={2}
+                dot={{ fill: COLORS.CHART.DANGER, r: 4, strokeWidth: 2, stroke: "#fff" }}
+                activeDot={{ r: 6 }}
+              />
             </LineChart>
           </ResponsiveContainer>
-        </div>
-      </div>
+        </ChartBox>
 
+        {/* Mora promedio y DSO comparten eje legítimamente: ambos son días. */}
+        <ChartBox titulo="Mora Promedio y DSO" unidad="días">
+          <ResponsiveContainer width="100%" height={190}>
+            <LineChart data={chartData} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+              <CartesianGrid {...GRILLA} />
+              <XAxis dataKey="fecha" tick={EJE} tickLine={false} axisLine={false} />
+              <YAxis
+                tick={EJE}
+                tickLine={false}
+                axisLine={false}
+                width={38}
+                tickFormatter={(v) => `${v}d`}
+              />
+              <Tooltip content={<HistTooltip unidad="dias" />} />
+              <Legend wrapperStyle={{ fontSize: 11 }} iconType="circle" iconSize={8} />
+              <Line
+                type="monotone"
+                dataKey="Mora Promedio"
+                stroke={COLORS.CHART.WARNING}
+                strokeWidth={2}
+                dot={{ fill: COLORS.CHART.WARNING, r: 4, strokeWidth: 2, stroke: "#fff" }}
+                activeDot={{ r: 6 }}
+              />
+              <Line
+                type="monotone"
+                dataKey="DSO"
+                stroke={COLOR_DSO}
+                strokeWidth={2}
+                dot={{ fill: COLOR_DSO, r: 4, strokeWidth: 2, stroke: "#fff" }}
+                activeDot={{ r: 6 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </ChartBox>
+      </div>
     </CollapsibleCard>
   );
 }
