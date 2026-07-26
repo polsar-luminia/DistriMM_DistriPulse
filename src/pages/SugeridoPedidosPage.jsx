@@ -5,10 +5,9 @@
  * el stock (agotado, crítico, normal, lento, muerto).
  * @module pages/SugeridoPedidosPage
  */
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import {
   ShoppingCart,
-  Upload,
   Trash2,
   FileDown,
   Search,
@@ -24,7 +23,6 @@ import { cn } from "@/lib/utils";
 import { useSugeridoPedidos } from "../hooks/useSugeridoPedidos";
 import { formatCurrency, formatDateUTC } from "../utils/formatters";
 import { Card, KpiCard, EmptyState } from "../components/comisiones/ComisionesShared";
-import InventarioUploadModal from "../components/sugerido/InventarioUploadModal";
 import SugeridoParamsBar from "../components/sugerido/SugeridoParamsBar";
 import SugeridoTable from "../components/sugerido/SugeridoTable";
 import { CLASIFICACION_META } from "../components/sugerido/clasificacion";
@@ -56,16 +54,50 @@ export default function SugeridoPedidosPage() {
     recalcular,
     guardarPredeterminado,
     deleteCarga,
-    fetchCargas,
   } = hook;
 
   const [confirmProps, confirm] = useConfirm();
-  const [showUpload, setShowUpload] = useState(false);
   const [filtro, setFiltro] = useState("TODOS");
+  const [filtroMarca, setFiltroMarca] = useState("TODAS");
+  const [filtroCategoria, setFiltroCategoria] = useState("TODAS");
   const [search, setSearch] = useState("");
   const [exporting, setExporting] = useState(false);
 
+  // Opciones de proveedor (marca) y línea (categoría) presentes en la carga
+  const opcionesMarca = useMemo(
+    () =>
+      [...new Set(rows.map((r) => r.marca).filter(Boolean))].sort((a, b) =>
+        a.localeCompare(b, "es"),
+      ),
+    [rows],
+  );
+  const opcionesCategoria = useMemo(
+    () =>
+      [...new Set(rows.map((r) => r.categoria_nombre).filter(Boolean))].sort(
+        (a, b) => a.localeCompare(b, "es"),
+      ),
+    [rows],
+  );
+
+  // Reset de filtros proveedor/línea al cambiar de carga (evita resultados vacíos)
+  useEffect(() => {
+    setFiltroMarca("TODAS");
+    setFiltroCategoria("TODAS");
+  }, [selectedCargaId]);
+
   const selectedCarga = cargas.find((c) => c.id === selectedCargaId);
+
+  // Filas dentro del proveedor/línea seleccionados — base de KPIs, contadores y tabla
+  const rowsScoped = useMemo(() => {
+    let result = rows;
+    if (filtroMarca !== "TODAS") {
+      result = result.filter((r) => r.marca === filtroMarca);
+    }
+    if (filtroCategoria !== "TODAS") {
+      result = result.filter((r) => r.categoria_nombre === filtroCategoria);
+    }
+    return result;
+  }, [rows, filtroMarca, filtroCategoria]);
 
   const stats = useMemo(() => {
     const porClasificacion = {};
@@ -73,7 +105,7 @@ export default function SugeridoPedidosPage() {
     let costoPedido = 0;
     let valorMuerto = 0;
     let valorLento = 0;
-    for (const r of rows) {
+    for (const r of rowsScoped) {
       porClasificacion[r.clasificacion] =
         (porClasificacion[r.clasificacion] || 0) + 1;
       if (Number(r.sugerido_cantidad) > 0) {
@@ -84,10 +116,10 @@ export default function SugeridoPedidosPage() {
       if (r.clasificacion === "LENTO") valorLento += Number(r.stock_valor) || 0;
     }
     return { porClasificacion, porPedir, costoPedido, valorMuerto, valorLento };
-  }, [rows]);
+  }, [rowsScoped]);
 
   const filteredRows = useMemo(() => {
-    let result = rows;
+    let result = rowsScoped;
     if (filtro === "POR_PEDIR") {
       result = result.filter((r) => Number(r.sugerido_cantidad) > 0);
     } else if (filtro !== "TODOS") {
@@ -103,15 +135,15 @@ export default function SugeridoPedidosPage() {
       );
     }
     return result;
-  }, [rows, filtro, search]);
+  }, [rowsScoped, filtro, search]);
 
   const filtroCount = useCallback(
     (key) => {
-      if (key === "TODOS") return rows.length;
+      if (key === "TODOS") return rowsScoped.length;
       if (key === "POR_PEDIR") return stats.porPedir;
       return stats.porClasificacion[key] || 0;
     },
-    [rows, stats],
+    [rowsScoped, stats],
   );
 
   const handleDeleteCarga = async () => {
@@ -130,10 +162,11 @@ export default function SugeridoPedidosPage() {
   };
 
   const handleExport = async () => {
-    if (exporting || rows.length === 0) return;
+    if (exporting || rowsScoped.length === 0) return;
     setExporting(true);
     try {
-      await generarSugeridoExcel(rows, params, selectedCarga);
+      // Respeta el filtro de proveedor/línea (p. ej. exportar la orden de un proveedor)
+      await generarSugeridoExcel(rowsScoped, params, selectedCarga);
       sileo.success("Excel generado");
     } catch (err) {
       if (import.meta.env.DEV) console.error("Export sugerido error:", err);
@@ -190,7 +223,7 @@ export default function SugeridoPedidosPage() {
               </button>
               <button
                 onClick={handleExport}
-                disabled={exporting || rows.length === 0}
+                disabled={exporting || rowsScoped.length === 0}
                 className="flex items-center gap-2 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg text-sm font-bold hover:bg-slate-50 disabled:opacity-50 transition-colors"
               >
                 {exporting ? (
@@ -202,12 +235,6 @@ export default function SugeridoPedidosPage() {
               </button>
             </>
           )}
-          <button
-            onClick={() => setShowUpload(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-900/20 transition-all"
-          >
-            <Upload size={16} /> Cargar Saldos
-          </button>
         </div>
       </div>
 
@@ -317,6 +344,33 @@ export default function SugeridoPedidosPage() {
                     );
                   })}
                 </div>
+                <select
+                  value={filtroMarca}
+                  onChange={(e) => setFiltroMarca(e.target.value)}
+                  aria-label="Filtrar por proveedor"
+                  className="px-3 py-2 border border-slate-300 rounded-lg text-sm font-medium bg-white focus:ring-2 focus:ring-indigo-500 max-w-[200px]"
+                >
+                  <option value="TODAS">Todos los proveedores</option>
+                  {opcionesMarca.map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={filtroCategoria}
+                  onChange={(e) => setFiltroCategoria(e.target.value)}
+                  aria-label="Filtrar por línea"
+                  className="px-3 py-2 border border-slate-300 rounded-lg text-sm font-medium bg-white focus:ring-2 focus:ring-indigo-500 max-w-[200px]"
+                >
+                  <option value="TODAS">Todas las líneas</option>
+                  {opcionesCategoria.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+
                 <div className="relative ml-auto">
                   <Search
                     size={16}
@@ -340,15 +394,6 @@ export default function SugeridoPedidosPage() {
         </>
       )}
 
-      <InventarioUploadModal
-        isOpen={showUpload}
-        onClose={() => setShowUpload(false)}
-        onSuccess={(cargaId) => {
-          fetchCargas({ autoSelect: false }).then(() => {
-            if (cargaId) setSelectedCargaId(cargaId);
-          });
-        }}
-      />
     </div>
   );
 }

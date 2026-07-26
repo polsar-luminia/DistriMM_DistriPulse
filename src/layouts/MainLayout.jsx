@@ -6,6 +6,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Outlet, NavLink, useLocation, useNavigate } from "react-router-dom";
+import logoDistriMM from "../assets/DistriMMLogo.png";
 import {
   LayoutDashboard,
   Users,
@@ -15,7 +16,6 @@ import {
   X,
   Upload,
   LogOut,
-  Layers,
   Briefcase,
   Building2,
   Brain,
@@ -117,7 +117,6 @@ export default function MainLayout({ dashboardContext }) {
     availableLoads = [],
     currentLoadId,
     onLoadChange,
-    onUploadClick,
     loading: dashboardLoading,
   } = dashboardContext || {};
 
@@ -127,15 +126,14 @@ export default function MainLayout({ dashboardContext }) {
       {/* Brand */}
       <div className="flex items-center justify-between h-14 px-4 border-b border-slate-100 shrink-0">
         <div
-          className="flex items-center gap-2.5 cursor-pointer"
+          className="flex items-center cursor-pointer"
           onClick={() => navigate("/")}
         >
-          <div className="bg-indigo-50 p-1.5 rounded-lg border border-indigo-100">
-            <Layers size={18} className="text-indigo-600" />
-          </div>
-          <span className="font-extrabold text-base tracking-tight text-slate-800">
-            Distri<span className="text-indigo-600">MM</span>
-          </span>
+          <img
+            src={logoDistriMM}
+            alt="Almacén Agropecuario DistriMM"
+            className="h-11 w-auto object-contain"
+          />
         </div>
         {/* Collapse toggle (desktop only) */}
         {!mobile && (
@@ -250,15 +248,14 @@ export default function MainLayout({ dashboardContext }) {
           {/* Brand (collapsed sidebar fallback) */}
           {!sidebarOpen && (
             <div
-              className="hidden md:flex items-center gap-2 cursor-pointer"
+              className="hidden md:flex items-center cursor-pointer"
               onClick={() => navigate("/")}
             >
-              <div className="bg-indigo-50 p-1 rounded-md border border-indigo-100">
-                <Layers size={14} className="text-indigo-600" />
-              </div>
-              <span className="font-extrabold text-sm tracking-tight text-slate-800">
-                Distri<span className="text-indigo-600">MM</span>
-              </span>
+              <img
+                src={logoDistriMM}
+                alt="Almacén Agropecuario DistriMM"
+                className="h-9 w-auto object-contain"
+              />
             </div>
           )}
 
@@ -288,15 +285,6 @@ export default function MainLayout({ dashboardContext }) {
                 Sin histórico
               </span>
             )}
-
-            {/* Upload button */}
-            <button
-              onClick={onUploadClick}
-              className="px-3 py-1.5 bg-indigo-600 rounded-lg text-xs font-bold text-white hover:bg-indigo-700 transition-colors shadow-sm flex items-center gap-1.5 active:scale-95"
-            >
-              <Upload size={14} />
-              <span className="hidden sm:inline">Cargar</span>
-            </button>
 
             {/* User / Logout */}
             <div className="ml-1 pl-2 border-l border-slate-200 flex items-center gap-2">

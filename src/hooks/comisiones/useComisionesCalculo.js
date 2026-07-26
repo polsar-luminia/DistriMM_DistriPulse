@@ -8,6 +8,7 @@ import {
   getRecaudoCargas,
   getPresupuestosMarca,
   getPresupuestosRecaudo,
+  getReglasExtra,
   getSnapshot,
   saveSnapshot,
   buildInputHash,
@@ -89,31 +90,81 @@ export function useComisionesCalculo(selectedCargaId, catalogo, exclusiones) {
         // Usar solo la última carga del mes (la más reciente reemplaza las anteriores)
         const ultimaCarga = cargasMes[cargasMes.length - 1];
         const ids = [ultimaCarga.id];
-        // Buscar última carga de recaudo del periodo
+
+        // Detectar si la última carga parece no-acumulativa (muchas menos filas que cargas anteriores)
+        let anomalyWarning = null;
+        if (cargasMes.length > 1) {
+          const prevCargas = cargasMes.slice(0, -1);
+          const maxPrevRows = Math.max(
+            ...prevCargas.map((c) => c.total_registros || 0),
+          );
+          const lastRows = ultimaCarga.total_registros || 0;
+          if (maxPrevRows > 0 && lastRows < maxPrevRows * 0.5) {
+            const mayorCarga = prevCargas.reduce((best, c) =>
+              (c.total_registros || 0) > (best.total_registros || 0) ? c : best,
+            );
+            anomalyWarning = {
+              lastCarga: ultimaCarga,
+              mayorCarga,
+              lastRows,
+              maxPrevRows,
+            };
+          }
+        }
+        // Buscar última carga de recaudo del periodo, separando crédito y contado.
+        // Política: la última carga de cada origen reemplaza a las anteriores del mismo
+        // origen. Crédito (CxC/RC) y contado (PDF) son independientes y se concatenan
+        // para la liquidación.
         const { data: recaudoCargas } = await getRecaudoCargas();
         const recaudoCargasMes = (recaudoCargas || []).filter((c) => {
           const d = new Date(c.fecha_periodo + "T12:00:00");
           return d.getFullYear() === year && d.getMonth() + 1 === month;
         });
-        const ultimaCargaRecaudo =
-          recaudoCargasMes.length > 0
-            ? recaudoCargasMes[0] // getRecaudoCargas ordena DESC por created_at
-            : null;
+        // CORTE HECHO (26/07/2026): la liquidación se hace con los datos
+        // sincronizados del ERP. `origen` aquí es la modalidad
+        // (credito/contado); la procedencia vive en `fuente`.
+        const porModalidad = (c, quiero) =>
+          (quiero === "contado"
+            ? c.origen === "contado"
+            : (c.origen || "credito") !== "contado");
 
-        const [ventasRes, recaudosRes, presMarcaRes, presRecaudoRes] =
-          await Promise.all([
-            getVentasByCargas(ids),
-            ultimaCargaRecaudo
-              ? getRecaudosByCarga(ultimaCargaRecaudo.id)
-              : Promise.resolve({ data: [] }),
-            getPresupuestosMarca(year, month),
-            getPresupuestosRecaudo(year, month),
-          ]);
+        // Solo cargas sincronizadas: si alguien volviera a subir un Excel de
+        // recaudo, no debe entrar en la liquidación.
+        const elegir = (modalidad) =>
+          recaudoCargasMes.find(
+            (c) => c.fuente === "erp" && porModalidad(c, modalidad),
+          ) || null;
+
+        const ultimaCargaCredito = elegir("credito");
+        const ultimaCargaContado = elegir("contado");
+
+        const [
+          ventasRes,
+          recaudosCredRes,
+          recaudosContRes,
+          presMarcaRes,
+          presRecaudoRes,
+          reglasExtraRes,
+        ] = await Promise.all([
+          getVentasByCargas(ids),
+          ultimaCargaCredito
+            ? getRecaudosByCarga(ultimaCargaCredito.id)
+            : Promise.resolve({ data: [] }),
+          ultimaCargaContado
+            ? getRecaudosByCarga(ultimaCargaContado.id)
+            : Promise.resolve({ data: [] }),
+          getPresupuestosMarca(year, month),
+          getPresupuestosRecaudo(year, month),
+          getReglasExtra(year, month),
+        ]);
 
         const ventasMes = ventasRes.data || [];
-        const recaudosMes = recaudosRes.data || [];
+        const recaudosCredito = recaudosCredRes.data || [];
+        const recaudosContado = recaudosContRes.data || [];
+        const recaudosMes = [...recaudosCredito, ...recaudosContado];
         const presMarca = presMarcaRes.data || [];
         const presRecaudo = presRecaudoRes.data || [];
+        const reglasExtra = reglasExtraRes.data || [];
 
         // Hash actual de inputs (incluye exclusiones y catálogo para detectar cambios de reglas)
         const currentHash = buildInputHash({
@@ -122,8 +173,13 @@ export function useComisionesCalculo(selectedCargaId, catalogo, exclusiones) {
           totalRecaudos: recaudosMes.length,
           presupuestosMarca: presMarca,
           presupuestosRecaudo: presRecaudo,
+          reglasExtra,
           exclusiones,
           catalogo,
+          cargaCreditoId: ultimaCargaCredito?.id || null,
+          cargaContadoId: ultimaCargaContado?.id || null,
+          totalRecaudosCredito: recaudosCredito.length,
+          totalRecaudosContado: recaudosContado.length,
         });
 
         // 1. Check for existing snapshot (unless forced recalc)
@@ -162,6 +218,7 @@ export function useComisionesCalculo(selectedCargaId, catalogo, exclusiones) {
                 isSnapshot: true,
                 isStale,
                 snapshotDate: snap.updated_at,
+                anomalyWarning,
               }),
             );
             setLoadingReporte(false);
@@ -194,6 +251,7 @@ export function useComisionesCalculo(selectedCargaId, catalogo, exclusiones) {
           presupuestosMarca: presMarca,
           presupuestosRecaudo: presRecaudo,
           productBrandMap,
+          reglasExtra,
         });
 
         // Calcular totales de ventas para congelar en el snapshot
@@ -234,9 +292,14 @@ export function useComisionesCalculo(selectedCargaId, catalogo, exclusiones) {
           resumen,
           presupuestosMarca: presMarca,
           presupuestosRecaudo: presRecaudo,
+          reglasExtra,
           totalesVentas,
           exclusiones,
           catalogo,
+          cargaCreditoId: ultimaCargaCredito?.id || null,
+          cargaContadoId: ultimaCargaContado?.id || null,
+          totalRecaudosCredito: recaudosCredito.length,
+          totalRecaudosContado: recaudosContado.length,
         });
 
         if (snapErr && import.meta.env.DEV) {
@@ -259,6 +322,8 @@ export function useComisionesCalculo(selectedCargaId, catalogo, exclusiones) {
             cargas: ids.length,
             ventas: ventasMes.length,
             recaudos: recaudosMes.length,
+            recaudos_credito: recaudosCredito.length,
+            recaudos_contado: recaudosContado.length,
           },
         );
 
@@ -276,6 +341,7 @@ export function useComisionesCalculo(selectedCargaId, catalogo, exclusiones) {
             isSnapshot: !snapErr,
             isStale: false,
             snapshotDate: !snapErr ? new Date().toISOString() : null,
+            anomalyWarning,
           }),
         );
       } catch (err) {

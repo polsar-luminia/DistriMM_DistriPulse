@@ -107,3 +107,13 @@ e2e/helpers/.auth-state.json
 e2e/test-results/
 e2e/playwright-report/
 e2e/blob-report/
+
+# gstack local artifacts (security reports, health history, learnings)
+.gstack/
+
+# Token del agente de sincronizacion SAMIT (vive solo en el servidor de la oficina)
+sync-agent/sync-samit.config.json
+
+# Respaldos y variantes de .env (nunca al repo)
+.env.*
+!.env.example

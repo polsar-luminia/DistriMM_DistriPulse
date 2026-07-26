@@ -29,9 +29,6 @@ import {
 import { clickableProps } from "@/utils/a11y";
 import { Card, KpiCard, EmptyState } from "./ComisionesShared";
 import { exportVentasExcel } from "../../utils/ventasExcelExport";
-import VentasUploadModal from "./VentasUploadModal";
-import CatalogoUploadModal from "./CatalogoUploadModal";
-import IvaUploadModal from "./IvaUploadModal";
 import VendedorDetail from "./VendedorDetail";
 
 export default function VentasTab({ hook }) {
@@ -54,9 +51,6 @@ export default function VentasTab({ hook }) {
   useEffect(() => {
     setExpandedVendedor(null);
   }, [selectedCargaId]);
-  const [showVentasModal, setShowVentasModal] = useState(false);
-  const [showCatalogoModal, setShowCatalogoModal] = useState(false);
-  const [showIvaModal, setShowIvaModal] = useState(false);
 
   // Build exclusion lookup maps (shared utility)
   const lookups = useMemo(
@@ -175,24 +169,6 @@ export default function VentasTab({ hook }) {
             {isExporting ? "Exportando..." : "Exportar Reporte"}
           </button>
         )}
-        <button
-          onClick={() => setShowCatalogoModal(true)}
-          className="px-3 py-2 bg-emerald-600 rounded-lg text-xs font-bold text-white hover:bg-emerald-700 transition-colors shadow-sm flex items-center gap-1.5"
-        >
-          <Package size={14} /> Cargar Catalogo
-        </button>
-        <button
-          onClick={() => setShowIvaModal(true)}
-          className="px-3 py-2 bg-amber-600 rounded-lg text-xs font-bold text-white hover:bg-amber-700 transition-colors shadow-sm flex items-center gap-1.5"
-        >
-          <Package size={14} /> Tasas IVA
-        </button>
-        <button
-          onClick={() => setShowVentasModal(true)}
-          className="px-3 py-2 bg-indigo-600 rounded-lg text-xs font-bold text-white hover:bg-indigo-700 transition-colors shadow-sm flex items-center gap-1.5"
-        >
-          <Upload size={14} /> Cargar Ventas
-        </button>
 
         {selectedCargaId && (
           <button
@@ -363,21 +339,6 @@ export default function VentasTab({ hook }) {
         </>
       )}
 
-      <VentasUploadModal
-        isOpen={showVentasModal}
-        onClose={() => setShowVentasModal(false)}
-        onSuccess={hook.refreshAfterUpload}
-      />
-      <CatalogoUploadModal
-        isOpen={showCatalogoModal}
-        onClose={() => setShowCatalogoModal(false)}
-        onSuccess={hook.fetchCatalogo}
-      />
-      <IvaUploadModal
-        isOpen={showIvaModal}
-        onClose={() => setShowIvaModal(false)}
-        onSuccess={hook.fetchCatalogo}
-      />
       <ConfirmDialog {...confirmProps} />
     </>
   );

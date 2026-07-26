@@ -54,7 +54,7 @@ async function metaGraphFetch(
 // Main handler
 // --------------------------------------------------------------------------
 
-Deno.serve(async (req: Request) => {
+const handler = (async (req: Request) => {
   // CORS preflight
   if (req.method === "OPTIONS") {
     return corsResponse(req);
@@ -330,3 +330,7 @@ Deno.serve(async (req: Request) => {
     );
   }
 });
+
+// Servido por el router del VPS (Deno) o standalone en Supabase Edge Functions.
+export default handler;
+if (!Deno.env.get("DISTRIMM_ROUTER")) Deno.serve(handler);

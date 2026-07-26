@@ -12,7 +12,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const META_GRAPH_URL = "https://graph.facebook.com/v21.0";
 const REFRESH_THRESHOLD_MS = 14 * 24 * 60 * 60 * 1000; // 14 días
 
-Deno.serve(async (_req: Request) => {
+const handler = (async (_req: Request) => {
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const appId = Deno.env.get("META_APP_ID");
@@ -99,3 +99,7 @@ Deno.serve(async (_req: Request) => {
     { headers: { "Content-Type": "application/json" } },
   );
 });
+
+// Servido por el router del VPS (Deno) o standalone en Supabase Edge Functions.
+export default handler;
+if (!Deno.env.get("DISTRIMM_ROUTER")) Deno.serve(handler);

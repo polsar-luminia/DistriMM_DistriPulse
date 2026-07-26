@@ -61,14 +61,15 @@ async function refreshToken(currentToken: string, appId: string, appSecret: stri
   return { access_token: data.access_token, expires_in: data.expires_in || 5184000 };
 }
 
-/** Envía un mensaje de template a un destinatario. Retorna null si OK, o mensaje de error. */
+/** Envía un mensaje de template a un destinatario.
+ *  Retorna { error: null, wamid } en éxito, o { error: string, wamid: null } en fallo. */
 async function sendTemplateMessage(
   phoneNumberId: string,
   accessToken: string,
   to: string,
   templateName: string,
   params: [string, string, string],
-): Promise<string | null> {
+): Promise<{ error: string | null; wamid: string | null }> {
   const res = await fetch(`${META_GRAPH_URL}/${phoneNumberId}/messages`, {
     method: "POST",
     headers: {
@@ -95,16 +96,17 @@ async function sendTemplateMessage(
   });
   const data = await res.json();
   if (!res.ok || data.error) {
-    return data.error?.message ?? `Meta API error (${res.status})`;
+    return { error: data.error?.message ?? `Meta API error (${res.status})`, wamid: null };
   }
-  return null;
+  const wamid = (data.messages as Array<{ id: string }> | undefined)?.[0]?.id ?? null;
+  return { error: null, wamid };
 }
 
 // --------------------------------------------------------------------------
 // Main handler
 // --------------------------------------------------------------------------
 
-Deno.serve(async (req: Request) => {
+const handler = (async (req: Request) => {
   if (req.method === "OPTIONS") return corsResponse(req);
   if (req.method !== "POST") return errorResponse("Método no permitido", 405, undefined, req);
 
@@ -116,18 +118,16 @@ Deno.serve(async (req: Request) => {
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
-  const supabaseUser = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
-    global: { headers: { Authorization: authHeader } },
-  });
-  const { data: { user }, error: authError } = await supabaseUser.auth.getUser();
+  // Validar JWT del usuario usando service role (no depende de SUPABASE_ANON_KEY)
+  const jwt = authHeader.replace(/^Bearer\s+/i, "");
+  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(jwt);
   if (authError || !user) {
-    console.error("[proxy-whatsapp] Auth failed:", authError?.message, "user:", user?.id ?? "null", "anonKey:", Deno.env.get("SUPABASE_ANON_KEY") ? "present" : "MISSING");
+    console.error("[proxy-whatsapp] Auth failed:", authError?.message, "user:", user?.id ?? "null");
     return errorResponse("Usuario no autenticado", 401, undefined, req);
   }
   console.log(`[proxy-whatsapp] Auth OK: user=${user.id} email=${user.email}`);
-
-  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
   // --- Parsear payload ---
   let rawBody: unknown;
@@ -153,6 +153,8 @@ Deno.serve(async (req: Request) => {
 
   if (instanceError || !instance) return errorResponse("Instancia de WhatsApp no encontrada", 404, undefined, req);
   const inst = instance as InstanceInfo;
+  // Instancia compartida entre usuarios de la organización (commit d20bda7).
+  // No se valida ownership por user_id — basta con que el usuario esté autenticado.
   if (inst.status !== "active") {
     return errorResponse(`La instancia de WhatsApp está ${inst.status}. Reconecta desde Configuración.`, 409, undefined, req);
   }
@@ -220,14 +222,17 @@ Deno.serve(async (req: Request) => {
     const templateName = tipo === "cobro" ? TEMPLATE_COBRO : TEMPLATE_URGENTE;
 
     let errorMsg: string | null = null;
+    let wamid: string | null = null;
     try {
-      errorMsg = await sendTemplateMessage(
+      const result = await sendTemplateMessage(
         inst.phone_number_id,
         credentials.access_token,
         phone,
         templateName,
         [clientName, var2, var3],
       );
+      errorMsg = result.error;
+      wamid = result.wamid;
     } catch (err) {
       errorMsg = (err as Error).message;
     }
@@ -242,39 +247,48 @@ Deno.serve(async (req: Request) => {
           estado_envio: ok ? "enviado" : "fallido",
           error_detalle: errorMsg,
           enviado_at: ok ? new Date().toISOString() : null,
+          wamid,
+          phone_number_id: inst.phone_number_id,
         })
         .eq("id", detalleId);
     }
   }
 
-  // --- Actualizar conteos del lote ---
+  // --- Actualizar conteos del lote (recomputa desde detalle para ser idempotente y correcto en retries) ---
   if (loteId) {
-    const { data: loteRow } = await supabaseAdmin
+    const { data: detalleStats } = await supabaseAdmin
+      .from("distrimm_recordatorios_detalle")
+      .select("estado_envio")
+      .eq("lote_id", loteId);
+
+    const rows = detalleStats || [];
+    const totalEnviados = rows.filter((r) => r.estado_envio === "enviado").length;
+    const totalFallidos = rows.filter((r) => r.estado_envio === "fallido").length;
+    const totalPendientes = rows.filter((r) => r.estado_envio === "pendiente").length;
+
+    const estadoFinal = totalPendientes > 0
+      ? "en_proceso"
+      : totalEnviados === 0
+        ? "fallido"
+        : totalFallidos > 0
+          ? "parcial"
+          : "completado";
+
+    await supabaseAdmin
       .from("distrimm_recordatorios_lote")
-      .select("enviados, fallidos, total_destinatarios")
-      .eq("id", loteId)
-      .single();
-
-    if (loteRow) {
-      const totalEnviados = (loteRow.enviados || 0) + enviados;
-      const totalFallidos = (loteRow.fallidos || 0) + fallidos;
-      const totalProcesados = totalEnviados + totalFallidos;
-      const estadoFinal = totalProcesados >= loteRow.total_destinatarios
-        ? (totalEnviados === 0 ? "fallido" : "completado")
-        : "en_proceso";
-
-      await supabaseAdmin
-        .from("distrimm_recordatorios_lote")
-        .update({
-          enviados: totalEnviados,
-          fallidos: totalFallidos,
-          estado: estadoFinal,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", loteId);
-    }
+      .update({
+        enviados: totalEnviados,
+        fallidos: totalFallidos,
+        estado: estadoFinal,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", loteId);
   }
 
   console.log(`[proxy-whatsapp] Lote completado: ${enviados} enviados, ${fallidos} fallidos`);
   return jsonResponse({ data: { enviados, fallidos, total: items.length } }, 200, req);
 });
+
+// Servido por el router del VPS (Deno) o standalone en Supabase Edge Functions.
+export default handler;
+if (!Deno.env.get("DISTRIMM_ROUTER")) Deno.serve(handler);

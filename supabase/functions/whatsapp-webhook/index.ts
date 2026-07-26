@@ -4,15 +4,27 @@
  *
  * Responsabilidades:
  * 1. GET  — verificación del webhook (challenge de Meta)
- * 2. POST — mensajes entrantes → envía auto-respuesta al remitente
- *
- * La auto-respuesta redirige al cliente al número de atención humana.
+ * 2. POST — mensajes entrantes → rutea por phone_number_id:
+ *    - El Club del Licor (1086250197900757) → forward al bot VPS (analitica.distripolsar.com/bot)
+ *    - DistriPolsar (787779341079688) → reenvía a la Edge Function de DistriPolsar
+ *    - DistriMM → envía auto-respuesta al remitente
  *
  * Secrets requeridos:
  *   WHATSAPP_WEBHOOK_VERIFY_TOKEN — token que configurás en Meta App → Webhooks
- *   META_PHONE_NUMBER_ID          — ID del número desde el que se responde
+ *   META_PHONE_NUMBER_ID          — ID del número desde el que se responde (DistriMM)
  *   META_ACCESS_TOKEN             — token de acceso (long-lived) de Meta
  */
+
+// Phone number ID de El Club del Licor (WABA DistriPolsar, instancia LuminIA aislada).
+// El bot del Club del Licor corre en el VPS (Node.js + OpenAI + pgvector).
+// Aquí solo reenviamos el evento crudo al bot para que procese y responda.
+const CLUB_DEL_LICOR_PHONE_NUMBER_ID = "1086250197900757";
+const CLUB_DEL_LICOR_BOT_URL = "https://analitica.distripolsar.com/bot/webhook";
+
+// Phone number ID de DistriPolsar suscrito a la app DistriMM
+const DISTRIPOLSAR_PHONE_NUMBER_ID = "787779341079688";
+const DISTRIPOLSAR_WEBHOOK_URL =
+  "https://rwxczwykqxhxugmcaoha.supabase.co/functions/v1/whatsapp-webhook";
 
 const META_GRAPH_URL = "https://graph.facebook.com/v21.0";
 
@@ -23,7 +35,7 @@ const AUTO_REPLY_TEXT =
   "📞 *+57 322 3806883*.\n\n" +
   "_Mensaje automático_";
 
-Deno.serve(async (req: Request) => {
+const handler = (async (req: Request) => {
   const url = new URL(req.url);
 
   // -----------------------------------------------------------------------
@@ -59,6 +71,48 @@ Deno.serve(async (req: Request) => {
   // Iterar sobre todos los cambios del evento
   const entries = (body.entry as Array<Record<string, unknown>>) || [];
 
+  // Helper: extraer phone_number_id del primer change del evento
+  const extractPhoneNumberId = (): string | null => {
+    for (const e of entries) {
+      for (const c of ((e.changes as Array<Record<string, unknown>>) || [])) {
+        const meta = ((c.value as Record<string, unknown>)?.metadata as Record<string, unknown>);
+        const pid = meta?.phone_number_id;
+        if (typeof pid === "string") return pid;
+      }
+    }
+    return null;
+  };
+
+  const phoneNumberId = extractPhoneNumberId();
+
+  // Rutear: El Club del Licor → forwardear al bot del VPS (fire-and-forget).
+  if (phoneNumberId === CLUB_DEL_LICOR_PHONE_NUMBER_ID) {
+    console.log("[whatsapp-webhook] Forwarding Club del Licor → VPS bot");
+    fetch(CLUB_DEL_LICOR_BOT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }).catch((err: Error) =>
+      console.error("[whatsapp-webhook] Error forwarding Club del Licor:", err.message)
+    );
+    return new Response("OK", { status: 200 });
+  }
+
+  // Rutear por phone_number_id: si el mensaje pertenece a DistriPolsar, reenviar
+  const isForDistrPolsar = phoneNumberId === DISTRIPOLSAR_PHONE_NUMBER_ID;
+
+  if (isForDistrPolsar) {
+    console.log("[whatsapp-webhook] Redirigiendo evento a DistriPolsar");
+    fetch(DISTRIPOLSAR_WEBHOOK_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }).catch((err: Error) =>
+      console.error("[whatsapp-webhook] Error forwarding DistriPolsar:", err.message)
+    );
+    return new Response("OK", { status: 200 });
+  }
+
   for (const entry of entries) {
     const changes = (entry.changes as Array<Record<string, unknown>>) || [];
 
@@ -74,8 +128,8 @@ Deno.serve(async (req: Request) => {
       const from = msg.from as string; // número del remitente (ej: "573183224021")
       const msgType = msg.type as string;
 
-      // No responder a mensajes de sistema o nuestros propios mensajes
-      if (!from || msgType === "system") continue;
+      // Solo responder a mensajes de texto de clientes reales
+      if (!from || msgType !== "text") continue;
 
       console.log(`[whatsapp-webhook] Mensaje entrante de ${from}, tipo=${msgType}`);
 
@@ -125,3 +179,7 @@ async function sendAutoReply(to: string): Promise<void> {
     console.error("[whatsapp-webhook] Error de red:", (err as Error).message);
   }
 }
+
+// Servido por el router del VPS (Deno) o standalone en Supabase Edge Functions.
+export default handler;
+if (!Deno.env.get("DISTRIMM_ROUTER")) Deno.serve(handler);

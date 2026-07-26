@@ -44,7 +44,6 @@ export default function FilesPage() {
     currentLoadId,
     onLoadChange,
     onDeleteLoad,
-    onUploadClick,
     showExactNumbers = false,
     error: loadError, // Get error from context
   } = context || {};
@@ -170,12 +169,6 @@ export default function FilesPage() {
               {isTesting ? "Comprobando..." : "Diagnosticar"}
             </button>
           )}
-          <button
-            onClick={onUploadClick}
-            className="group px-6 py-2.5 bg-indigo-600 text-white rounded-lg font-black text-sm hover:bg-indigo-500 transition-all flex items-center gap-2 shadow-lg shadow-indigo-900/10 hover:shadow-indigo-900/20 active:scale-95"
-          >
-            <Upload size={18} className="group-hover:bounce" /> Nueva Carga
-          </button>
         </div>
       </div>
 
@@ -385,16 +378,10 @@ export default function FilesPage() {
           <h3 className="font-black text-slate-800 text-xl mb-2">
             Sin Datos Cargados
           </h3>
-          <p className="text-slate-500 max-w-sm mx-auto mb-8 font-medium">
-            Su panel de control está listo. Suba un archivo de cartera para
-            desplegar el análisis financiero impulsado por IA.
+          <p className="text-slate-500 max-w-sm mx-auto font-medium">
+            La información se sincroniza sola desde SAMIT cada 2 horas. Si no
+            aparece nada, revise el estado de la última sincronización.
           </p>
-          <button
-            onClick={onUploadClick}
-            className="px-8 py-4 bg-indigo-600 text-white rounded-xl font-black hover:bg-indigo-500 transition-all shadow-xl shadow-indigo-900/20 active:scale-95 flex items-center gap-3 mx-auto"
-          >
-            <Upload size={20} /> Cargar Primer Archivo
-          </button>
         </Card>
       )}
 

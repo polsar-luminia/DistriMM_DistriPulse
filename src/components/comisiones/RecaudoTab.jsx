@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useContext } from "react";
 import {
   Wallet,
   Upload,
+  Banknote,
   Calendar,
   Loader2,
   DollarSign,
@@ -16,7 +17,6 @@ import {
 import { formatCurrency, formatFullCurrency } from "../../utils/formatters";
 import { clickableProps } from "@/utils/a11y";
 import { Card, KpiCard, EmptyState, MESES } from "./ComisionesShared";
-import RecaudoUploadModal from "./RecaudoUploadModal";
 import { RECAUDO_THRESHOLDS } from "../../constants/thresholds";
 import { DashboardContext } from "../DashboardManager";
 import { getPeriodoOperativo } from "../../utils/periodoOperativo";
@@ -46,7 +46,6 @@ export default function RecaudoTab({ hook }) {
     fetchRecaudosPeriodo(selectedYear, selectedMonth);
   }, [fetchRecaudosPeriodo, selectedYear, selectedMonth]);
 
-  const [showModal, setShowModal] = useState(false);
   const [expandedVendedor, setExpandedVendedor] = useState(null);
 
   // Mapa codigo → nombre desde tabla maestra de vendedores
@@ -128,11 +127,20 @@ export default function RecaudoTab({ hook }) {
     let totalExcluidoIva = 0;
     let countMora = 0;
     let countMarca = 0;
+    let totalContado = 0;
+    let totalCredito = 0;
+    let countContado = 0;
     recaudos.forEach((r) => {
       const val = Number(r.valor_recaudo || 0);
       const exclMarca = Number(r.valor_excluido_marca || 0);
       const iva = Number(r.valor_iva || 0);
       totalRecaudado += val;
+      if (r.origen === "contado") {
+        totalContado += val;
+        countContado += 1;
+      } else {
+        totalCredito += val;
+      }
       // Exclusiones de marca se contabilizan siempre
       if (exclMarca > 0) {
         totalExcluidoMarca += exclMarca;
@@ -160,6 +168,9 @@ export default function RecaudoTab({ hook }) {
       countMora,
       countMarca,
       pctComisionable,
+      totalContado,
+      totalCredito,
+      countContado,
     };
   }, [recaudos]);
 
@@ -212,12 +223,6 @@ export default function RecaudoTab({ hook }) {
 
         <div className="flex-1" />
 
-        <button
-          onClick={() => setShowModal(true)}
-          className="px-3 py-2 bg-emerald-600 rounded-lg text-xs font-bold text-white hover:bg-emerald-700 transition-colors shadow-sm flex items-center gap-1.5"
-        >
-          <Upload size={14} /> Cargar Recaudos
-        </button>
       </div>
 
       {!loadingRecaudos && recaudos.length === 0 ? (
@@ -233,6 +238,11 @@ export default function RecaudoTab({ hook }) {
             <KpiCard
               title="Total Recaudado"
               value={formatCurrency(totals.totalRecaudado)}
+              subtitle={
+                totals.totalContado !== 0
+                  ? `Crédito ${formatCurrency(totals.totalCredito)} · Contado ${formatCurrency(totals.totalContado)}`
+                  : undefined
+              }
               icon={DollarSign}
               type="info"
             />
@@ -375,6 +385,7 @@ export default function RecaudoTab({ hook }) {
                                     <thead className="text-slate-400 uppercase font-bold border-b border-slate-200">
                                       <tr>
                                         <th className="px-6 py-2">Cliente</th>
+                                        <th className="px-3 py-2">Origen</th>
                                         <th className="px-4 py-2">Factura</th>
                                         <th className="px-4 py-2">
                                           Fecha Abono
@@ -408,6 +419,17 @@ export default function RecaudoTab({ hook }) {
                                             <td className="px-6 py-2 truncate max-w-[180px]">
                                               {item.cliente_nombre ||
                                                 item.cliente_nit}
+                                            </td>
+                                            <td className="px-3 py-2">
+                                              {item.origen === "contado" ? (
+                                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                                                  Contado
+                                                </span>
+                                              ) : (
+                                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
+                                                  Crédito
+                                                </span>
+                                              )}
                                             </td>
                                             <td className="px-4 py-2 font-mono">
                                               {item.factura}
@@ -527,11 +549,6 @@ export default function RecaudoTab({ hook }) {
         </>
       )}
 
-      <RecaudoUploadModal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        onSuccess={() => fetchRecaudosPeriodo(selectedYear, selectedMonth)}
-      />
     </>
   );
 }

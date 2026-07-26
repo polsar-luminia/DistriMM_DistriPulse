@@ -74,13 +74,21 @@ export function usePortfolioAnalytics() {
       if (error) throw error;
 
       if (loads && loads.length > 0) {
-        // Update availableLoads IMMEDIATELY so the list appears
-        setData((prev) => ({ ...prev, availableLoads: loads }));
-
-        const latest = loads[0];
+        // CORTE HECHO (26/07/2026): la ÚNICA fuente es el ERP. Una carga por
+        // mes; la más reciente es el mes en curso, que se refresca en cada
+        // sincronización, y los meses cerrados quedan congelados.
+        //
+        // El filtro por origen no es decorativo: si alguien volviera a subir un
+        // Excel, esa carga llevaría fecha de hoy y se convertiría en la vista
+        // por defecto de gerencia. Filtrando aquí, lo manual no puede colarse
+        // aunque quede algún botón de carga vivo.
+        const cargasErp = loads.filter((l) => l.origen === "erp");
+        const visibles = cargasErp.length > 0 ? cargasErp : loads;
+        setData((prev) => ({ ...prev, availableLoads: visibles }));
+        const latest = visibles[0];
         setCurrentLoadId(latest.id);
 
-        return { loads, latestId: latest.id };
+        return { loads: visibles, latestId: latest.id };
       }
       // Even if empty, update state
       setData((prev) => ({ ...prev, availableLoads: [] }));

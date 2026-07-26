@@ -2,7 +2,6 @@
 import React, { useState, useMemo, useCallback } from "react";
 import MainLayout from "../layouts/MainLayout";
 import { usePortfolioAnalytics } from "../hooks/usePortfolioAnalytics";
-import UploadModal from "./UploadModal";
 import { getPeriodoOperativo } from "../utils/periodoOperativo";
 
 // Dashboard and Filter contexts for the page-based architecture
@@ -27,7 +26,6 @@ export default function DashboardManager() {
     deleteLoad,
   } = usePortfolioAnalytics();
 
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
   // --- FILTERS STATE ---
   const [filters, setFilters] = useState({
@@ -149,7 +147,6 @@ export default function DashboardManager() {
   );
 
   // Stable callback for upload click
-  const onUploadClick = useCallback(() => setIsUploadModalOpen(true), []);
 
   // --- MEMOIZED CONTEXT VALUES (prevents unnecessary consumer re-renders) ---
   const dashboardContextValue = useMemo(
@@ -160,7 +157,6 @@ export default function DashboardManager() {
       // Top-level properties for MainLayout & FilesPage
       availableLoads,
       currentLoadId,
-      onUploadClick,
       onDeleteLoad: deleteLoad,
 
       // Data object for Pages (DashboardPage, ClientsPage)
@@ -231,7 +227,6 @@ export default function DashboardManager() {
     [
       availableLoads,
       currentLoadId,
-      onUploadClick,
       deleteLoad,
       sortedItems,
       items,
@@ -269,14 +264,6 @@ export default function DashboardManager() {
     <DashboardContext.Provider value={dashboardContextValue}>
       <FilterContext.Provider value={filterContextValue}>
         <MainLayout dashboardContext={dashboardContextValue} />
-        <UploadModal
-          isOpen={isUploadModalOpen}
-          onClose={() => setIsUploadModalOpen(false)}
-          onUploadSuccess={() => {
-            setIsUploadModalOpen(false);
-            refresh();
-          }}
-        />
       </FilterContext.Provider>
     </DashboardContext.Provider>
   );
