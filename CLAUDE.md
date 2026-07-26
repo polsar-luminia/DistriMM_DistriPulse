@@ -547,9 +547,32 @@ reemplazó, y las columnas se quedan en su default (`true` y `0`).
 **Prerrequisito RESUELTO: 2025 sincronizado (26/07/2026).** El cruce por marca necesita la venta
 original, y muchas facturas de 2025 se cobran en 2026. La forma de validar el port es contrastarlo
 contra las 4.095 filas manuales —mismos insumos, comparar salidas—: daba **98,2%**, y las 43 fallas
-eran todas facturas fuera de la ventana sincronizada. Con 2025 dentro sube a **99,0% y esas 43
-desaparecen**. Quedan **39 filas (0,95%) que difieren por otra causa, sin explicar: entenderlas
-antes de dar el arreglo por bueno.**
+eran todas facturas fuera de la ventana sincronizada. Con 2025 dentro sube a **99,0%**.
+
+**Las 39 filas restantes están todas explicadas, y en las tres causas el número VIEJO es el
+equivocado.** El port en SQL no tiene nada pendiente:
+
+| Causa | Filas | Guardado | Recalculado |
+|---|---|---|---|
+| **A.** El modal leyó cargas solapadas → proporción inestable | 22 | 12.506.590 | 12.480.070 |
+| **B.** El modal no encontró la venta y guardó 0 | 11 | **0** | **4.749.956** |
+| **D.** Factura neteada a 0 (VE+DV se cancelan) | 6 | 0 | 0 |
+| **C.** Sin explicar | **0** | — | — |
+
+**La raíz de (A) es que `enrichRecaudoExclusions` consulta `distrimm_comisiones_ventas`** — la tabla
+CRUDA, justo la que este documento advierte no agregar nunca. Con cargas solapadas la proporción se
+vuelve absurda: la factura 20892 da **250,1%** sobre la tabla cruda (19 líneas en 11 cargas) contra
+40,5% sobre la vista; la 23290 da **236,5%** contra 59,7%. Y como las cargas se acumulaban con los
+días, el resultado dependía de *qué día* se subiera el Excel. Donde no hay solapamiento —la 18387,
+9 líneas en 1 carga— ambos métodos dan **35,7% idéntico**.
+
+(B) es dinero real: el modal dejó de excluir **4.749.956 COP** de base comisionable porque la venta
+no estaba cargada. Iba en contra de la empresa, comisionando marcas excluidas. (A) y (D) son ruido
+—26.520 COP y 0—.
+
+> Para la vista que reemplace esto: (D) obliga a decidir el caso `venta_total = 0` explícitamente
+> (factura devuelta por completo). Hoy la división por cero cae a exclusión 0 y da igual, porque
+> esos abonos vienen en pares +/− que se cancelan. Dejarlo escrito, no implícito.
 
 Mientras no se arregle, **cualquier "Recalcular" sobre un mes con datos del ERP sobreestima la
 comisión por recaudo**: en marzo el vendedor 14 pasaría de 0 a 5.607.828 COP.
