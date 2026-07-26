@@ -241,10 +241,35 @@ Servidor oficina (SERVER, Tailscale)          VPS
 | `clientes` | `G_Clientes`+`G_Municipio` | `distrimm_clientes` | upsert por `no_identif` | ✅ |
 | `inventario` | `IN_ProdBodega`+`IN_Producto` | `distrimm_inventario_items` | full vía `fn_sync_inventario` | ✅ |
 | `cartera` | `CT_Movimientos` cta. `13050501`, **años 2022–2026** | `cartera_items`+`historial_cargas` | full vía `fn_sync_cartera` | ✅ |
-| `ventas` | `IN_Documento`(VE/DV)+`IN_Movimiento` | `distrimm_comisiones_ventas` | full **por mes** vía `fn_sync_ventas` | ✅ |
+| `ventas` | `IN_Documento`(VE/DV)+`IN_Movimiento`, **años 2025–2026** | `distrimm_comisiones_ventas` | full **por mes** vía `fn_sync_ventas` | ✅ |
 | `recaudos` | `CT_Documentos`(RC/NC/CE)+`CT_Movimientos` y ventas sin CxC | `distrimm_comisiones_recaudos` | full por **mes + modalidad** vía `fn_sync_recaudos` | ✅ |
 
 **CORTE HECHO (26/07/2026). La carga manual de Excel ya no existe.** El ERP es la única fuente.
+
+**Backfill de años cerrados.** La tarea programada sincroniza **solo el año en curso**: no tiene
+por qué reprocesar años cerrados cada 2 h. Para traer histórico, una vez y a mano:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File C:\distrimm-sync\sync-samit.ps1 -Dataset ventas -AniosVentas 2025
+```
+
+Cada año vive en su propia base del ERP (`E0032025`, `E0032026`…), así que los **movimientos** se
+leen de la base del año y los **maestros** (vendedor, cliente, municipio) siempre de `E0032026`
+—los nombres vigentes—, igual que ya hacía `Sync-Cartera`. Hoy hay 2025 y 2026: 44.719 líneas.
+Traer 2025 costó ~1 min y **no movió ninguna cifra de 2026** (verificado con huellas md5 de
+`fn_calcular_comisiones` y `fn_sugerido_pedidos` antes y después). Sí mejoró la atribución de
+vendedor en cartera, de 92,2% a 95,1%: facturas viejas que antes no tenían venta contra la cual
+cruzarse.
+
+> Traer 2025 obligó a **ensanchar `margen_pct` de `numeric(8,2)` a `(18,2)`** —ver
+> `sql/widen_margen_pct.sql`—. Hay 15 líneas facturadas a 1 peso con su costo real (obsequios y
+> ajustes) cuyo margen porcentual desborda el tope: `-12.499.900%` en el peor caso. La
+> sincronización moría con `numeric field overflow`. Ojo con los promedios: son atípicos que
+> arrastran cualquier `AVG(margen_pct)`.
+>
+> Además `fn_sync_ventas` descarta a propósito las filas con `valor_total = 0` (mismo filtro que el
+> ETL manual). Por eso 2025 lee 26.770 y escribe 26.762: son 8 líneas en cero, y la cifra de
+> control cuadra en 0. **No es pérdida de datos.**
 
 ### Modelo de visualización: UNA CARGA POR MES
 
@@ -518,6 +543,13 @@ reemplazó, y las columnas se quedan en su default (`true` y `0`).
   → catálogo → exclusiones, y se descuenta del abono la **proporción** que en esa factura
   correspondía a marcas excluidas. Hoy hay 3 activas —ADAMA, AGROCENTRO y CONTEGRAL— que pesan el
   **21,3%** de las ventas. La comparación va con `normalize_brand()` a ambos lados.
+
+**Prerrequisito RESUELTO: 2025 sincronizado (26/07/2026).** El cruce por marca necesita la venta
+original, y muchas facturas de 2025 se cobran en 2026. La forma de validar el port es contrastarlo
+contra las 4.095 filas manuales —mismos insumos, comparar salidas—: daba **98,2%**, y las 43 fallas
+eran todas facturas fuera de la ventana sincronizada. Con 2025 dentro sube a **99,0% y esas 43
+desaparecen**. Quedan **39 filas (0,95%) que difieren por otra causa, sin explicar: entenderlas
+antes de dar el arreglo por bueno.**
 
 Mientras no se arregle, **cualquier "Recalcular" sobre un mes con datos del ERP sobreestima la
 comisión por recaudo**: en marzo el vendedor 14 pasaría de 0 a 5.607.828 COP.

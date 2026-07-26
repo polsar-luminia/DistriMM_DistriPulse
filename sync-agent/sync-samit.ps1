@@ -19,7 +19,12 @@ param(
   [string]$Dataset = "todos",
   [switch]$DryRun,
   # Reconstruye los meses cerrados del anio, no solo el mes en curso.
-  [switch]$Backfill
+  [switch]$Backfill,
+  # Anios de ventas a sincronizar. Vacio = solo el anio en curso, que es como
+  # corre la tarea programada. Para traer historico:
+  #   -Dataset ventas -AniosVentas 2025
+  # Cada anio vive en su propia base del ERP (E0032025, E0032026...).
+  [int[]]$AniosVentas = @()
 )
 
 $ErrorActionPreference = "Stop"
@@ -277,13 +282,24 @@ WHERE $exprCant <> 0 OR pb.Remisionado <> 0
 #
 # Las devoluciones (DV) tienen VrVenta POSITIVO en el ERP; el signo negativo lo
 # pone el ETL, y aquí se replica igual (ventasUpload.js:49).
-$ANIOS_VENTAS = 2026
+# Años a sincronizar. Por defecto SOLO el año en curso: la tarea programada corre
+# cada 2 h y no tiene por qué reprocesar años cerrados. Para traer histórico se
+# pasa -AniosVentas 2025 (o 2024,2025) una vez, a mano.
+#
+# Al cerrar el año el ERP abre una base nueva (E0032025, E0032026...), así que
+# los movimientos se leen de la base del año. Los MAESTROS (vendedor, cliente,
+# municipio) se leen siempre de E0032026: son los nombres vigentes, y es el mismo
+# criterio que ya usa Sync-Cartera.
+$ANIOS_VENTAS = if ($AniosVentas -and $AniosVentas.Count -gt 0) { $AniosVentas }
+                else { @((Get-Date).Year) }
 
 function Sync-Ventas {
   foreach ($anio in $ANIOS_VENTAS) {
+    $db = "E003$anio"
+    Escribir-Log "ventas: año $anio (base $db)"
     $meses = Consultar @"
 SELECT DISTINCT CONVERT(varchar(7), d.FechaDoc, 126) AS periodo
-FROM IN_Documento d WITH (NOLOCK)
+FROM $db.dbo.IN_Documento d WITH (NOLOCK)
 WHERE d.TipoDoc IN ('VE','DV') AND ISNULL(d.Anulado,0)=0
   AND YEAR(d.FechaDoc) = $anio
 ORDER BY 1
@@ -310,11 +326,11 @@ SELECT m.Documento                                   AS erp_documento,
             ELSE m.VrVenta + m.VrIva END             AS valor_total,
        CASE WHEN d.TipoDoc='DV' THEN -m.Costo ELSE m.Costo END AS costo,
        m.Descuento                                   AS descuento
-FROM IN_Documento  d WITH (NOLOCK)
-JOIN IN_Movimiento m WITH (NOLOCK) ON m.Documento = d.Secuencial
-LEFT JOIN IN_Vendedor  iv WITH (NOLOCK) ON iv.CodVendedor   = d.Vendedor
-LEFT JOIN G_Clientes   g  WITH (NOLOCK) ON g.Identificacion = d.Tercero
-LEFT JOIN G_Municipio  mu WITH (NOLOCK) ON mu.IdMunicipio   = g.Municipio
+FROM $db.dbo.IN_Documento  d WITH (NOLOCK)
+JOIN $db.dbo.IN_Movimiento m WITH (NOLOCK) ON m.Documento = d.Secuencial
+LEFT JOIN E0032026.dbo.IN_Vendedor  iv WITH (NOLOCK) ON iv.CodVendedor   = d.Vendedor
+LEFT JOIN E0032026.dbo.G_Clientes   g  WITH (NOLOCK) ON g.Identificacion = d.Tercero
+LEFT JOIN E0032026.dbo.G_Municipio  mu WITH (NOLOCK) ON mu.IdMunicipio   = g.Municipio
 WHERE d.TipoDoc IN ('VE','DV') AND ISNULL(d.Anulado,0)=0
   AND CONVERT(varchar(7), d.FechaDoc, 126) = '$periodo'
 "@
