@@ -1,6 +1,28 @@
 import { normalizeBrand } from "../../utils/brandNormalization";
+import { RECAUDO_THRESHOLDS } from "../../constants/thresholds";
 
 const normalizeCode = (value) => String(value ?? "").trim().toUpperCase();
+
+/**
+ * Días de mora máximos para que un recaudo comisione.
+ *
+ * La fuente es la base —fila `tipo='dias_mora'` de las exclusiones, editable
+ * desde la pantalla de Exclusiones—, no `thresholds.js`. Se lee del arreglo que
+ * ya trae `getExclusiones()`; no hace falta una consulta aparte.
+ *
+ * El respaldo solo entra si la fila no está o trae basura, y es deliberadamente
+ * el mismo 72 histórico: ante un fallo de lectura conviene liquidar como
+ * siempre, no dejar de excluir a nadie (que sería sobrepagar).
+ */
+export function leerDiasMoraLimite(exclusiones) {
+  const fila = (exclusiones || []).find(
+    (e) => e.tipo === "dias_mora" && e.activa !== false,
+  );
+  const n = Number(fila?.valor);
+  return Number.isInteger(n) && n > 0
+    ? n
+    : RECAUDO_THRESHOLDS.DIAS_MORA_LIMITE;
+}
 
 export function getExclusionInfo(
   productoCode,

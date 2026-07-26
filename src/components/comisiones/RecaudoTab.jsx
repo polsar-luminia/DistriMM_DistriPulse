@@ -17,12 +17,10 @@ import {
 import { formatCurrency, formatFullCurrency } from "../../utils/formatters";
 import { clickableProps } from "@/utils/a11y";
 import { Card, KpiCard, EmptyState, MESES } from "./ComisionesShared";
-import { RECAUDO_THRESHOLDS } from "../../constants/thresholds";
+import { leerDiasMoraLimite } from "../../hooks/comisiones/utils";
 import { DashboardContext } from "../DashboardManager";
 import { getPeriodoOperativo } from "../../utils/periodoOperativo";
 import { getVendedores } from "../../services/portfolioService";
-
-const { DIAS_MORA_LIMITE } = RECAUDO_THRESHOLDS;
 
 export default function RecaudoTab({ hook }) {
   const {
@@ -31,7 +29,12 @@ export default function RecaudoTab({ hook }) {
     recaudos,
     loadingRecaudos,
     fetchRecaudosPeriodo,
+    exclusiones,
   } = hook;
+
+  // El límite lo configura gerencia desde Exclusiones y vive en la base; la
+  // constante de thresholds.js quedó solo como respaldo.
+  const DIAS_MORA_LIMITE = leerDiasMoraLimite(exclusiones);
 
   // Periodo operativo
   const dashCtx = useContext(DashboardContext);

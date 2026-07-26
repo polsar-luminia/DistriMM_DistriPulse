@@ -590,11 +590,16 @@ Aplicando los dos candados a mano sobre los datos sincronizados:
 **Mayo, junio y julio cuadran: los ceros son correctos, ahí nadie quedó mal pagado.** Marzo y abril
 son de la era manual y no son comparables fila a fila (el ERP suma NC y CE, que el Excel no traía).
 
-> Al arreglarlo hay dos decisiones de diseño abiertas: **(1)** el umbral 72 vive en
-> `thresholds.js`; escribirlo también en SQL deja el mismo riesgo que `normalize_brand` — dos
-> copias que divergen en silencio. **(2)** el modal guardaba estos valores *congelados* al cargar;
-> si en vez de eso se calculan al liquidar, cambiar una exclusión de marca recalcularía también los
-> meses viejos. Son comportamientos distintos, hay que elegir a propósito.
+> **(1) RESUELTO — el umbral vive en la base (26/07/2026).** Fila única `tipo='dias_mora'` de
+> `distrimm_comisiones_exclusiones`, configurable desde la pantalla de Exclusiones. `thresholds.js`
+> quedó solo como respaldo si la base no responde; **cambiarlo ahí ya no cambia la liquidación**.
+> Se lee con `leerDiasMoraLimite(exclusiones)` — llega dentro de `getExclusiones()`, sin consulta
+> aparte. Ver `sql/dias_mora_configurable.sql`.
+>
+> **(2) ABIERTO** — el modal guardaba estos valores *congelados* al cargar; si en vez de eso se
+> calculan al liquidar, cambiar una exclusión de marca recalcularía también los meses viejos. Son
+> comportamientos distintos, hay que elegir a propósito. (El snapshot ya congela la liquidación por
+> su cuenta, así que congelar además en la fila es congelar dos veces.)
 
 **DECISIÓN DEL DUEÑO (26/07/2026): los snapshots de marzo a junio se dejan como están.** Son el
 registro de lo que se liquidó en la era manual. **No pulsar "Recalcular" en esos meses.**

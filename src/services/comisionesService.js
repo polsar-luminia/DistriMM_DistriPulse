@@ -194,6 +194,37 @@ export const toggleExclusion = async (id, activa) => {
   }
 };
 
+/**
+ * Días de mora máximos para que un recaudo comisione.
+ *
+ * Vive en la base (fila única `tipo='dias_mora'` de las exclusiones), no en
+ * `thresholds.js`: el cálculo también corre en SQL y una constante de JS que el
+ * servidor no puede leer se convierte en dos copias que divergen —el problema
+ * que ya arrastra `normalize_brand`—.
+ *
+ * Llega dentro de `getExclusiones()`, así que normalmente se lee de ahí con
+ * `leerDiasMoraLimite()` en vez de pedirlo aparte.
+ */
+export const setDiasMoraLimite = async (dias) => {
+  const n = Number(dias);
+  if (!Number.isInteger(n) || n <= 0 || n > 9999) {
+    return { success: false, error: new Error("Los días de mora deben ser un entero entre 1 y 9999") };
+  }
+  try {
+    const { error } = await supabase
+      .from("distrimm_comisiones_exclusiones")
+      .update({ valor: String(n), activa: true })
+      .eq("tipo", "dias_mora");
+
+    if (error) throw error;
+    return { success: true, error: null };
+  } catch (error) {
+    if (import.meta.env.DEV)
+      console.error("[comisionesService] Error setting dias_mora:", error);
+    return { success: false, error };
+  }
+};
+
 export const getCargasByMonth = async (year, month) => {
   try {
     const startDate = `${year}-${String(month).padStart(2, "0")}-01`;

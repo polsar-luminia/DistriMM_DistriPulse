@@ -126,5 +126,9 @@ export function useComisionesExclusiones() {
     removeExclusion,
     toggleExclusion,
     setFetchComisionesRef,
+    // El límite de días de mora también vive en esta tabla y se edita desde
+    // ExclusionesTab; tras guardarlo hay que releer para que la UI y la huella
+    // de snapshots vean el valor nuevo.
+    refetchExclusiones: fetchExclusiones,
   };
 }

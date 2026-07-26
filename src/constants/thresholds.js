@@ -51,6 +51,18 @@ export const DISPLAY_LIMITS = {
 
 // Recaudo (collections) thresholds
 export const RECAUDO_THRESHOLDS = {
+  // ⚠️ YA NO ES LA FUENTE DE VERDAD (26/07/2026). Solo el respaldo si la base
+  // no responde.
+  //
+  // El umbral vive en el VPS, en la fila `tipo='dias_mora'` de
+  // `distrimm_comisiones_exclusiones`, y se configura desde la pantalla de
+  // Exclusiones. Se movió porque el cálculo también corre en SQL: una constante
+  // de JS que el servidor no puede leer obliga a escribirla dos veces, y dos
+  // copias divergen en silencio (le pasa a `normalize_brand`).
+  //
+  // Para leerlo: `leerDiasMoraLimite(exclusiones)` en hooks/comisiones/utils.js.
+  // Cambiarlo aquí NO cambia la liquidación.
+  //
   // Días máximos entre emisión de factura y pago para que el recaudo comisione.
   // Se amplió de 70 a 72 (jul/2026) porque los días se cuentan desde la fecha
   // de factura y pagos legítimos quedaban por fuera por 1-2 días.
