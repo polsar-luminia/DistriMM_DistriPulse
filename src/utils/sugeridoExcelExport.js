@@ -1,10 +1,13 @@
 /**
  * @fileoverview Exportación a Excel del Sugerido de Pedidos.
- * Hoja 1: solo productos con sugerido > 0 (orden de compra).
- * Hoja 2: análisis completo con clasificación de stock.
+ * El alcance lo elige el usuario en el modal de exportación:
+ * "Orden de compra" (solo sugerido > 0), "Análisis completo" (todo lo
+ * filtrado) o ambas hojas. Siempre se agrega una hoja "Parámetros" con el
+ * cálculo y el recorte aplicado, para que el archivo se explique solo.
  * @module utils/sugeridoExcelExport
  */
 import { CLASIFICACION_META } from "../components/sugerido/clasificacion";
+import { describirFiltros } from "./sugeridoFiltros";
 
 const HEADER_STYLE = {
   font: { bold: true, color: { rgb: "FFFFFF" } },
@@ -13,6 +16,13 @@ const HEADER_STYLE = {
 };
 
 const MONEY_FMT = '"$"#,##0';
+
+/** Etiquetas del alcance, para la hoja "Parámetros". */
+const ALCANCE_ETIQUETA = {
+  POR_PEDIR: "Orden de compra (solo productos por pedir)",
+  COMPLETO: "Análisis completo",
+  AMBOS: "Orden de compra y análisis completo",
+};
 
 function buildSheet(XLSX, rows, { incluirEstado }) {
   const header = [
@@ -85,29 +95,54 @@ function buildSheet(XLSX, rows, { incluirEstado }) {
 }
 
 /**
+ * Sufijo del nombre de archivo. Solo se agrega cuando el recorte es de un
+ * único proveedor o una única línea: es el caso que se manda por correo y
+ * conviene que se distinga sin abrirlo.
+ * @param {{marcas: string[], categorias: string[]}} filtros
+ * @returns {string}
+ */
+function sufijoArchivo(filtros) {
+  const etiqueta =
+    (filtros?.marcas?.length === 1 && filtros.marcas[0]) ||
+    (filtros?.categorias?.length === 1 && filtros.categorias[0]) ||
+    "";
+  if (!etiqueta) return "";
+  // Los caracteres inválidos en nombres de archivo se colapsan a "_"
+  return "_" + etiqueta.replace(/[^\p{L}\p{N}]+/gu, "_").replace(/^_|_$/g, "");
+}
+
+/**
  * Genera y descarga el Excel del sugerido.
- * @param {Object[]} rows - Resultado completo de fn_sugerido_pedidos
+ * @param {Object[]} rows - Filas ya recortadas por el modal de exportación
  * @param {{diasCobertura: number, pctCrecimiento: number, pctReserva: number, diasAnalisis: number}} params
  * @param {{fecha_saldos: string}} carga - Carga de inventario usada
+ * @param {Object} [opciones]
+ * @param {"POR_PEDIR"|"COMPLETO"|"AMBOS"} [opciones.alcance="AMBOS"] - Qué hojas incluir
+ * @param {Object} [opciones.filtros] - Recorte aplicado, para la hoja "Parámetros"
  */
-export async function generarSugeridoExcel(rows, params, carga) {
+export async function generarSugeridoExcel(rows, params, carga, opciones = {}) {
+  const { alcance = "AMBOS", filtros } = opciones;
   const XLSX = await import("xlsx-js-style");
 
   const wb = XLSX.utils.book_new();
 
-  const porPedir = rows.filter((r) => Number(r.sugerido_cantidad) > 0);
-  XLSX.utils.book_append_sheet(
-    wb,
-    buildSheet(XLSX, porPedir, { incluirEstado: false }),
-    "Sugerido de compra",
-  );
-  XLSX.utils.book_append_sheet(
-    wb,
-    buildSheet(XLSX, rows, { incluirEstado: true }),
-    "Análisis completo",
-  );
+  if (alcance === "POR_PEDIR" || alcance === "AMBOS") {
+    const porPedir = rows.filter((r) => Number(r.sugerido_cantidad) > 0);
+    XLSX.utils.book_append_sheet(
+      wb,
+      buildSheet(XLSX, porPedir, { incluirEstado: false }),
+      "Sugerido de compra",
+    );
+  }
+  if (alcance === "COMPLETO" || alcance === "AMBOS") {
+    XLSX.utils.book_append_sheet(
+      wb,
+      buildSheet(XLSX, rows, { incluirEstado: true }),
+      "Análisis completo",
+    );
+  }
 
-  // Hoja de parámetros para trazabilidad del cálculo
+  // Hoja de parámetros para trazabilidad del cálculo y del recorte
   const paramsSheet = XLSX.utils.aoa_to_sheet([
     ["Parámetros del cálculo"],
     ["Fecha de saldos", carga?.fecha_saldos || ""],
@@ -116,10 +151,17 @@ export async function generarSugeridoExcel(rows, params, carga) {
     ["Reserva (%)", params.pctReserva],
     ["Ventana de análisis (días)", params.diasAnalisis],
     ["Bodegas incluidas", "1, 5, 6"],
+    [],
+    ["Filtros aplicados a la exportación"],
+    ["Alcance", ALCANCE_ETIQUETA[alcance] || alcance],
+    ...(filtros ? describirFiltros(filtros) : [["Filtros", "Ninguno"]]),
   ]);
-  paramsSheet["!cols"] = [{ wch: 26 }, { wch: 16 }];
+  paramsSheet["!cols"] = [{ wch: 26 }, { wch: 40 }];
   XLSX.utils.book_append_sheet(wb, paramsSheet, "Parámetros");
 
   const fecha = carga?.fecha_saldos || new Date().toISOString().slice(0, 10);
-  XLSX.writeFile(wb, `Sugerido_Pedidos_${fecha}.xlsx`);
+  XLSX.writeFile(
+    wb,
+    `Sugerido_Pedidos_${fecha}${sufijoArchivo(filtros || {})}.xlsx`,
+  );
 }

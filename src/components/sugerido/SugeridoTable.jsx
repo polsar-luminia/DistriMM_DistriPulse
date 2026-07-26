@@ -11,7 +11,19 @@ const COLUMNS = [
   { key: "producto_codigo", label: "Código", align: "left" },
   { key: "producto_nombre", label: "Producto", align: "left" },
   { key: "marca", label: "Marca", align: "left" },
+  {
+    key: "costo_unitario",
+    label: "Costo unit.",
+    align: "right",
+    title: "Último valor de compra del producto",
+  },
   { key: "stock", label: "Stock", align: "right" },
+  {
+    key: "stock_valor",
+    label: "Valor stock",
+    align: "right",
+    title: "Existencia valorizada en bodegas 1, 5 y 6",
+  },
   { key: "venta_diaria", label: "Venta/día", align: "right" },
   { key: "cobertura_dias", label: "Cobertura", align: "right" },
   { key: "ultima_venta", label: "Últ. venta", align: "center" },
@@ -79,6 +91,7 @@ export default function SugeridoTable({ rows }) {
               {COLUMNS.map((c) => (
                 <th
                   key={c.key}
+                  title={c.title}
                   className={cn(
                     "px-3 py-2.5 cursor-pointer select-none whitespace-nowrap hover:text-slate-800 transition-colors",
                     c.align === "right" && "text-right",
@@ -116,6 +129,11 @@ export default function SugeridoTable({ rows }) {
                   <td className="px-3 py-2 text-xs text-slate-500 truncate max-w-[120px]">
                     {row.marca}
                   </td>
+                  <td className="px-3 py-2 text-xs text-right font-mono tabular-nums text-slate-600">
+                    {Number(row.costo_unitario) > 0
+                      ? formatFullCurrency(row.costo_unitario)
+                      : "—"}
+                  </td>
                   <td className="px-3 py-2 text-xs text-right font-mono tabular-nums">
                     {Number(row.stock)}
                     {Number(row.transito) > 0 && (
@@ -127,6 +145,11 @@ export default function SugeridoTable({ rows }) {
                         +{Number(row.transito)}
                       </span>
                     )}
+                  </td>
+                  <td className="px-3 py-2 text-xs text-right font-mono tabular-nums text-slate-600">
+                    {Number(row.stock_valor) > 0
+                      ? formatFullCurrency(row.stock_valor)
+                      : "—"}
                   </td>
                   <td className="px-3 py-2 text-xs text-right font-mono tabular-nums">
                     {Number(row.venta_diaria).toFixed(2)}

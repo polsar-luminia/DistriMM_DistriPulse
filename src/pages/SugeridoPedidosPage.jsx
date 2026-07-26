@@ -5,12 +5,11 @@
  * el stock (agotado, crítico, normal, lento, muerto).
  * @module pages/SugeridoPedidosPage
  */
-import React, { useState, useMemo, useCallback, useEffect } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import {
   ShoppingCart,
   Trash2,
   FileDown,
-  Search,
   PackageX,
   PackageCheck,
   Skull,
@@ -19,26 +18,22 @@ import {
   Loader2,
 } from "lucide-react";
 import { sileo } from "sileo";
-import { cn } from "@/lib/utils";
 import { useSugeridoPedidos } from "../hooks/useSugeridoPedidos";
 import { formatCurrency, formatDateUTC } from "../utils/formatters";
 import { Card, KpiCard, EmptyState } from "../components/comisiones/ComisionesShared";
 import SugeridoParamsBar from "../components/sugerido/SugeridoParamsBar";
 import SugeridoTable from "../components/sugerido/SugeridoTable";
-import { CLASIFICACION_META } from "../components/sugerido/clasificacion";
+import SugeridoFiltros from "../components/sugerido/SugeridoFiltros";
+import SugeridoExportModal from "../components/sugerido/SugeridoExportModal";
 import ConfirmDialog from "../components/ConfirmDialog";
 import { useConfirm } from "../hooks/useConfirm";
 import { generarSugeridoExcel } from "../utils/sugeridoExcelExport";
-
-const FILTROS = [
-  { key: "TODOS", label: "Todos" },
-  { key: "POR_PEDIR", label: "Por pedir" },
-  { key: "AGOTADO", label: "Agotados" },
-  { key: "CRITICO", label: "Críticos" },
-  { key: "NORMAL", label: "Normales" },
-  { key: "LENTO", label: "Lentos" },
-  { key: "MUERTO", label: "Muertos" },
-];
+import {
+  FILTROS_INICIALES,
+  aplicarAlcance,
+  aplicarEstado,
+  aplicarBusqueda,
+} from "../utils/sugeridoFiltros";
 
 export default function SugeridoPedidosPage() {
   const hook = useSugeridoPedidos();
@@ -57,11 +52,14 @@ export default function SugeridoPedidosPage() {
   } = hook;
 
   const [confirmProps, confirm] = useConfirm();
-  const [filtro, setFiltro] = useState("TODOS");
-  const [filtroMarca, setFiltroMarca] = useState("TODAS");
-  const [filtroCategoria, setFiltroCategoria] = useState("TODAS");
-  const [search, setSearch] = useState("");
-  const [exporting, setExporting] = useState(false);
+  const [filtros, setFiltros] = useState(FILTROS_INICIALES);
+  const [exportOpen, setExportOpen] = useState(false);
+
+  const setFiltro = useCallback(
+    (patch) => setFiltros((f) => ({ ...f, ...patch })),
+    [],
+  );
+  const limpiarFiltros = useCallback(() => setFiltros(FILTROS_INICIALES), []);
 
   // Opciones de proveedor (marca) y línea (categoría) presentes en la carga
   const opcionesMarca = useMemo(
@@ -79,25 +77,21 @@ export default function SugeridoPedidosPage() {
     [rows],
   );
 
-  // Reset de filtros proveedor/línea al cambiar de carga (evita resultados vacíos)
-  useEffect(() => {
-    setFiltroMarca("TODAS");
-    setFiltroCategoria("TODAS");
-  }, [selectedCargaId]);
+  // Reset de filtros al cambiar de carga: un proveedor de la carga anterior
+  // puede no existir en la nueva y dejaría la tabla vacía sin explicación.
+  // Ajuste en render (no en efecto) para no pintar un frame con los filtros
+  // viejos aplicados sobre las filas nuevas.
+  const [cargaFiltrada, setCargaFiltrada] = useState(selectedCargaId);
+  if (cargaFiltrada !== selectedCargaId) {
+    setCargaFiltrada(selectedCargaId);
+    setFiltros(FILTROS_INICIALES);
+  }
 
   const selectedCarga = cargas.find((c) => c.id === selectedCargaId);
 
-  // Filas dentro del proveedor/línea seleccionados — base de KPIs, contadores y tabla
-  const rowsScoped = useMemo(() => {
-    let result = rows;
-    if (filtroMarca !== "TODAS") {
-      result = result.filter((r) => r.marca === filtroMarca);
-    }
-    if (filtroCategoria !== "TODAS") {
-      result = result.filter((r) => r.categoria_nombre === filtroCategoria);
-    }
-    return result;
-  }, [rows, filtroMarca, filtroCategoria]);
+  // Universo tras los filtros de alcance (proveedor, línea, última venta,
+  // stock) — base de los KPIs y de los contadores de las pastillas de estado
+  const rowsScoped = useMemo(() => aplicarAlcance(rows, filtros), [rows, filtros]);
 
   const stats = useMemo(() => {
     const porClasificacion = {};
@@ -118,24 +112,14 @@ export default function SugeridoPedidosPage() {
     return { porClasificacion, porPedir, costoPedido, valorMuerto, valorLento };
   }, [rowsScoped]);
 
-  const filteredRows = useMemo(() => {
-    let result = rowsScoped;
-    if (filtro === "POR_PEDIR") {
-      result = result.filter((r) => Number(r.sugerido_cantidad) > 0);
-    } else if (filtro !== "TODOS") {
-      result = result.filter((r) => r.clasificacion === filtro);
-    }
-    const q = search.trim().toLowerCase();
-    if (q) {
-      result = result.filter(
-        (r) =>
-          r.producto_codigo?.toLowerCase().includes(q) ||
-          r.producto_nombre?.toLowerCase().includes(q) ||
-          r.marca?.toLowerCase().includes(q),
-      );
-    }
-    return result;
-  }, [rowsScoped, filtro, search]);
+  const filteredRows = useMemo(
+    () =>
+      aplicarBusqueda(
+        aplicarEstado(rowsScoped, filtros.estado),
+        filtros.search,
+      ),
+    [rowsScoped, filtros.estado, filtros.search],
+  );
 
   const filtroCount = useCallback(
     (key) => {
@@ -161,18 +145,20 @@ export default function SugeridoPedidosPage() {
     else sileo.error("No se pudo eliminar la carga");
   };
 
-  const handleExport = async () => {
-    if (exporting || rowsScoped.length === 0) return;
-    setExporting(true);
+  /**
+   * El recorte lo decide el modal (proveedor, línea, estado…), no lo que esté
+   * filtrado en pantalla: exportar la orden de un proveedor no debería
+   * obligar a cambiar la vista.
+   */
+  const handleExport = async (rowsExport, opciones) => {
     try {
-      // Respeta el filtro de proveedor/línea (p. ej. exportar la orden de un proveedor)
-      await generarSugeridoExcel(rowsScoped, params, selectedCarga);
+      await generarSugeridoExcel(rowsExport, params, selectedCarga, opciones);
       sileo.success("Excel generado");
     } catch (err) {
       if (import.meta.env.DEV) console.error("Export sugerido error:", err);
       sileo.error("Error generando el Excel");
-    } finally {
-      setExporting(false);
+      // Se relanza para que el modal siga abierto y se pueda reintentar
+      throw err;
     }
   };
 
@@ -222,15 +208,11 @@ export default function SugeridoPedidosPage() {
                 <Trash2 size={16} />
               </button>
               <button
-                onClick={handleExport}
-                disabled={exporting || rowsScoped.length === 0}
+                onClick={() => setExportOpen(true)}
+                disabled={calculando || rows.length === 0}
                 className="flex items-center gap-2 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg text-sm font-bold hover:bg-slate-50 disabled:opacity-50 transition-colors"
               >
-                {exporting ? (
-                  <Loader2 size={16} className="animate-spin" />
-                ) : (
-                  <FileDown size={16} />
-                )}
+                <FileDown size={16} />
                 Exportar
               </button>
             </>
@@ -314,78 +296,14 @@ export default function SugeridoPedidosPage() {
               </div>
 
               {/* Filtros + búsqueda */}
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="flex flex-wrap gap-1.5 bg-slate-100 rounded-xl p-1.5 w-fit">
-                  {FILTROS.map((f) => {
-                    const meta = CLASIFICACION_META[f.key];
-                    return (
-                      <button
-                        key={f.key}
-                        onClick={() => setFiltro(f.key)}
-                        className={cn(
-                          "px-3 py-1.5 text-xs font-bold rounded-lg transition-all whitespace-nowrap",
-                          filtro === f.key
-                            ? "bg-indigo-600 text-white shadow-lg shadow-indigo-900/20"
-                            : "text-slate-500 hover:text-slate-800 hover:bg-slate-200",
-                        )}
-                      >
-                        {f.label}
-                        <span
-                          className={cn(
-                            "ml-1.5 px-1.5 py-0.5 rounded-full text-[10px]",
-                            filtro === f.key
-                              ? "bg-white/20"
-                              : meta?.badge || "bg-slate-200 text-slate-500",
-                          )}
-                        >
-                          {filtroCount(f.key)}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-                <select
-                  value={filtroMarca}
-                  onChange={(e) => setFiltroMarca(e.target.value)}
-                  aria-label="Filtrar por proveedor"
-                  className="px-3 py-2 border border-slate-300 rounded-lg text-sm font-medium bg-white focus:ring-2 focus:ring-indigo-500 max-w-[200px]"
-                >
-                  <option value="TODAS">Todos los proveedores</option>
-                  {opcionesMarca.map((m) => (
-                    <option key={m} value={m}>
-                      {m}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  value={filtroCategoria}
-                  onChange={(e) => setFiltroCategoria(e.target.value)}
-                  aria-label="Filtrar por línea"
-                  className="px-3 py-2 border border-slate-300 rounded-lg text-sm font-medium bg-white focus:ring-2 focus:ring-indigo-500 max-w-[200px]"
-                >
-                  <option value="TODAS">Todas las líneas</option>
-                  {opcionesCategoria.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-
-                <div className="relative ml-auto">
-                  <Search
-                    size={16}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-                  />
-                  <input
-                    type="text"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Buscar producto, código o marca..."
-                    aria-label="Buscar producto"
-                    className="pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm w-64 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  />
-                </div>
-              </div>
+              <SugeridoFiltros
+                filtros={filtros}
+                onChange={setFiltro}
+                onLimpiar={limpiarFiltros}
+                opcionesMarca={opcionesMarca}
+                opcionesCategoria={opcionesCategoria}
+                contarEstado={filtroCount}
+              />
 
               {/* Tabla */}
               <SugeridoTable rows={filteredRows} />
@@ -394,6 +312,15 @@ export default function SugeridoPedidosPage() {
         </>
       )}
 
+      <SugeridoExportModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        rows={rows}
+        filtrosPantalla={filtros}
+        opcionesMarca={opcionesMarca}
+        opcionesCategoria={opcionesCategoria}
+        onExportar={handleExport}
+      />
     </div>
   );
 }
