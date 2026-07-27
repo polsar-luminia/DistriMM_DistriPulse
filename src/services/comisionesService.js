@@ -319,6 +319,13 @@ export const deleteRecaudoCarga = async (id) => {
  * filas del ERP; la sincronización no los escribe y la tabla los deja en
  * `true` y `0`, es decir, comisionando todo. Las filas manuales pasan intactas.
  * Ver sql/recaudos_comisionables.sql.
+ *
+ * **`fuente='erp'` NO es opcional.** Un mes de la época de convivencia tiene
+ * carga manual Y carga sincronizada con los mismos abonos: julio 2026 sumaba
+ * 1.139.043.169 (590.003.732 del ERP + 549.039.437 del Excel) cuando lo real
+ * eran 590 millones. Sin este filtro se cuenta el mismo dinero dos veces, y
+ * `dedupeRecaudosDentroDeCarga` no lo evita porque su llave incluye
+ * `carga_id`. Marzo a julio de 2026 tienen las dos fuentes.
  */
 export const getRecaudosByPeriodo = async (year, month) => {
   try {
@@ -328,6 +335,7 @@ export const getRecaudosByPeriodo = async (year, month) => {
         .select("*")
         .eq("periodo_year", year)
         .eq("periodo_month", month)
+        .eq("fuente", "erp")
         .order("id")
         .range(from, to),
     );

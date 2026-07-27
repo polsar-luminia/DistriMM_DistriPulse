@@ -49,6 +49,20 @@ export default function RecaudoTab({ hook }) {
     fetchRecaudosPeriodo(selectedYear, selectedMonth);
   }, [fetchRecaudosPeriodo, selectedYear, selectedMonth]);
 
+  // Cargas que realmente alimentan lo que se está viendo: las del ERP del mes
+  // seleccionado (crédito y contado). `recaudoCargas` trae TODAS las de todos
+  // los periodos —incluidas las manuales de la era del Excel—, así que
+  // contarlas junto al selector de mes daba a entender que julio tenía 24.
+  const cargasDelPeriodo = useMemo(
+    () =>
+      recaudoCargas.filter((c) => {
+        if (c.fuente !== "erp" || !c.fecha_periodo) return false;
+        const [y, m] = c.fecha_periodo.split("-").map(Number);
+        return y === selectedYear && m === selectedMonth;
+      }),
+    [recaudoCargas, selectedYear, selectedMonth],
+  );
+
   const [expandedVendedor, setExpandedVendedor] = useState(null);
 
   // Mapa codigo → nombre desde tabla maestra de vendedores
@@ -216,11 +230,11 @@ export default function RecaudoTab({ hook }) {
           </select>
         </div>
 
-        {/* Cargas count badge */}
-        {recaudoCargas.length > 0 && (
+        {/* Cargas del periodo (sincronizadas desde el ERP) */}
+        {cargasDelPeriodo.length > 0 && (
           <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-full">
-            {recaudoCargas.length} carga{recaudoCargas.length > 1 ? "s" : ""}{" "}
-            subida{recaudoCargas.length > 1 ? "s" : ""}
+            {cargasDelPeriodo.length} carga
+            {cargasDelPeriodo.length > 1 ? "s" : ""} del ERP
           </span>
         )}
 

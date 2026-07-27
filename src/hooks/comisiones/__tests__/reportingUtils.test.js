@@ -1,10 +1,10 @@
 import { describe, expect, test } from "vitest";
 import {
   buildReporteMensualState,
-  dedupeRecaudosByCargaId,
+  dedupeRecaudosDentroDeCarga,
 } from "../reportingUtils";
 
-describe("dedupeRecaudosByCargaId", () => {
+describe("dedupeRecaudosDentroDeCarga", () => {
   test("conserva duplicados legítimos entre cargas distintas", () => {
     const rows = [
       {
@@ -21,7 +21,7 @@ describe("dedupeRecaudosByCargaId", () => {
       },
     ];
 
-    expect(dedupeRecaudosByCargaId(rows)).toHaveLength(2);
+    expect(dedupeRecaudosDentroDeCarga(rows)).toHaveLength(2);
   });
 
   test("elimina duplicados dentro de la misma carga", () => {
@@ -40,7 +40,31 @@ describe("dedupeRecaudosByCargaId", () => {
       },
     ];
 
-    expect(dedupeRecaudosByCargaId(rows)).toHaveLength(1);
+    expect(dedupeRecaudosDentroDeCarga(rows)).toHaveLength(1);
+  });
+
+  // Este es el caso que rompió la pestaña Recaudo en julio 2026: el mismo
+  // abono en la carga manual y en la del ERP. La función NO lo resuelve —lo
+  // resuelve el filtro `fuente='erp'` de getRecaudosByPeriodo—, y el test
+  // existe para que nadie vuelva a confiar en ella para eso.
+  test("NO protege contra el mismo abono en dos fuentes distintas", () => {
+    const abono = {
+      cliente_nit: "9001",
+      factura: "F-1",
+      comprobante: "RC-1",
+      fecha_abono: "2026-07-15",
+      valor_recaudo: 1000,
+    };
+    const rows = [
+      { ...abono, carga_id: "manual-julio", fuente: "manual" },
+      { ...abono, carga_id: "erp-julio", fuente: "erp" },
+    ];
+
+    expect(dedupeRecaudosDentroDeCarga(rows)).toHaveLength(2);
+
+    // Así es como se evita de verdad: filtrando por fuente aguas arriba
+    const soloErp = rows.filter((r) => r.fuente === "erp");
+    expect(dedupeRecaudosDentroDeCarga(soloErp)).toHaveLength(1);
   });
 });
 

@@ -15,7 +15,7 @@ import {
   upsertReglaExtra,
   deleteReglaExtra,
 } from "../../services/comisionesService";
-import { dedupeRecaudosByCargaId } from "./reportingUtils";
+import { dedupeRecaudosDentroDeCarga } from "./reportingUtils";
 
 export function useComisionesRecaudos() {
   const [recaudoCargas, setRecaudoCargas] = useState([]);
@@ -144,7 +144,7 @@ export function useComisionesRecaudos() {
     setLoadingRecaudos(true);
     try {
       const { data } = await getRecaudosByPeriodo(year, month);
-      setRecaudos(dedupeRecaudosByCargaId(data));
+      setRecaudos(dedupeRecaudosDentroDeCarga(data));
     } catch (err) {
       if (import.meta.env.DEV)
         console.error("[useComisionesRecaudos] Error fetching periodo:", err);
