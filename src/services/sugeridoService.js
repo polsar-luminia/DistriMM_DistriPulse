@@ -7,7 +7,10 @@ import { supabase, fetchAllRows } from "../lib/supabase";
 import { BODEGAS_CONFIABLES } from "../utils/inventarioUpload";
 
 /**
- * Lista las cargas de inventario (más reciente primero).
+ * Lista las cargas de inventario del ERP (más reciente primero).
+ *
+ * Solo `origen='erp'`: queda una carga manual de julio de 2026 que ya no es
+ * fuente de verdad y no debe poder escogerse para calcular el sugerido.
  * @returns {Promise<{data: Object[]|null, error: Error|null}>}
  */
 export async function getInventarioCargas() {
@@ -15,6 +18,7 @@ export async function getInventarioCargas() {
     const { data, error } = await supabase
       .from("distrimm_inventario_cargas")
       .select("id, nombre_archivo, fecha_saldos, total_registros, total_valor, created_at")
+      .eq("origen", "erp")
       .order("fecha_saldos", { ascending: false })
       .limit(100);
     if (error) throw error;

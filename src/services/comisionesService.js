@@ -1,10 +1,19 @@
 import { supabase, fetchAllRows } from "../lib/supabase";
 
+/**
+ * Cargas de ventas visibles en la aplicación: solo las del ERP.
+ *
+ * Las 74 cargas manuales de la era del Excel quedan en la base como registro
+ * histórico, pero fuera de los desplegables: eran acumuladas y solapadas, y
+ * ofrecerlas para escoger invita a mirar un mes con datos que ya no son la
+ * fuente de verdad.
+ */
 export const getComisionesCargas = async () => {
   try {
     const { data, error } = await supabase
       .from("distrimm_comisiones_cargas")
       .select("*")
+      .eq("origen", "erp")
       .order("fecha_ventas", { ascending: false })
       .limit(1000);
 
@@ -225,6 +234,19 @@ export const setDiasMoraLimite = async (dias) => {
   }
 };
 
+/**
+ * Cargas de ventas de un mes, solo las sincronizadas del ERP.
+ *
+ * **El filtro corrige un defecto real, no es higiene.** `useComisionesCalculo`
+ * toma la última carga por `fecha_ventas`, y en mayo 2026 y noviembre 2025 la
+ * carga manual gana porque su fecha cae un día después que la del ERP (el
+ * Excel se rotulaba 31/05 mientras el último movimiento del ERP era el 30).
+ * La liquidación quedaba leyendo el Excel en silencio.
+ *
+ * El ERP mantiene exactamente una carga por mes, así que después del filtro
+ * `cargasMes` trae una sola fila y el "reemplazo por la más reciente" deja de
+ * tener nada que reemplazar — que es justo lo que se quiere.
+ */
 export const getCargasByMonth = async (year, month) => {
   try {
     const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
@@ -238,6 +260,7 @@ export const getCargasByMonth = async (year, month) => {
       .select(
         "id, fecha_ventas, nombre_archivo, total_registros, total_ventas, created_at",
       )
+      .eq("origen", "erp")
       .gte("fecha_ventas", startDate)
       .lt("fecha_ventas", endDate)
       .order("fecha_ventas", { ascending: true })
@@ -278,11 +301,18 @@ export const getVentasByCargas = async (cargaIds) => {
   }
 };
 
+/**
+ * Cargas de recaudo visibles: solo las sincronizadas del ERP.
+ *
+ * Ojo con los dos nombres: `fuente` es la procedencia (manual/erp) y `origen`
+ * es la MODALIDAD (credito/contado). Aquí se filtra la primera.
+ */
 export const getRecaudoCargas = async () => {
   try {
     const { data, error } = await supabase
       .from("distrimm_comisiones_cargas_recaudo")
       .select("*")
+      .eq("fuente", "erp")
       .order("created_at", { ascending: false })
       .limit(1000);
     if (error) throw error;
