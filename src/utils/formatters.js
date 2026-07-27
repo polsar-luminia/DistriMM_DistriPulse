@@ -44,6 +44,32 @@ export const formatDateShort = (dateString) => {
   }).format(date);
 };
 
+/**
+ * Formatea un instante (timestamptz ISO) como `dd/MM/yyyy HH:mm` en hora de
+ * Colombia. A diferencia de formatDateUTC —que recibe una fecha suelta y la
+ * fija al mediodía—, aquí la hora es el dato: el servidor del VPS corre en
+ * Europe/Berlin, así que sin convertir se mostraría con 7 horas de más.
+ * @param {string} isoString
+ * @returns {string}
+ */
+export const formatDateTimeBogota = (isoString) => {
+  if (!isoString) return "N/A";
+  const date = new Date(isoString);
+  if (isNaN(date.getTime())) return "N/A";
+
+  return new Intl.DateTimeFormat("es-CO", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: DATE_FORMATS.TIMEZONE,
+  })
+    .format(date)
+    .replace(",", "");
+};
+
 export const formatPercentage = (value, decimals = 1) => {
   if (value === undefined || value === null || !Number.isFinite(value))
     return "0%";

@@ -2,6 +2,7 @@ import {
   formatCurrency,
   formatFullCurrency,
   formatDateUTC,
+  formatDateTimeBogota,
   formatDateShort,
   formatPercentage,
   formatNumber,
@@ -66,6 +67,37 @@ describe("formatDateUTC", () => {
   test("formats end of year correctly", () => {
     const result = formatDateUTC("2024-12-31");
     expect(result).toBe("31/12/2024");
+  });
+});
+
+describe("formatDateTimeBogota", () => {
+  test("retorna 'N/A' cuando recibe null o una fecha inválida", () => {
+    expect(formatDateTimeBogota(null)).toBe("N/A");
+    expect(formatDateTimeBogota("no soy una fecha")).toBe("N/A");
+  });
+
+  // El VPS corre en Europe/Berlin: la bitácora de sincronización llega con
+  // offset +02, y sin convertir se mostrarían 7 horas de más
+  test("convierte la hora del VPS (Europe/Berlin) a hora de Colombia", () => {
+    expect(formatDateTimeBogota("2026-07-27T03:00:27.756+02:00")).toBe(
+      "26/07/2026 20:00",
+    );
+  });
+
+  test("convierte desde UTC", () => {
+    expect(formatDateTimeBogota("2026-07-27T01:00:00Z")).toBe(
+      "26/07/2026 20:00",
+    );
+  });
+
+  test("usa reloj de 24 horas", () => {
+    expect(formatDateTimeBogota("2026-07-26T23:30:00Z")).toBe(
+      "26/07/2026 18:30",
+    );
+  });
+
+  test("no deja coma entre la fecha y la hora", () => {
+    expect(formatDateTimeBogota("2026-07-27T01:00:00Z")).not.toContain(",");
   });
 });
 

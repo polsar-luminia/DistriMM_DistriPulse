@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import ErrorBoundary from "../components/common/ErrorBoundary";
+import UltimaSincronizacion from "../components/common/UltimaSincronizacion";
 import ConfirmDialog from "../components/ConfirmDialog";
 import { useConfirm } from "../hooks/useConfirm";
 
@@ -264,6 +265,9 @@ export default function MainLayout({ dashboardContext }) {
 
           {/* Right actions */}
           <div className="flex items-center gap-2">
+            {/* Última sincronización del ERP SAMIT */}
+            <UltimaSincronizacion />
+
             {/* Time Travel Selector */}
             {availableLoads.length > 0 ? (
               <div className="flex items-center gap-2 bg-slate-100 rounded-lg px-2.5 py-1.5 border border-slate-200">
