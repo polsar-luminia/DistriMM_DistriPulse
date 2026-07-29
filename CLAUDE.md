@@ -437,6 +437,54 @@ tabla daría siempre `sospechoso`.
   escritura sobre el ERP en todo el proyecto, **requiere aprobación del dueño**).
 
 
+## Sugerido de Pedidos — la rotación se mide sobre días DISPONIBLES (28/07/2026)
+
+Reporte de gerencia por nota de voz. Dos síntomas, una raíz y un hallazgo aparte.
+Corrección en `sql/sugerido_rotacion_y_marca.sql` (reemplaza `fn_sugerido_pedidos`).
+
+- **`venta_diaria` ya NO divide entre la ventana nominal.** Dividía siempre entre los 90 días de
+  análisis aunque el producto llevara 19 días existiendo. El INTREPID X100 (`90497`) vendió 38
+  unidades en 19 días —2 diarias— y el cálculo reportaba **0,42**: con esa rotación 14 unidades
+  "cubrían" 33 días y el sugerido daba **0** mientras gerencia lo pedía de a 24. Ahora el
+  denominador son los días que el producto **realmente estuvo disponible**: lo más viejo entre su
+  primera venta y su primera aparición con existencia en un corte de inventario, acotado a la
+  ventana. El sugerido pasó a **25**.
+- **El piso del denominador es `dias_cobertura`, y es el guardarraíl.** Garantiza
+  `sugerido <= vendido_en_la_ventana − stock`: **nunca se sugiere pedir más de lo que se vendió**.
+  Sin ese piso, un producto con una sola venta reciente dispararía un pedido absurdo.
+- **TRAMPA — no anclar el "producto viejo" a NULL.** El primer intento marcaba con `NULL` a los
+  productos ya presentes en el corte más antiguo. `LEAST` **ignora los NULL**, así que caía en la
+  primera venta y aceleraba la rotación de todo el catálogo viejo: 294 productos subían en vez de
+  33. Hay que anclarlos explícitamente al inicio de la ventana. Un producto **sin ninguna** fila de
+  inventario en ningún corte tampoco da evidencia de ser nuevo: se asume disponible desde el inicio
+  de la ventana (conservador).
+- **Un producto lento NO se ve afectado**: su primera aparición es anterior a la ventana, así que
+  sigue dividiendo entre los 90 días. De 909 productos con ventas concentradas al final de la
+  ventana, solo 339 son realmente nuevos y solo **33 suben de sugerido; ninguno baja**.
+- **`marca` y `categoría` ahora salen también de `distrimm_productos_catalogo`.** Solo venían del
+  corte de inventario, así que **463 productos agotados llegaban con `marca` NULL** — y
+  `aplicarAlcance` (`src/utils/sugeridoFiltros.js`) filtra con `set.has(r.marca)`, que descarta los
+  NULL. Filtrar por proveedor escondía justo los agotados, que es cuando más importa verlos. Es la
+  queja literal: *"filtro Corteva y no me aparece el INTREPID litro"*. Quedan **0 sin marca**.
+- **El costo estimado del pedido venía subestimado ~4x.** Los agotados no tienen fila en el corte,
+  así que su `ult_val_compra` era 0 y su costo estimado $0 aunque tuvieran sugerido. Ahora heredan
+  el último valor de compra conocido. El total del corte del 28/07 pasó de **80,8 a 313,5
+  millones**, y el desglose importa: **+222M son el arreglo de costo** (mismas cantidades, costo
+  real) y solo **+10M** vienen del aumento de rotación.
+- **`dias_historia` es columna nueva del RPC.** La tabla marca en índigo la venta/día calculada
+  sobre menos días que la ventana, y el Excel la exporta. Un sugerido alto sobre 19 días de
+  historia tiene que poder explicarse.
+- **Cambia la firma del RPC**: hay que `DROP FUNCTION` antes y recargar el caché de esquema de
+  PostgREST (`NOTIFY pgrst, 'reload schema'` + `pm2 restart distrimm-rest`) o sigue anunciando la
+  vieja.
+
+- **El umbral de CRÍTICO es el 100% de la meta de cobertura** (decisión del dueño 28/07/2026).
+  Antes exigía bajar del **25%**, y el `90497` —11 días de cobertura contra una meta de 30— salía
+  NORMAL: aparecía en "Por pedir" pero no en el filtro de "Críticos" que gerencia usa para
+  priorizar. Ahora CRÍTICO = *no alcanza a cubrir la meta*, que es lo que la palabra significa.
+  Efecto: 71 productos pasan de NORMAL a CRÍTICO (de 34 a **105**); NORMAL queda como la banda
+  entre 1x y 3x la meta. Agotados, muertos y lentos no se mueven.
+
 ### Decisiones tomadas y pendientes abiertos (26/07/2026)
 
 **El IVA se excluye SIEMPRE de la base comisionable de recaudos** (decisión del dueño). No se

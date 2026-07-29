@@ -24,7 +24,13 @@ const COLUMNS = [
     align: "right",
     title: "Existencia valorizada en bodegas 1, 5 y 6",
   },
-  { key: "venta_diaria", label: "Venta/día", align: "right" },
+  {
+    key: "venta_diaria",
+    label: "Venta/día",
+    align: "right",
+    title:
+      "Unidades vendidas por día, promediadas sobre los días que el producto realmente estuvo disponible",
+  },
   { key: "cobertura_dias", label: "Cobertura", align: "right" },
   { key: "ultima_venta", label: "Últ. venta", align: "center" },
   { key: "clasificacion", label: "Estado", align: "center" },
@@ -42,8 +48,15 @@ function compareValues(a, b) {
 
 /**
  * Tabla del sugerido con ordenamiento por columna y paginación client-side.
+ *
+ * @param {Object} props
+ * @param {Object[]} props.rows
+ * @param {number} [props.diasAnalisis] - Ventana de análisis pedida. Sirve
+ *   para marcar los productos cuya historia es más corta que la ventana: su
+ *   venta diaria se promedia sobre menos días, así que el sugerido puede
+ *   parecer alto sin serlo.
  */
-export default function SugeridoTable({ rows }) {
+export default function SugeridoTable({ rows, diasAnalisis }) {
   const [sort, setSort] = useState({ key: "sugerido_costo", dir: "desc" });
   const [page, setPage] = useState(0);
 
@@ -118,6 +131,10 @@ export default function SugeridoTable({ rows }) {
                 CLASIFICACION_META[row.clasificacion] ||
                 CLASIFICACION_META.NORMAL;
               const sugerido = Number(row.sugerido_cantidad) || 0;
+              const historiaCorta =
+                diasAnalisis != null &&
+                row.dias_historia != null &&
+                Number(row.dias_historia) < diasAnalisis;
               return (
                 <tr key={row.producto_codigo} className="hover:bg-slate-50">
                   <td className="px-3 py-2 text-xs font-mono text-slate-500">
@@ -152,7 +169,16 @@ export default function SugeridoTable({ rows }) {
                       : "—"}
                   </td>
                   <td className="px-3 py-2 text-xs text-right font-mono tabular-nums">
-                    {Number(row.venta_diaria).toFixed(2)}
+                    {historiaCorta ? (
+                      <span
+                        className="text-indigo-600 font-bold border-b border-dotted border-indigo-300 cursor-help"
+                        title={`Promedio sobre ${row.dias_historia} días: el producto lleva menos tiempo que la ventana de análisis (${diasAnalisis} días)`}
+                      >
+                        {Number(row.venta_diaria).toFixed(2)}
+                      </span>
+                    ) : (
+                      Number(row.venta_diaria).toFixed(2)
+                    )}
                   </td>
                   <td className="px-3 py-2 text-xs text-right font-mono tabular-nums">
                     {row.cobertura_dias != null

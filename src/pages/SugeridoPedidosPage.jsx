@@ -306,7 +306,10 @@ export default function SugeridoPedidosPage() {
               />
 
               {/* Tabla */}
-              <SugeridoTable rows={filteredRows} />
+              <SugeridoTable
+                rows={filteredRows}
+                diasAnalisis={params?.diasAnalisis}
+              />
             </>
           )}
         </>

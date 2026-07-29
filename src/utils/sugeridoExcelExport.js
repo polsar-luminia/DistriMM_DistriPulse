@@ -33,6 +33,7 @@ function buildSheet(XLSX, rows, { incluirEstado }) {
     "Stock",
     "Tránsito",
     "Venta/día",
+    "Días de historia",
     "Cobertura (días)",
     "Últ. venta",
     ...(incluirEstado ? ["Estado"] : []),
@@ -49,6 +50,7 @@ function buildSheet(XLSX, rows, { incluirEstado }) {
     Number(r.stock) || 0,
     Number(r.transito) || 0,
     Number(r.venta_diaria) || 0,
+    r.dias_historia != null ? Number(r.dias_historia) : "",
     r.cobertura_dias != null ? Number(r.cobertura_dias) : "",
     r.ultima_venta || "",
     ...(incluirEstado
@@ -83,6 +85,7 @@ function buildSheet(XLSX, rows, { incluirEstado }) {
     { wch: 8 },
     { wch: 8 },
     { wch: 10 },
+    { wch: 16 },
     { wch: 14 },
     { wch: 11 },
     ...(incluirEstado ? [{ wch: 10 }] : []),
