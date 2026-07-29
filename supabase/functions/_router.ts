@@ -12,7 +12,6 @@
 import proxyN8nCfo from "./proxy-n8n-cfo/index.ts";
 import proxyN8nChatbot from "./proxy-n8n-chatbot/index.ts";
 import proxyN8nWhatsapp from "./proxy-n8n-whatsapp/index.ts";
-import proxyEmbeddedSignup from "./proxy-embedded-signup/index.ts";
 import whatsappWebhook from "./whatsapp-webhook/index.ts";
 import tokenRefreshCron from "./token-refresh-cron/index.ts";
 import syncIngest from "./sync-ingest/index.ts";
@@ -23,7 +22,9 @@ const routes: Record<string, Handler> = {
   "proxy-n8n-cfo": proxyN8nCfo,
   "proxy-n8n-chatbot": proxyN8nChatbot,
   "proxy-n8n-whatsapp": proxyN8nWhatsapp,
-  "proxy-embedded-signup": proxyEmbeddedSignup,
+  // proxy-embedded-signup se retiró: el número es uno solo y se configura por
+  // entorno (META_PHONE_NUMBER_ID / META_ACCESS_TOKEN). El archivo se conserva
+  // en el repo por si alguna vez se vuelve a multi-número.
   "whatsapp-webhook": whatsappWebhook,
   "token-refresh-cron": tokenRefreshCron,
   "sync-ingest": syncIngest,

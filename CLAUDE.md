@@ -55,8 +55,9 @@ RPC: `fn_calcular_comisiones(p_carga_id UUID)` — returns per-salesperson total
 
 **REGLA CRÍTICA — deduplicación de ventas:** los archivos de ventas son ACUMULADOS del mes (cada carga trae del día 1 hasta su fecha) y solo se reemplazan cargas de la misma `fecha_ventas`, así que un mes queda con ~20 cargas solapadas. Cualquier agregación global sobre `distrimm_comisiones_ventas` multiplica los totales (~10x). Usar SIEMPRE la vista `distrimm_ventas_vigentes` (última carga de cada mes — ver `sql/ventas_vigentes_dedup.sql`), salvo que se trabaje sobre una `carga_id` específica como hacen VentasTab y los snapshots.
 
-`distrimm_whatsapp_instances` stores per-user WhatsApp Business connections (via Embedded Signup). The frontend reads it (SELECT) to show connection status; Edge Functions write to it (INSERT/UPDATE via `service_role`). **Regla operativa: una sola instancia con `status='active'` por organización.** El frontend hace `eq(status,'active').order(created_at desc).limit(1)` — si hay más de una activa, toma la más reciente y puede acabar mandando desde el número equivocado. Cuando aparezca una intrusa, marcarla como `disconnected`.
-`distrimm_whatsapp_credentials` stores access tokens for each instance — only accessible via Edge Functions with `service_role` key (no RLS policies for users).
+`distrimm_whatsapp_instances` y `distrimm_whatsapp_credentials` quedaron **vestigiales el 27/07/2026**
+(ver "WhatsApp" más abajo): nadie las lee ni las escribe. No se borraron para conservar la vía de
+rollback, pero cambiarlas no cambia nada.
 `distrimm_recordatorios_detalle` incluye `wamid` y `phone_number_id` (nullable) — se llenan en cada envío exitoso para auditar desde qué número salió y cruzar con webhooks de Meta.
 
 Link key between datasets: `cartera_items.tercero_nit` ↔ `distrimm_clientes.no_identif`
@@ -72,20 +73,46 @@ Use `sileo` (not `sonner`). Import: `import { toast } from "sileo"`. The `<Toast
 - WhatsApp send restriction: 7am–9pm Colombia time (`COLOMBIA_OFFSET = -5`)
 - Phone format for Meta Cloud API: `57XXXXXXXXXX` (country code + 10 digits, no `+`)
 
-## WhatsApp: Meta Cloud API
+## WhatsApp: Meta Cloud API — UN SOLO NÚMERO (simplificado 27/07/2026)
 
-**Status:** Conexión directa con Meta Cloud API vía Edge Function `proxy-n8n-whatsapp`. Sin intermediarios.
+Conexión directa con Meta Cloud API vía Edge Function `proxy-n8n-whatsapp`. Sin intermediarios.
+
+**Toda la organización envía desde un único número, y su configuración vive en el entorno del VPS:**
+`META_PHONE_NUMBER_ID` y `META_ACCESS_TOKEN` en `/etc/distrimm/functions.env`. El token es de
+System User y no caduca (expiraba en 2099 en el esquema viejo).
+
+Se eliminó el modelo multi-instancia entero: tabla de instancias, credenciales en base, RLS por
+dueño, refresco perezoso de token, el SDK de Facebook en el navegador y todo el Embedded Signup.
+El frontend ya **no** sabe con qué número se envía — solo manda destinatarios.
+
+- `getActiveInstance()` ya no existe; `sendWhatsAppMessage` y `triggerLoteProcessing` no reciben
+  `instance_id`.
+- `WhatsAppTab.jsx` pasó de 604 a ~157 líneas: es un panel informativo, no conecta nada.
+- `proxy-embedded-signup` salió del router (`supabase/functions/_router.ts`). El archivo se conserva
+  en el repo por si algún día se vuelve a multi-número.
+- `VITE_WHATSAPP_NUMERO` es **solo la etiqueta** que se muestra en la pestaña. Cambiarla no cambia
+  el número con el que se envía; eso solo se cambia en el VPS.
+
+**Por qué se hizo:** el modelo multi-instancia dejó sin canal a quien no era dueño de la instancia
+—la RLS era `auth.uid() = user_id` mientras el código asumía instancia compartida— y eso pasó
+inadvertido desde el 28/05/2026 porque el respaldo SMS tapaba el fallo. Ver el historial de
+`distrimm_recordatorios_detalle.canal`.
+
+**Respaldo SMS caído a propósito:** `vps-sms/` (desplegado en `/home/admin/distrimm-sms/`, PM2
+`distrimm-sms`, puerto 3103) valida los tokens contra Supabase cloud y devuelve **401 a todo** desde
+la migración del 26/07/2026. No estorba —si WhatsApp entrega, no se llama—, pero ya no hay red de
+seguridad. Para revivirlo: apuntar `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` de su `.env` al VPS.
 
 ## Environment Variables
 
 See `.env.example` for full documentation with instructions on where to obtain each value. Key variables:
 
 ```
-VITE_SUPABASE_URL / VITE_SUPABASE_KEY     — Supabase project
-VITE_META_APP_ID                          — Facebook App ID (for Embedded Signup)
-VITE_META_CONFIG_ID                       — FB Login for Business config ID
-VITE_META_SOLUTION_ID                     — Solution ID (optional)
+VITE_SUPABASE_URL / VITE_SUPABASE_KEY     — backend (el VPS, no supabase.co)
+VITE_WHATSAPP_NUMERO                      — etiqueta del número en la UI. Solo cosmética
+VITE_VPS_API_URL                          — servicio SMS (hoy caído, ver arriba)
 ```
+Las `VITE_META_*` (APP_ID, CONFIG_ID, SOLUTION_ID) se retiraron el 27/07/2026 con el Embedded Signup.
 
 Secretos de las Edge Functions — ya **no** están en el panel de Supabase, sino en
 `/etc/distrimm/functions.env` del VPS (chmod 600). Tras editarlo: `pm2 restart distrimm-functions`.
@@ -98,8 +125,10 @@ SUPABASE_URL                   — apunta al dominio propio, no a supabase.co
 SUPABASE_ANON_KEY / SUPABASE_SERVICE_ROLE_KEY — JWT firmados con el secreto del VPS
 ```
 
-Edge Functions: `proxy-n8n-whatsapp` (messaging with lazy token refresh), `proxy-n8n-cfo` (CFO analysis), `proxy-n8n-chatbot` (AI agent chat, 100s timeout), `proxy-embedded-signup` (WhatsApp Embedded Signup onboarding).
-Other server-side secrets (Meta access token per instance) live in `distrimm_whatsapp_credentials`.
+Edge Functions activas: `proxy-n8n-whatsapp` (mensajería), `proxy-n8n-cfo` (CFO analysis),
+`proxy-n8n-chatbot` (AI agent chat, 100s timeout), `whatsapp-webhook`, `token-refresh-cron`,
+`sync-ingest`. `proxy-embedded-signup` se retiró del router el 27/07/2026.
+El token de Meta sale del entorno (`META_ACCESS_TOKEN`), no de base de datos.
 
 ## VPS y Deploy
 

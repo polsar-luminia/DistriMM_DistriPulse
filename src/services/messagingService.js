@@ -167,42 +167,17 @@ export const buildInvoiceDetail = (items = []) => {
 };
 
 // ============================================================================
-// WHATSAPP INSTANCE (multi-instance support)
-// ============================================================================
-
-/**
- * Gets the active WhatsApp instance for the current user.
- * @returns {{ data: { id: string, phone_number_id: string, phone_display: string } | null, error: object | null }}
- */
-export const getActiveInstance = async () => {
-  try {
-    // Instancia compartida: cualquier usuario autenticado usa la única instancia activa
-    // de la organización (decisión de producto — ver commit d20bda7).
-    const { data, error } = await supabase
-      .from("distrimm_whatsapp_instances")
-      .select("id, phone_number_id, phone_display, business_name, status")
-      .eq("status", "active")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (error) throw error;
-    return { data, error: null };
-  } catch (err) {
-    if (import.meta.env.DEV)
-      console.error("[messagingService] Error fetching active instance:", err);
-    return { data: null, error: err };
-  }
-};
-
-// ============================================================================
 // WHATSAPP SEND (via Edge Function → Meta Cloud API)
 // ============================================================================
+//
+// El número y el token viven en el entorno del VPS (META_PHONE_NUMBER_ID y
+// META_ACCESS_TOKEN en /etc/distrimm/functions.env). El frontend no los conoce
+// ni los resuelve: solo manda destinatarios y la Edge Function decide con qué
+// número salen. Un solo número para toda la organización.
 
 /**
  * Sends a WhatsApp message via Edge Function (Meta Cloud API).
- * Includes instance_id so the Edge Function can resolve credentials.
- * @param {{ phone: string, message: string, clientName: string, tipo: string, instance_id?: string }} payload
+ * @param {{ phone: string, message: string, clientName: string, tipo: string }} payload
  * @returns {{ success: boolean, error: string|null }}
  */
 export const sendWhatsAppMessage = async ({
@@ -210,36 +185,11 @@ export const sendWhatsAppMessage = async ({
   message,
   clientName,
   tipo = "recordatorio",
-  instance_id,
 }) => {
   try {
-    // If no instance_id provided, try to get it automatically
-    let resolvedInstanceId = instance_id;
-    if (!resolvedInstanceId) {
-      const { data: inst } = await getActiveInstance();
-      resolvedInstanceId = inst?.id;
-    }
-
-    if (!resolvedInstanceId) {
-      return {
-        success: false,
-        data: null,
-        error:
-          "No hay instancia de WhatsApp activa. Conecta tu numero primero.",
-      };
-    }
-
     const { data, error } = await supabase.functions.invoke(
       "proxy-n8n-whatsapp",
-      {
-        body: {
-          phone,
-          message,
-          clientName,
-          tipo,
-          instance_id: resolvedInstanceId,
-        },
-      },
+      { body: { phone, message, clientName, tipo } },
     );
 
     if (error) throw error;
@@ -654,30 +604,21 @@ export async function enviarFallbackSms(loteId, smsTipo) {
  * La Edge Function hace loop secuencial sobre cada destinatario.
  * @param {string} loteId - UUID of the lote (for tracking)
  * @param {object[]} destinatarios - Array of { cliente_nombre, cliente_nit, telefono, mensaje_personalizado, detalle_id }
- * @param {string} [instanceId] - UUID of the WhatsApp instance. If omitted, resolved automatically.
  * @returns {{ success: boolean, data: object|null, error: string|null }}
  */
 export async function triggerLoteProcessing(
   loteId,
   destinatarios = [],
-  instanceId,
   onChunkProgress,
 ) {
   try {
-    // Resolver instance_id (puede no existir: el fallback SMS cubre ese caso).
-    let resolvedInstanceId = instanceId;
-    if (!resolvedInstanceId) {
-      const { data: inst } = await getActiveInstance();
-      resolvedInstanceId = inst?.id || null;
-    }
-
     let totalEnviados = 0;
     let totalFallidos = 0;
     let firstError = null;
     let chunksCount = 0;
 
-    // --- 1. Intento por WhatsApp (solo si hay instancia activa) ---
-    if (resolvedInstanceId) {
+    // --- 1. Envío por WhatsApp (canal principal) ---
+    {
       const items = destinatarios.map((d) => ({
         phone: d.telefono,
         message: d.mensaje_personalizado,
@@ -685,7 +626,6 @@ export async function triggerLoteProcessing(
         tipo: "recordatorio",
         detalle_id: d.detalle_id || null,
         lote_id: loteId,
-        instance_id: resolvedInstanceId,
         template_var2: d.template_var2 ?? d.template_params?.[1] ?? null,
         template_var3: d.template_var3 ?? d.template_params?.[2] ?? null,
       }));
@@ -730,10 +670,6 @@ export async function triggerLoteProcessing(
           );
         }
       }
-    } else if (import.meta.env.DEV) {
-      console.warn(
-        "[messagingService] Sin instancia WhatsApp activa; el lote se intenta solo por SMS.",
-      );
     }
 
     // --- 2. Fallback SMS automático para los no enviados (fallido/pendiente) ---

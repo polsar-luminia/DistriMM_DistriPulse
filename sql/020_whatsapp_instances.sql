@@ -50,17 +50,23 @@ CREATE INDEX IF NOT EXISTS idx_whatsapp_instances_phone_number
 
 -- ============================================================================
 -- 2. RLS: distrimm_whatsapp_instances
--- SELECT y UPDATE: solo el usuario dueño.
+-- SELECT: la propia, o la activa de la organización (instancia compartida).
+-- UPDATE: solo el usuario dueño.
 -- INSERT y DELETE: solo service_role (Edge Functions) — sin policy = bloqueado.
 -- ============================================================================
 
 ALTER TABLE public.distrimm_whatsapp_instances ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users read own whatsapp instances"
+-- El frontend asume instancia compartida desde el commit d20bda7: getActiveInstance()
+-- y WhatsAppTab piden la única activa sin filtrar por dueño. La política era por
+-- dueño, así que quien no la creó recibía [] y se quedaba sin canal de WhatsApp —
+-- el envío caía al respaldo SMS sin avisar. Se conserva la visibilidad de las
+-- propias porque el flujo de conexión (Embedded Signup) sí es personal.
+CREATE POLICY "Read own or shared active whatsapp instance"
   ON public.distrimm_whatsapp_instances
   FOR SELECT
   TO authenticated
-  USING (auth.uid() = user_id);
+  USING (auth.uid() = user_id OR status = 'active');
 
 CREATE POLICY "Users update own whatsapp instances"
   ON public.distrimm_whatsapp_instances

@@ -10,7 +10,6 @@ import {
   triggerLoteProcessing,
   retryLoteFailed,
   cancelLote,
-  getActiveInstance,
 } from "../../services/messagingService";
 
 export function useLotes() {
@@ -135,20 +134,10 @@ export function useLotes() {
         };
       }
 
-      // Pre-flight: instancia WhatsApp (opcional si hay canal SMS de respaldo).
-      // Si no hay WhatsApp activo pero el SMS está configurado, se continúa y
-      // todo el lote saldrá por SMS (fallback). Solo se aborta si no hay ningún canal.
-      const { data: activeInstance } = await getActiveInstance();
-      const whatsappId = activeInstance?.id || null;
-      const smsConfigurado = Boolean(import.meta.env.VITE_VPS_API_URL);
-      if (!whatsappId && !smsConfigurado) {
-        return {
-          success: false,
-          loteId: null,
-          error:
-            "No hay WhatsApp activo ni canal SMS configurado. Conecta WhatsApp o configura el servicio SMS.",
-        };
-      }
+      // WhatsApp es el canal principal y su configuración vive en el servidor
+      // (META_PHONE_NUMBER_ID / META_ACCESS_TOKEN). No hay nada que comprobar
+      // desde el frontend: si falta, la Edge Function responde 503 y el lote
+      // queda marcado como fallido con el motivo a la vista.
 
       // Solo recomendación si está fuera de horario — no bloquea el envío
       const hourCheck = checkSendingHours();
@@ -232,11 +221,10 @@ export function useLotes() {
           );
         }
 
-        // 4. Procesar lote: WhatsApp (si hay instancia) + fallback SMS automático.
+        // 4. Procesar lote: WhatsApp (canal principal) + fallback SMS automático.
         const triggerResult = await triggerLoteProcessing(
           loteId,
           destinatariosConIds,
-          whatsappId,
         );
 
         if (!triggerResult.success) {

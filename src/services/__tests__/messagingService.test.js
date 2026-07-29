@@ -28,7 +28,6 @@ import {
   renderTemplate,
   buildInvoiceDetail,
   sendWhatsAppMessage,
-  getActiveInstance,
   getMessageLog,
   createLote,
   getClientPhones,
@@ -292,46 +291,30 @@ describe("buildInvoiceDetail", () => {
 describe("sendWhatsAppMessage", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  test("envía mensaje exitosamente con instance_id provisto", async () => {
+  test("envía mensaje sin resolver instancia: el número lo pone el servidor", async () => {
     mockInvoke.mockResolvedValue({ data: { success: true }, error: null });
 
     const result = await sendWhatsAppMessage({
       phone: "573101234567",
       message: "Hola",
       clientName: "Test",
-      instance_id: "inst-123",
     });
 
     expect(result.success).toBe(true);
-    expect(mockInvoke).toHaveBeenCalledWith(
-      "proxy-n8n-whatsapp",
-      expect.any(Object),
-    );
-  });
-
-  test("retorna error si no hay instancia activa", async () => {
-    const chain = makeChain({
-      maybeSingle: () => Promise.resolve({ data: null, error: null }),
+    expect(mockInvoke).toHaveBeenCalledWith("proxy-n8n-whatsapp", {
+      body: {
+        phone: "573101234567",
+        message: "Hola",
+        clientName: "Test",
+        tipo: "recordatorio",
+      },
     });
-    mockFrom.mockReturnValue(chain);
-
-    const result = await sendWhatsAppMessage({
-      phone: "573101234567",
-      message: "Hola",
-      clientName: "Test",
-    });
-
-    expect(result.success).toBe(false);
-    expect(result.error).toContain("No hay instancia");
+    // No debe consultar ninguna tabla para resolver el número de origen.
+    expect(mockFrom).not.toHaveBeenCalled();
   });
 
   test("retorna error cuando falla la invocación", async () => {
     mockInvoke.mockResolvedValue({ data: null, error: new Error("Timeout") });
-    const chain = makeChain({
-      maybeSingle: () =>
-        Promise.resolve({ data: { id: "inst-1" }, error: null }),
-    });
-    mockFrom.mockReturnValue(chain);
 
     const result = await sendWhatsAppMessage({
       phone: "573101234567",
@@ -340,37 +323,6 @@ describe("sendWhatsAppMessage", () => {
     });
 
     expect(result.success).toBe(false);
-  });
-});
-
-describe("getActiveInstance", () => {
-  beforeEach(() => vi.clearAllMocks());
-
-  test("retorna instancia activa cuando existe", async () => {
-    const mockInstance = {
-      id: "inst-1",
-      phone_number_id: "123",
-      phone_display: "+57310",
-    };
-    const chain = makeChain({
-      maybeSingle: () => Promise.resolve({ data: mockInstance, error: null }),
-    });
-    mockFrom.mockReturnValue(chain);
-
-    const result = await getActiveInstance();
-    expect(result.data).toEqual(mockInstance);
-    expect(result.error).toBeNull();
-  });
-
-  test("retorna null cuando no hay instancia", async () => {
-    const chain = makeChain({
-      maybeSingle: () => Promise.resolve({ data: null, error: null }),
-    });
-    mockFrom.mockReturnValue(chain);
-
-    const result = await getActiveInstance();
-    expect(result.data).toBeNull();
-    expect(result.error).toBeNull();
   });
 });
 
