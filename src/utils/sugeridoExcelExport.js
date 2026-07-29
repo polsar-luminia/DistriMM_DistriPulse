@@ -33,7 +33,10 @@ function buildSheet(XLSX, rows, { incluirEstado }) {
     "Stock",
     "Tránsito",
     "Venta/día",
-    "Días de historia",
+    // Días sobre los que se promedió la venta diaria: los que el producto tuvo
+    // stock. El nombre es neutro porque para cargas viejas, sin movimientos
+    // con qué reconstruir, la base son los días de disponibilidad.
+    "Días base del promedio",
     "Cobertura (días)",
     "Últ. venta",
     ...(incluirEstado ? ["Estado"] : []),

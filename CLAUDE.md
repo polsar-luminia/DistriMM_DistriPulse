@@ -448,9 +448,9 @@ sugerido. Investigación completa en
 
 **Por qué hacía falta.** El inventario se guarda como UNA FOTO POR MES, así que no se ve que un
 producto se agotó el día 12 y volvió el día 40. La demanda se divide entre días en los que era
-imposible vender. Medido sobre los 90 días previos al 28/07: **537 de 1.082 productos con venta
-(50%) estuvieron sin stock**, 351 de ellos 30 días o más, y la demanda diaria real del catálogo es
-**1.618 u/día contra las 1.040 que mide el sistema** — un 55% más.
+imposible vender. Medido sobre los 90 días previos al 28/07, de 1.071 productos con venta:
+**584 (55%) tuvieron quiebre**, 430 de ellos por más de 30 días, promedio 30,8 días sin stock de
+90, y la demanda diaria del catálogo pasa de **1.040 a 1.223 u/día (+17,6%)**.
 
 - **Van TODOS los tipos que mueven existencia**, no solo ventas: `VE` 17.873 · `CO` 2.148 ·
   `TR` 1.212 · `SA` 1.070 · `EN` 990 · `DV` 445 · `NA` 161 · `DC` 27. `NA` y `DC` siguen sin
@@ -523,6 +523,28 @@ Corrección en `sql/sugerido_rotacion_y_marca.sql` (reemplaza `fn_sugerido_pedid
 - **`dias_historia` es columna nueva del RPC.** La tabla marca en índigo la venta/día calculada
   sobre menos días que la ventana, y el Excel la exporta. Un sugerido alto sobre 19 días de
   historia tiene que poder explicarse.
+
+### Segunda pasada (misma fecha): el denominador son los días CON stock
+
+`sql/dias_con_stock.sql` **reemplaza** a `sugerido_rotacion_y_marca.sql`. La medida por
+disponibilidad resolvía el producto nuevo pero no el que se **agotó a mitad de la ventana**, que es
+el caso masivo: 584 de 1.071 productos con venta (55%) tuvieron quiebre, 430 de ellos por más de 30
+días. Con `distrimm_inventario_movimientos` el denominador pasa a ser los días en que el producto
+tuvo con qué venderse. Efecto: **313 productos suben de sugerido, 24 bajan**, y el costo total del
+corte del 28/07 pasa de 313,5 a **446,4 millones**.
+
+- **`fn_dias_con_stock(desde, hasta, bodegas)` va aparte** para poder contrastarla sola. **Ancla en
+  la foto mensual anterior a la ventana y avanza**; no acumula desde enero, porque los buckets
+  `AjusteD/C` de `IN_ProdBodega` no pasan por `IN_Movimiento` y ese error se arrastraría.
+- **`base_calculo` dice qué medida se usó** (`con_stock` / `disponible`). El respaldo se activa
+  cuando no hay foto anterior a la ventana —cargas viejas o ventanas largas—: hoy son 3 de 1.477.
+- **TRAMPA — `CEIL` sobre aritmética `numeric`.** `29/30` da `0,96666…67`, y por 30 vuelve como
+  `29,0000…001`: el `CEIL` lo subía a 30 y sugería pedir **una unidad más de las que se vendieron**,
+  rompiendo el guardarraíl en 69 de 1.477 filas. Hay que redondear la proyección **antes** del
+  `CEIL`. El invariante `sugerido <= vendido − stock` ahora se cumple en las 1.477.
+- **Al validar contra el ERP, cuidado con contar solo tramos que arrancan en un movimiento.** Un
+  producto con stock de apertura y su primera venta al final de la ventana parece no haber tenido
+  stock nunca. Ese error hizo publicar un "+55% de demanda" que en realidad es **+17,6%**.
 - **Cambia la firma del RPC**: hay que `DROP FUNCTION` antes y recargar el caché de esquema de
   PostgREST (`NOTIFY pgrst, 'reload schema'` + `pm2 restart distrimm-rest`) o sigue anunciando la
   vieja.

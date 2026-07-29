@@ -33,20 +33,33 @@ Medido sobre los 90 días previos al 28/07/2026, productos con venta en la venta
 
 | | productos |
 |---|---|
-| Con venta en los últimos 90 días | 1.082 |
-| **Estuvieron sin stock en algún momento** | **537 (50%)** |
-| Estuvieron sin stock **30 días o más** | **351 (32%)** |
-| Promedio de días sin stock (de 90) | **22,4** |
+| Con venta en los últimos 90 días | 1.071 |
+| **Estuvieron sin stock en algún momento** | **584 (55%)** |
+| Estuvieron sin stock **30 días o más** | **430 (40%)** |
+| Promedio de días sin stock (de 90) | **30,8** |
 
 Efecto agregado sobre la demanda diaria del catálogo:
 
 | Cómo se mide | Unidades/día |
 |---|---|
 | Hoy (entre los días de la ventana) | 1.040 |
-| Dividiendo entre los **días con stock** | **1.618** |
+| Dividiendo entre los **días con stock**, con piso de 30 días | **1.223 (+17,6%)** |
 
-**La demanda real es ~55% mayor que la que ve el sistema.** No es un sesgo repartido: se concentra
-en los productos que más se agotan, que son justamente los que hay que reponer.
+No es un sesgo repartido: se concentra en los productos que más se agotan, que son justamente los
+que hay que reponer.
+
+> **CORRECCIÓN (misma fecha).** La primera versión de este documento decía 537 productos, 22,4 días
+> y **+55%**. Estaba mal por dos motivos, y las cifras de arriba son las buenas, ya calculadas con
+> `fn_dias_con_stock` y contrastadas producto a producto contra el ERP:
+>
+> 1. La consulta ad-hoc sobre el ERP **solo contaba tramos que arrancan en un movimiento**, así que
+>    un producto con stock de apertura y su primera venta al final de la ventana figuraba con cero
+>    días de stock. Eran 64 productos mal medidos, todos en la misma dirección.
+> 2. Usaba un **piso de 7 días** en el denominador, que deja extrapolar casi sin freno. El piso real
+>    del cálculo es `dias_cobertura` (30), que es lo que garantiza el guardarraíl.
+>
+> El resultado neto: el problema es **más extendido** de lo que se dijo (584 productos, no 537) pero
+> la corrección de demanda es **bastante menor** (+17,6%, no +55%).
 
 ### Se puede arreglar, y el dato existe
 
@@ -197,7 +210,7 @@ cada 14 días (el `90497`) y uno que se compra cada 90 no deberían cubrirse igu
 
 | # | Cambio | Impacto | Esfuerzo | Riesgo |
 |---|---|---|---|---|
-| 1 | Demanda sobre días **con stock** (dataset `movimientos_inventario`) | **Muy alto** — 55% de la demanda | Medio | Medio: necesita el piso ya probado |
+| ~~1~~ | ~~Demanda sobre días **con stock**~~ — **HECHO 28/07/2026** | +17,6% de demanda | Medio | Resuelto con el piso |
 | 2 | Proveedor real desde documentos `CO` | Alto — hace usable la orden de compra | Bajo | Bajo |
 | 3 | Redondeo al lote de compra | Medio — vuelve accionable el número | Bajo | Bajo |
 | 4 | Quitar/marcar la columna `tránsito` muerta | Bajo, pero evita una falsa sensación | Muy bajo | Ninguno |

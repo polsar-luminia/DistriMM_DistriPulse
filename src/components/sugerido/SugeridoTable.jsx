@@ -29,7 +29,7 @@ const COLUMNS = [
     label: "Venta/día",
     align: "right",
     title:
-      "Unidades vendidas por día, promediadas sobre los días que el producto realmente estuvo disponible",
+      "Unidades vendidas por día, promediadas sobre los días en que el producto realmente tuvo stock para venderse",
   },
   { key: "cobertura_dias", label: "Cobertura", align: "right" },
   { key: "ultima_venta", label: "Últ. venta", align: "center" },
@@ -172,7 +172,11 @@ export default function SugeridoTable({ rows, diasAnalisis }) {
                     {historiaCorta ? (
                       <span
                         className="text-indigo-600 font-bold border-b border-dotted border-indigo-300 cursor-help"
-                        title={`Promedio sobre ${row.dias_historia} días: el producto lleva menos tiempo que la ventana de análisis (${diasAnalisis} días)`}
+                        title={
+                          row.base_calculo === "con_stock"
+                            ? `Promedio sobre los ${row.dias_historia} días en que el producto tuvo stock, no sobre los ${diasAnalisis} de la ventana: estuvo agotado el resto`
+                            : `Promedio sobre ${row.dias_historia} días: el producto lleva menos tiempo que la ventana de análisis (${diasAnalisis} días)`
+                        }
                       >
                         {Number(row.venta_diaria).toFixed(2)}
                       </span>
