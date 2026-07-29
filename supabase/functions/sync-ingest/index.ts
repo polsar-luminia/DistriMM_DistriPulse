@@ -203,6 +203,30 @@ const DATASETS: Record<string, DatasetSpec> = {
       "cuenta_contable",
     ],
   },
+  movimientos: {
+    // Línea de tiempo del stock: una fila por (documento, item) de CUALQUIER
+    // tipo que mueva existencia — VE, DV, CO, EN, SA, TR, NA, DC — no solo
+    // ventas. Con esto el stock queda reconstruible día a día y la demanda se
+    // puede dividir entre los días que el producto SÍ tuvo stock.
+    //
+    // FULL POR MES, no upsert: los documentos se anulan retroactivamente y el
+    // ERP no lo delata (ni FechaSys ni Doc_FechaSistema se actualizan al
+    // anular — mapeo §6). Reemplazar el mes entero es lo único que hace
+    // desaparecer una anulación vieja.
+    rpc: "fn_sync_movimientos",
+    rpcControl: "total_cantidad",
+    porPeriodo: true,
+    columnas: [
+      "erp_documento",
+      "erp_item",
+      "fecha",
+      "tipo_doc",
+      "producto_codigo",
+      "bodega",
+      "dc",
+      "cantidad",
+    ],
+  },
   inventario: {
     // Dataset FULL: lo que desaparece del ERP debe desaparecer del destino.
     // fn_sync_inventario mantiene UNA sola carga de origen 'erp' y la reemplaza

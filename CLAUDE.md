@@ -269,6 +269,7 @@ Servidor oficina (SERVER, Tailscale)          VPS
 | `catalogo` | `IN_Producto`+`IN_Marcas`+`IN_Categorias` | `distrimm_productos_catalogo` | upsert por `codigo` | ✅ |
 | `clientes` | `G_Clientes`+`G_Municipio` | `distrimm_clientes` | upsert por `no_identif` | ✅ |
 | `inventario` | `IN_ProdBodega`+`IN_Producto` | `distrimm_inventario_items` | full vía `fn_sync_inventario` | ✅ |
+| `movimientos` | `IN_Documento`+`IN_Movimiento`, **todos los tipos** | `distrimm_inventario_movimientos` | full **por mes** vía `fn_sync_movimientos` | ✅ |
 | `cartera` | `CT_Movimientos` cta. `13050501`, **años 2022–2026** | `cartera_items`+`historial_cargas` | full vía `fn_sync_cartera` | ✅ |
 | `ventas` | `IN_Documento`(VE/DV)+`IN_Movimiento`, **años 2025–2026** | `distrimm_comisiones_ventas` | full **por mes** vía `fn_sync_ventas` | ✅ |
 | `recaudos` | `CT_Documentos`(RC/NC/CE)+`CT_Movimientos` y ventas sin CxC | `distrimm_comisiones_recaudos` | full por **mes + modalidad** vía `fn_sync_recaudos` | ✅ |
@@ -436,6 +437,54 @@ tabla daría siempre `sospechoso`.
   `GERENCIA DISTRI MM`; el plan recomienda un login SQL dedicado de solo lectura (sería la única
   escritura sobre el ERP en todo el proyecto, **requiere aprobación del dueño**).
 
+
+## Movimientos de inventario — la línea de tiempo del stock (28/07/2026)
+
+Dataset `movimientos` → `distrimm_inventario_movimientos`. Una fila por
+`(IN_Documento.Secuencial, IN_Movimiento.Item)` con fecha, tipo, producto, bodega, `DC` y cantidad.
+Existe para poder reconstruir el stock **día a día**, que es el insumo del siguiente paso del
+sugerido. Investigación completa en
+[docs/plans/2026-07-28-sugerido-precision.md](docs/plans/2026-07-28-sugerido-precision.md).
+
+**Por qué hacía falta.** El inventario se guarda como UNA FOTO POR MES, así que no se ve que un
+producto se agotó el día 12 y volvió el día 40. La demanda se divide entre días en los que era
+imposible vender. Medido sobre los 90 días previos al 28/07: **537 de 1.082 productos con venta
+(50%) estuvieron sin stock**, 351 de ellos 30 días o más, y la demanda diaria real del catálogo es
+**1.618 u/día contra las 1.040 que mide el sistema** — un 55% más.
+
+- **Van TODOS los tipos que mueven existencia**, no solo ventas: `VE` 17.873 · `CO` 2.148 ·
+  `TR` 1.212 · `SA` 1.070 · `EN` 990 · `DV` 445 · `NA` 161 · `DC` 27. `NA` y `DC` siguen sin
+  identificarse en el mapeo pero **mueven existencia**: para reconstruir un saldo hay que sumarlo
+  todo o no cuadra. Un `TR` aparece dos veces (sale de una bodega, entra a otra) y por eso
+  `TR` está balanceado.
+- **Se publican TODAS las bodegas**, no solo las confiables 1/5/6. El filtro vive en el cálculo,
+  igual que en `inventario`, para poder cambiarlo sin recargar el histórico.
+- **Full por mes, no upsert**, porque los documentos se anulan retroactivamente y el ERP no lo
+  delata (ni `FechaSys` ni `Doc_FechaSistema` se actualizan al anular — mapeo §6). Reemplazar el
+  mes entero es lo único que hace desaparecer una anulación vieja. **Un `-Backfill` periódico es
+  lo que mantiene sincronizadas las anulaciones de meses cerrados.**
+- **Por defecto sincroniza mes en curso Y mes anterior** (los demás datasets solo el actual): la
+  ventana de análisis cruza meses y hay 281 de 7.524 documentos registrados con fecha atrasada,
+  hasta 174 días.
+- **`delta` es `GENERATED ALWAYS`** (`+cantidad` si `DC='D'`, `−cantidad` si `'C'`): no se escribe.
+- La llave es `(erp_documento, erp_item)` — única en las 24.059 líneas de 2026. **Nunca
+  `(factura, producto)`**: hay 697 combinaciones repetidas.
+
+**Validado contra el propio ERP.** 23.926 líneas en 2026, que es exactamente
+`24.007 − 81` (las 81 son líneas con cantidad cero, descartadas a propósito porque no mueven
+stock). Reconstruyendo `foto de junio + movimientos de julio` y contrastando contra la foto de
+julio en bodegas 1/5/6: **1.565 de 1.566 pares producto-bodega cuadran (99,94%)**.
+
+> **Los servicios y gastos NO son inventario.** Flete, casino, contable, publicidad, hospedaje y
+> "compras diversas" se registran como compras (`CO`) pero el ERP **no los lleva en
+> `IN_ProdBodega`**: sus buckets están en cero aunque haya decenas de documentos. Son 10 de los 11
+> descuadres del contraste sin filtrar. Al reconstruir stock hay que anclarse en las fotos de
+> inventario y no asumir que todo lo comprado es existencia.
+>
+> El único descuadre real es el `93116` (IVOMEC F X 500ML): 2 unidades que pasaron de la bodega 4
+> a la 5 **sin documento**. `IN_ProdBodega` tiene buckets `AjusteD/C` que no son documentos, así
+> que hay un canal de ajuste directo que esta tabla no captura. Es marginal, pero por eso el
+> cálculo debe anclar en la foto mensual y avanzar desde ahí, en vez de acumular desde enero.
 
 ## Sugerido de Pedidos — la rotación se mide sobre días DISPONIBLES (28/07/2026)
 

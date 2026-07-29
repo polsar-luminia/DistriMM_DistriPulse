@@ -537,10 +537,76 @@ LEFT JOIN E0032026.dbo.IN_Vendedor iv WITH (NOLOCK) ON iv.CodVendedor = v.Vended
   }
 }
 
+# ── Movimientos de inventario (~24.000 líneas al año) ────────────────────────
+# La línea de tiempo del stock. El inventario se guarda como UNA FOTO POR MES,
+# así que hoy no se ve que un producto se agotó el día 12 y volvió el día 40:
+# la demanda se divide entre días en los que era imposible vender. Con estos
+# movimientos el stock queda reconstruible día a día.
+#
+# Van TODOS los tipos que mueven existencia, no solo ventas: CO y EN suman,
+# VE y SA restan, TR aparece dos veces (sale de una bodega y entra a otra) y
+# DV devuelve. NA y DC no están identificados en el mapeo pero mueven
+# existencia, así que entran: para reconstruir un saldo hay que sumarlo todo o
+# no cuadra.
+#
+# Se publican TODAS las bodegas, no solo las confiables 1/5/6. El filtro vive
+# del lado del cálculo, igual que en inventario, para poder cambiarlo sin
+# volver a cargar el histórico.
+#
+# POR DEFECTO: mes en curso Y mes anterior. No solo el actual, porque una
+# ventana de análisis de 90 días cruza meses y porque los documentos se
+# registran con fecha atrasada (281 de 7.524 tienen FechaSys posterior a
+# FechaDoc, hasta 174 días). Con -Backfill se reconstruye el año completo, que
+# es además la única forma de que desaparezcan las anulaciones retroactivas de
+# meses viejos.
+function Sync-Movimientos {
+  $hoy = Get-Date
+  $meses = @()
+  if ($Backfill) {
+    for ($m = 1; $m -le $hoy.Month; $m++) {
+      $meses += (Get-Date -Year $hoy.Year -Month $m -Day 1)
+    }
+  } else {
+    $ini = Get-Date -Year $hoy.Year -Month $hoy.Month -Day 1
+    # El mes anterior solo si cae dentro del mismo año: cada año vive en su
+    # propia base del ERP y esta consulta lee la del año en curso.
+    if ($hoy.Month -gt 1) { $meses += $ini.AddMonths(-1) }
+    $meses += $ini
+  }
+
+  foreach ($mes in $meses) {
+    $periodo = $mes.ToString("yyyy-MM")
+    $desde   = $mes.ToString("yyyy-MM-dd")
+    $hasta   = $mes.AddMonths(1).ToString("yyyy-MM-dd")
+    Escribir-Log "movimientos $periodo"
+    $filas = Consultar @"
+SELECT d.Secuencial                       AS erp_documento,
+       m.Item                             AS erp_item,
+       CONVERT(varchar(10), d.FechaDoc, 23) AS fecha,
+       LTRIM(RTRIM(d.TipoDoc))            AS tipo_doc,
+       LTRIM(RTRIM(m.Producto))           AS producto_codigo,
+       m.Bodega                           AS bodega,
+       LTRIM(RTRIM(m.DC))                 AS dc,
+       m.Cantidad                         AS cantidad
+FROM IN_Documento d WITH (NOLOCK)
+JOIN IN_Movimiento m WITH (NOLOCK) ON m.Documento = d.Secuencial
+WHERE ISNULL(d.Anulado, 0) = 0
+  AND d.FechaDoc >= '$desde' AND d.FechaDoc < '$hasta'
+  AND m.Cantidad <> 0
+  AND m.DC IN ('D', 'C')
+"@
+    # Cifra de control: suma de cantidades ABSOLUTAS. La neta no sirve, porque
+    # entradas y salidas se cancelan y cualquier pérdida pasaría inadvertida.
+    $control = 0
+    foreach ($f in $filas) { $control += [math]::Abs([double]$f["cantidad"]) }
+    Publicar "movimientos" $filas ([math]::Round($control, 0)) $periodo $null $null
+  }
+}
+
 # ── Orquestación ─────────────────────────────────────────────────────────────
 Escribir-Log "=== sincronización SAMIT -> VPS (dataset: $Dataset) ==="
 $huboError = $false
-foreach ($d in @("vendedores", "catalogo", "tasasIva", "clientes", "inventario", "cartera", "ventas", "recaudos")) {
+foreach ($d in @("vendedores", "catalogo", "tasasIva", "clientes", "inventario", "movimientos", "cartera", "ventas", "recaudos")) {
   if ($Dataset -ne "todos" -and $Dataset -ne $d) { continue }
   try {
     & "Sync-$([char]::ToUpper($d[0]) + $d.Substring(1))"
