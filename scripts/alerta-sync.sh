@@ -45,11 +45,21 @@ HORA_HASTA="${SYNC_HORA_HASTA:-19}"
 psql_() { sudo -u postgres psql -p 5433 -d distrimm -tAc "$1" 2>/dev/null | tr -d ' '; }
 
 avisar() {
-  curl -sS --max-time 20 -o /dev/null \
+  local resp
+  resp=$(curl -sS --max-time 20 \
     "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
     --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
     --data-urlencode "parse_mode=HTML" \
-    --data-urlencode "text=$1"
+    --data-urlencode "text=$1" 2>&1)
+  # HAY QUE MIRAR EL CUERPO, no el código de salida: curl devuelve 0 aunque
+  # Telegram conteste 400 (token revocado, bot bloqueado, chat_id malo). Darlo
+  # por enviado sería exactamente el fallo silencioso que este script existe
+  # para evitar. Al fallar no se escribe el archivo de estado, así que la
+  # corrida siguiente vuelve a intentarlo.
+  case "$resp" in
+    *'"ok":true'*) return 0 ;;
+    *) echo "$(date -Is) FALLO al enviar a Telegram: ${resp:0:200}" >&2; return 1 ;;
+  esac
 }
 
 # ── ¿Estamos en horario en que el ERP debería estar despachando? ─────────────
@@ -122,10 +132,12 @@ if [ "$problema" -eq 1 ]; then
   fi
 elif [ "$EST_PREV" != "ok" ]; then
   # Avisar también al recuperarse: si no, uno se queda sin saber si sigue caído.
+  # El && importa: si el aviso de recuperación no sale, el estado sigue en
+  # "mal" y se reintenta. Si no, se perdería y uno se quedaría creyendo que
+  # todavía está caído.
   avisar "✅ <b>DistriMM — sincronización restablecida</b>
 
-Última corrida: ${ULTIMA} (Bogotá)."
-  echo "ok $AHORA" > "$ESTADO"
+Última corrida: ${ULTIMA} (Bogotá)." && echo "ok $AHORA" > "$ESTADO"
 else
   echo "ok $AHORA" > "$ESTADO"
 fi
