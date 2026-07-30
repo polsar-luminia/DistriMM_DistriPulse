@@ -220,6 +220,41 @@ cat mcp-server/src/ARCHIVO.js | ssh admin@161.97.111.39 'cat > /var/www/distrimm
 ssh admin@161.97.111.39 'pm2 restart distrimm-mcp'
 ```
 
+### `pm2 save` DESPUÉS de crear un proceso, siempre (regla dura)
+
+**Un proceso de PM2 que no esté en `dump.pm2` desaparece solo, sin dejar rastro en su propio log.**
+Pasó el 29/07/2026 y tumbó las Edge Functions **34 horas** sin que nadie lo notara: la
+sincronización del ERP, el CFO, DistriBot y el envío de WhatsApp quedaron caídos.
+
+La cadena:
+
+1. `unattended-upgrades` corre a diario (`apt-daily-upgrade.service`, ~07:00 CEST).
+2. Fuerza un re-exec de systemd y **reinicia `pm2-admin.service`**.
+3. Al reiniciarse, PM2 hace `kill` de todo y **restaura desde `dump.pm2`**.
+4. `distrimm-functions` se creó el 26/07 a las 23:52, pero el último `pm2 save` era de ese mismo
+   día a las 07:42. **No estaba en el dump y no volvió.** Los otros 9 sí.
+
+**Cómo se ve el síntoma:** `/functions/v1/*` devuelve **502** (nginx no alcanza el 3112) mientras
+`/rest/v1`, `/auth/v1` y `/mcp` siguen en 200. En `pm2 list` el proceso **no aparece** — no figura
+como `errored` ni `stopped`, sencillamente no está. Su log tampoco dice nada: el último renglón es
+un `Listening on…` viejo. La huella está en `/home/admin/.pm2/pm2.log`, que sí registra el
+`Stopping app:` de los 10 procesos a la misma hora.
+
+```bash
+pm2 start /opt/distrimm/bin/run-functions.sh --name distrimm-functions --interpreter bash
+pm2 save   # <-- ESTO es lo que faltó
+```
+
+Verificar que el dump y lo que corre coincidan:
+
+```bash
+ssh admin@161.97.111.39 "pm2 list | grep -c online; python3 -c \"import json;print(len(json.load(open('/home/admin/.pm2/dump.pm2'))))\""
+```
+
+**Nadie se enteró en 34 horas porque no hay alerta sobre `distrimm_sync_estado`.** El dashboard
+sigue mostrando datos —viejos, pero plausibles—, así que la caída es invisible desde la aplicación.
+Una consulta de frescura (`max(fin)` de la bitácora contra `now()`) sería la señal que hoy falta.
+
 ### Si SSH no responde
 
 El servidor tiene fail2ban. Si hay timeout:
