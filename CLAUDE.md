@@ -255,6 +255,28 @@ ssh admin@161.97.111.39 "pm2 list | grep -c online; python3 -c \"import json;pri
 sigue mostrando datos —viejos, pero plausibles—, así que la caída es invisible desde la aplicación.
 Una consulta de frescura (`max(fin)` de la bitácora contra `now()`) sería la señal que hoy falta.
 
+### Alerta de frescura de la sincronización (Telegram)
+
+`scripts/alerta-sync.sh` → `/opt/distrimm/bin/alerta-sync.sh`, cron cada 30 min en el crontab de
+`admin`. Existe por la caída de 34 h descrita arriba: **la aplicación no puede detectar que la
+sincronización murió**, porque sigue mostrando datos viejos pero plausibles.
+
+- Avisa si no entra una corrida en **4 h** (la sincronización va cada 2 h, así que tolera perder
+  un ciclo) o si el **último** estado de algún dataset es `sospechoso`/`parcial`.
+- **Solo dentro de la ventana 10:00–19:00 de Bogotá, L-S.** El servidor de la oficina se apaga al
+  cerrar, así que fuera de ese horario la falta de datos es normal y avisar sería ruido diario. La
+  hora se evalúa con `TZ=America/Bogota`, **no** con la del VPS, que va en Europe/Berlin.
+- Se mira el **último estado por dataset**, no cualquiera de las últimas horas: un fallo que la
+  corrida siguiente ya arregló no debe despertar a nadie.
+- Avisa una vez, repite cada 6 h mientras siga mal, y **manda un mensaje de recuperación** cuando
+  vuelve. Sin ese último aviso uno no sabe si sigue caído.
+- Config en `/etc/distrimm/alertas.env` (chmod 600, `admin:sudo`, **no va al repo**):
+  `TELEGRAM_BOT_TOKEN` y `TELEGRAM_CHAT_ID`. Sin ese archivo el script sale en silencio con código
+  0 — a propósito, para que cron no mande correo en cada corrida.
+- Umbrales ajustables por entorno: `SYNC_HORAS_LIMITE`, `SYNC_REPETIR_HORAS`, `SYNC_HORA_DESDE`,
+  `SYNC_HORA_HASTA`.
+- Bitácora en `/var/log/distrimm-alerta-sync.log`.
+
 ### Si SSH no responde
 
 El servidor tiene fail2ban. Si hay timeout:
