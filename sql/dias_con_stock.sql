@@ -47,7 +47,7 @@
 CREATE OR REPLACE FUNCTION fn_dias_con_stock(
   p_desde DATE,
   p_hasta DATE,
-  p_bodegas SMALLINT[] DEFAULT '{1,5,6}'
+  p_bodegas SMALLINT[] DEFAULT '{3,5,6}'
 )
 RETURNS TABLE (
   producto_codigo TEXT,
@@ -193,7 +193,7 @@ CREATE OR REPLACE FUNCTION fn_sugerido_pedidos(
   p_pct_crecimiento NUMERIC DEFAULT 0,
   p_pct_reserva NUMERIC DEFAULT 0,
   p_dias_analisis INTEGER DEFAULT 90,
-  p_bodegas SMALLINT[] DEFAULT '{1,5,6}'
+  p_bodegas SMALLINT[] DEFAULT '{3,5,6}'
 )
 RETURNS TABLE (
   producto_codigo TEXT,

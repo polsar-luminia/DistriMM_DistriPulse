@@ -182,7 +182,7 @@ export const OPENAPI_SCHEMA = {
         operationId: "consultarInventario",
         summary: "Existencias de la última carga de saldos",
         description:
-          "Valor y unidades por bodega, marca, categoría o producto. Por defecto solo bodegas confiables (1, 5 y 6). Para stock muerto/lento/agotado y sugerido usar /sugerido.",
+          "Valor y unidades por bodega, marca, categoría o producto. Por defecto solo bodegas confiables (3, 5 y 6). Para stock muerto/lento/agotado y sugerido usar /sugerido.",
         parameters: [
           p(
             "agrupar_por",
@@ -190,7 +190,7 @@ export const OPENAPI_SCHEMA = {
             "Dimensión de agrupación",
           ),
           p("buscar", { type: "string" }, "Filtro por producto, marca o código exacto"),
-          p("solo_bodegas_confiables", { type: "boolean", default: true }, "true = solo bodegas 1, 5 y 6 (recomendado)"),
+          p("solo_bodegas_confiables", { type: "boolean", default: true }, "true = solo bodegas 3, 5 y 6 (recomendado)"),
           LIMITE,
         ],
         responses: RESP,

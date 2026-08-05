@@ -341,7 +341,7 @@ Bodegas existentes (24/07/2026, filtrando `CantidadFinal <> 0`):
 | 5 | 856 | 44.918 | 639.363.986 |
 | 6 | 271 | 45.269 | 872.393.843 |
 
-Gerencia considera confiables únicamente las bodegas **1, 5 y 6**
+Gerencia considera confiables únicamente las bodegas **3, 5 y 6** (actualizado 05/08/2026; hasta entonces eran 1, 5 y 6)
 (`BODEGAS_CONFIABLES` en `src/utils/inventarioUpload.js`).
 
 ### 3.9 `IN_Producto` — maestro de productos (4.374 filas)

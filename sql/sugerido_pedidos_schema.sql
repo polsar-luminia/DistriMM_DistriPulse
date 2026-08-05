@@ -24,7 +24,7 @@ CREATE TABLE distrimm_inventario_cargas (
 );
 
 -- Cada línea del Excel de saldos (una fila por producto/bodega).
--- Se guardan TODAS las bodegas; el filtro de bodegas confiables (1, 5, 6)
+-- Se guardan TODAS las bodegas; el filtro de bodegas confiables (3, 5, 6)
 -- se aplica en el RPC para poder ajustarlo sin recargar el archivo.
 CREATE TABLE distrimm_inventario_items (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -122,7 +122,7 @@ CREATE OR REPLACE FUNCTION fn_sugerido_pedidos(
   p_pct_crecimiento NUMERIC DEFAULT 0,
   p_pct_reserva NUMERIC DEFAULT 0,
   p_dias_analisis INTEGER DEFAULT 90,
-  p_bodegas SMALLINT[] DEFAULT '{1,5,6}'
+  p_bodegas SMALLINT[] DEFAULT '{3,5,6}'
 )
 RETURNS TABLE (
   producto_codigo TEXT,

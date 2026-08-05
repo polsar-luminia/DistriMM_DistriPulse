@@ -96,7 +96,7 @@ export function getSuggestedQuestions() {
     {
       label: "Stock por marca",
       message:
-        "Muestra el stock valorizado por marca en las bodegas confiables (1, 5 y 6)",
+        "Muestra el stock valorizado por marca en las bodegas confiables (3, 5 y 6)",
     },
     {
       label: "Aging de cartera",

@@ -6,8 +6,8 @@
 import { col, normalizeHeader, parseNumeric } from "./excelETL";
 import { parseExcelDate } from "./recaudoUpload";
 
-/** Bodegas con existencias confiables según gerencia (jul/2026) */
-export const BODEGAS_CONFIABLES = [1, 5, 6];
+/** Bodegas con existencias confiables según gerencia (ago/2026) */
+export const BODEGAS_CONFIABLES = [3, 5, 6];
 
 const SALDOS_MARKERS = ["Codigo", "Bodega", "Nombre Producto", "Cantidad"];
 

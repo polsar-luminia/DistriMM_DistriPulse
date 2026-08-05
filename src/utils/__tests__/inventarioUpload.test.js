@@ -125,7 +125,7 @@ describe("transformSaldos", () => {
 });
 
 describe("BODEGAS_CONFIABLES", () => {
-  test("son 1, 5 y 6 según definición de gerencia", () => {
-    expect(BODEGAS_CONFIABLES).toEqual([1, 5, 6]);
+  test("son 3, 5 y 6 según definición de gerencia", () => {
+    expect(BODEGAS_CONFIABLES).toEqual([3, 5, 6]);
   });
 });

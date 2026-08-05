@@ -77,10 +77,10 @@ BEGIN
 
   SELECT jsonb_build_object(
     'fecha_saldos', c.fecha_saldos,
-    'valor_bodegas_confiables', COALESCE(SUM(i.valor) FILTER (WHERE i.bodega IN (1,5,6)), 0),
+    'valor_bodegas_confiables', COALESCE(SUM(i.valor) FILTER (WHERE i.bodega IN (3,5,6)), 0),
     'valor_todas_bodegas', COALESCE(SUM(i.valor), 0),
-    'productos_con_stock', COUNT(DISTINCT i.producto_codigo) FILTER (WHERE i.bodega IN (1,5,6) AND i.cantidad > 0),
-    'nota', 'bodegas confiables: 1, 5 y 6'
+    'productos_con_stock', COUNT(DISTINCT i.producto_codigo) FILTER (WHERE i.bodega IN (3,5,6) AND i.cantidad > 0),
+    'nota', 'bodegas confiables: 3, 5 y 6'
   ) INTO v_inventario
   FROM distrimm_inventario_cargas c
   JOIN distrimm_inventario_items i ON i.carga_id = c.id
@@ -344,7 +344,7 @@ BEGIN
   ) INTO v_totales
   FROM distrimm_inventario_items
   WHERE carga_id = v_carga_id
-    AND (NOT p_solo_confiables OR bodega IN (1,5,6))
+    AND (NOT p_solo_confiables OR bodega IN (3,5,6))
     AND (p_buscar IS NULL OR producto_nombre ILIKE '%' || p_buscar || '%'
          OR marca ILIKE '%' || p_buscar || '%' OR producto_codigo = p_buscar);
 
@@ -365,7 +365,7 @@ BEGIN
       COUNT(DISTINCT producto_codigo) AS productos
     FROM distrimm_inventario_items
     WHERE carga_id = v_carga_id
-      AND (NOT p_solo_confiables OR bodega IN (1,5,6))
+      AND (NOT p_solo_confiables OR bodega IN (3,5,6))
       AND (p_buscar IS NULL OR producto_nombre ILIKE '%' || p_buscar || '%'
            OR marca ILIKE '%' || p_buscar || '%' OR producto_codigo = p_buscar)
     GROUP BY 1
@@ -391,148 +391,11 @@ $$;
 --    resumen + top de la clasificación pedida.
 -- ----------------------------------------------------------------------------
 
--- Ajuste del guard: el MCP (service_role) también puede calcular el sugerido
--- (el guard original solo contemplaba usuarios del frontend con JWT).
--- Se reemplaza únicamente la condición del IF; el resto del cuerpo es idéntico
--- al de sql/sugerido_pedidos_schema.sql.
-CREATE OR REPLACE FUNCTION fn_sugerido_pedidos(
-  p_carga_id UUID,
-  p_dias_cobertura INTEGER DEFAULT 30,
-  p_pct_crecimiento NUMERIC DEFAULT 0,
-  p_pct_reserva NUMERIC DEFAULT 0,
-  p_dias_analisis INTEGER DEFAULT 90,
-  p_bodegas SMALLINT[] DEFAULT '{1,5,6}'
-)
-RETURNS TABLE (
-  producto_codigo TEXT,
-  producto_nombre TEXT,
-  marca TEXT,
-  categoria_nombre TEXT,
-  stock NUMERIC,
-  transito NUMERIC,
-  stock_valor NUMERIC,
-  cantidad_vendida NUMERIC,
-  venta_diaria NUMERIC,
-  ultima_venta DATE,
-  dias_sin_venta INTEGER,
-  cobertura_dias NUMERIC,
-  clasificacion TEXT,
-  sugerido_cantidad NUMERIC,
-  costo_unitario NUMERIC,
-  sugerido_costo NUMERIC
-)
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-  v_fecha_saldos DATE;
-  v_factor NUMERIC;
-BEGIN
-  IF auth.uid() IS NULL AND COALESCE(auth.role(), '') <> 'service_role' THEN
-    RAISE EXCEPTION 'No autenticado';
-  END IF;
-
-  SELECT c.fecha_saldos INTO v_fecha_saldos
-  FROM distrimm_inventario_cargas c
-  WHERE c.id = p_carga_id;
-
-  IF v_fecha_saldos IS NULL THEN
-    RAISE EXCEPTION 'Carga de inventario % no encontrada', p_carga_id;
-  END IF;
-
-  v_factor := (1 + COALESCE(p_pct_crecimiento, 0) / 100.0)
-            * (1 + COALESCE(p_pct_reserva, 0) / 100.0);
-
-  RETURN QUERY
-  WITH inventario AS (
-    SELECT
-      i.producto_codigo AS codigo,
-      MAX(i.producto_nombre) AS nombre,
-      MAX(i.marca) AS marca,
-      MAX(i.categoria_nombre) AS categoria,
-      SUM(i.cantidad) AS stock,
-      SUM(i.transito) AS transito,
-      SUM(i.valor) AS stock_valor,
-      MAX(i.ult_val_compra) AS ult_val_compra
-    FROM distrimm_inventario_items i
-    WHERE i.carga_id = p_carga_id
-      AND i.bodega = ANY(p_bodegas)
-    GROUP BY i.producto_codigo
-  ),
-  demanda AS (
-    SELECT
-      v.producto_codigo AS codigo,
-      MAX(v.producto_descripcion) AS descripcion,
-      SUM(CASE WHEN v.tipo = 'DV' THEN -v.cantidad ELSE v.cantidad END) AS cantidad_vendida,
-      MAX(v.fecha) FILTER (WHERE v.tipo <> 'DV') AS ultima_venta
-    FROM distrimm_ventas_vigentes v
-    WHERE v.fecha > v_fecha_saldos - p_dias_analisis
-      AND v.fecha <= v_fecha_saldos
-    GROUP BY v.producto_codigo
-  ),
-  combinado AS (
-    SELECT
-      COALESCE(inv.codigo, d.codigo) AS codigo,
-      COALESCE(inv.nombre, d.descripcion) AS nombre,
-      inv.marca,
-      inv.categoria,
-      COALESCE(inv.stock, 0) AS stock,
-      COALESCE(inv.transito, 0) AS transito,
-      COALESCE(inv.stock_valor, 0) AS stock_valor,
-      GREATEST(COALESCE(d.cantidad_vendida, 0), 0) AS cantidad_vendida,
-      d.ultima_venta,
-      COALESCE(inv.ult_val_compra, 0) AS ult_val_compra
-    FROM inventario inv
-    FULL JOIN demanda d ON d.codigo = inv.codigo
-  ),
-  calculado AS (
-    SELECT
-      c.*,
-      c.cantidad_vendida / p_dias_analisis AS venta_diaria,
-      CASE
-        WHEN c.cantidad_vendida > 0
-        THEN (c.stock + c.transito) / (c.cantidad_vendida / p_dias_analisis)
-      END AS cobertura,
-      GREATEST(
-        CEIL(
-          (c.cantidad_vendida / p_dias_analisis) * p_dias_cobertura * v_factor
-          - (c.stock + c.transito)
-        ),
-        0
-      ) AS sugerido
-    FROM combinado c
-  )
-  SELECT
-    ca.codigo,
-    ca.nombre,
-    ca.marca,
-    ca.categoria,
-    ROUND(ca.stock, 2),
-    ROUND(ca.transito, 2),
-    ROUND(ca.stock_valor, 2),
-    ROUND(ca.cantidad_vendida, 2),
-    ROUND(ca.venta_diaria, 4),
-    ca.ultima_venta,
-    CASE WHEN ca.ultima_venta IS NOT NULL
-      THEN (v_fecha_saldos - ca.ultima_venta)::INTEGER
-    END AS dias_sin_venta,
-    ROUND(ca.cobertura, 1),
-    CASE
-      WHEN ca.cantidad_vendida = 0 AND ca.stock > 0 THEN 'MUERTO'
-      WHEN ca.cantidad_vendida > 0 AND (ca.stock + ca.transito) <= 0 THEN 'AGOTADO'
-      WHEN ca.cobertura < p_dias_cobertura * 0.25 THEN 'CRITICO'
-      WHEN ca.cobertura > p_dias_cobertura * 3 THEN 'LENTO'
-      ELSE 'NORMAL'
-    END AS clasificacion,
-    ca.sugerido,
-    ROUND(ca.ult_val_compra, 2),
-    ROUND(ca.sugerido * ca.ult_val_compra, 2) AS sugerido_costo
-  FROM calculado ca
-  WHERE NOT (ca.stock <= 0 AND ca.cantidad_vendida = 0)
-  ORDER BY ca.sugerido * ca.ult_val_compra DESC, ca.codigo;
-END;
-$$;
+-- fn_sugerido_pedidos NO se define aquí. La versión canónica —con dias_historia,
+-- base_calculo y el guard que permite service_role— vive en sql/dias_con_stock.sql;
+-- aplicar ese archivo, no este, para crearla o modificarla. (Aquí vivió una copia
+-- con el guard ajustado para el MCP, retirada el 05/08/2026: el guard ya está en
+-- la canónica y la copia vieja fallaba con "cannot change return type" al re-aplicar.)
 
 CREATE OR REPLACE FUNCTION fn_mcp_sugerido(
   p_clasificacion TEXT DEFAULT NULL,
@@ -613,7 +476,7 @@ BEGIN
       'pct_crecimiento', COALESCE(p_pct_crecimiento, v_cfg.pct_crecimiento, 0),
       'pct_reserva', COALESCE(p_pct_reserva, v_cfg.pct_reserva, 0),
       'dias_analisis', COALESCE(v_cfg.dias_analisis, 90),
-      'bodegas', '1,5,6'
+      'bodegas', '3,5,6'
     ),
     'moneda', 'COP',
     'resumen_por_clasificacion', COALESCE(v_resumen, '[]'::JSONB),
@@ -779,7 +642,7 @@ BEGIN
       'stock_bodegas_confiables', (
         SELECT jsonb_build_object('unidades', COALESCE(SUM(i.cantidad),0), 'valor', ROUND(COALESCE(SUM(i.valor),0)))
         FROM distrimm_inventario_items i
-        WHERE i.producto_codigo = p.codigo AND i.bodega IN (1,5,6)
+        WHERE i.producto_codigo = p.codigo AND i.bodega IN (3,5,6)
           AND i.carga_id = (SELECT id FROM distrimm_inventario_cargas ORDER BY fecha_saldos DESC LIMIT 1)
       ),
       'ventas_ultimos_90_dias', (

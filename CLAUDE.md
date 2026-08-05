@@ -514,7 +514,7 @@ imposible vender. Medido sobre los 90 días previos al 28/07, de 1.071 productos
   identificarse en el mapeo pero **mueven existencia**: para reconstruir un saldo hay que sumarlo
   todo o no cuadra. Un `TR` aparece dos veces (sale de una bodega, entra a otra) y por eso
   `TR` está balanceado.
-- **Se publican TODAS las bodegas**, no solo las confiables 1/5/6. El filtro vive en el cálculo,
+- **Se publican TODAS las bodegas**, no solo las confiables 3/5/6 (1/5/6 hasta el 05/08/2026). El filtro vive en el cálculo,
   igual que en `inventario`, para poder cambiarlo sin recargar el histórico.
 - **Full por mes, no upsert**, porque los documentos se anulan retroactivamente y el ERP no lo
   delata (ni `FechaSys` ni `Doc_FechaSistema` se actualizan al anular — mapeo §6). Reemplazar el

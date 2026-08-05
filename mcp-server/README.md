@@ -16,7 +16,7 @@ ventas, cartera, inventario, comisiones y sugerido de compra.
 | `resumen_ejecutivo` | Panorama: ventas del mes vs anterior, cartera, inventario, comisiones |
 | `consultar_ventas` | Ventas por mes/día/vendedor/marca/categoría/producto/cliente/municipio |
 | `consultar_cartera` | Cartera por aging/vendedor/cliente/zona/ciudad, filtro por días de mora |
-| `consultar_inventario` | Existencias por bodega/marca/categoría/producto (bodegas confiables 1, 5, 6) |
+| `consultar_inventario` | Existencias por bodega/marca/categoría/producto (bodegas confiables 3, 5, 6) |
 | `analisis_stock_y_sugerido` | Stock muerto/lento/crítico/agotado + sugerido de compra |
 | `consultar_comisiones` | Liquidación mensual por vendedor (desde snapshots oficiales) |
 | `search` / `fetch` | Búsqueda y ficha de productos, clientes y vendedores (contrato ChatGPT) |

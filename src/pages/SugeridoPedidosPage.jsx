@@ -1,6 +1,6 @@
 /**
  * @fileoverview Sugerido de Pedidos — módulo para gerencia.
- * Cruza el inventario (Excel "Saldos de Productos", bodegas confiables 1/5/6)
+ * Cruza el inventario (Excel "Saldos de Productos", bodegas confiables 3/5/6)
  * con la velocidad de venta para sugerir cantidades de compra y clasificar
  * el stock (agotado, crítico, normal, lento, muerto).
  * @module pages/SugeridoPedidosPage
@@ -182,7 +182,7 @@ export default function SugeridoPedidosPage() {
           </h1>
           <p className="text-sm text-slate-500 mt-1">
             Sugerido de compra según velocidad de venta e inventario de
-            bodegas 1, 5 y 6
+            bodegas 3, 5 y 6
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">

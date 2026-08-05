@@ -22,7 +22,7 @@ const COLUMNS = [
     key: "stock_valor",
     label: "Valor stock",
     align: "right",
-    title: "Existencia valorizada en bodegas 1, 5 y 6",
+    title: "Existencia valorizada en bodegas 3, 5 y 6",
   },
   {
     key: "venta_diaria",

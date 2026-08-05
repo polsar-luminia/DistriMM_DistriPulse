@@ -35,7 +35,7 @@ VENTAS Y MARGENES:
 INVENTARIO:
 - distrimm_inventario_items: lineas producto/bodega. distrimm_inventario_cargas: cargas de saldos.
 - Columnas items: producto_codigo, producto_nombre, bodega, cantidad (stock), valor, transito, categoria_nombre, marca, ult_compra, ult_val_compra, ult_val_venta, precio_medio, carga_id
-- Stock confiable = bodegas 1, 5 y 6. Para stock actual filtra la ultima carga: WHERE carga_id = (SELECT id FROM distrimm_inventario_cargas ORDER BY fecha_saldos DESC LIMIT 1) AND bodega IN (1,5,6)
+- Stock confiable = bodegas 3, 5 y 6. Para stock actual filtra la ultima carga: WHERE carga_id = (SELECT id FROM distrimm_inventario_cargas ORDER BY fecha_saldos DESC LIMIT 1) AND bodega IN (3,5,6)
 
 CATALOGO / COMISIONES:
 - distrimm_productos_catalogo: codigo, nombre, categoria_nombre, marca, pct_iva
@@ -54,7 +54,7 @@ SELECT vendedor_nombre, SUM(valor_total) venta_neta, SUM(margen_valor) margen FR
 -- Ventas: productos con mejor margen %
 SELECT producto_descripcion, ROUND(AVG(margen_pct),1) margen_pct, SUM(valor_total) venta FROM distrimm_ventas_vigentes WHERE tipo='VE' GROUP BY producto_descripcion HAVING SUM(valor_total) > 5000000 ORDER BY margen_pct DESC LIMIT 15
 -- Inventario: stock valorizado por marca (bodegas confiables)
-SELECT marca, SUM(cantidad) unidades, SUM(valor) valor_stock FROM distrimm_inventario_items WHERE carga_id = (SELECT id FROM distrimm_inventario_cargas ORDER BY fecha_saldos DESC LIMIT 1) AND bodega IN (1,5,6) GROUP BY marca ORDER BY valor_stock DESC LIMIT 15
+SELECT marca, SUM(cantidad) unidades, SUM(valor) valor_stock FROM distrimm_inventario_items WHERE carga_id = (SELECT id FROM distrimm_inventario_cargas ORDER BY fecha_saldos DESC LIMIT 1) AND bodega IN (3,5,6) GROUP BY marca ORDER BY valor_stock DESC LIMIT 15
 
 REGLAS CRITICAS:
 1. SIEMPRE usa consulta_datos para cifras. JAMAS inventes.

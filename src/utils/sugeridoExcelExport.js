@@ -156,7 +156,7 @@ export async function generarSugeridoExcel(rows, params, carga, opciones = {}) {
     ["Crecimiento (%)", params.pctCrecimiento],
     ["Reserva (%)", params.pctReserva],
     ["Ventana de análisis (días)", params.diasAnalisis],
-    ["Bodegas incluidas", "1, 5, 6"],
+    ["Bodegas incluidas", "3, 5, 6"],
     [],
     ["Filtros aplicados a la exportación"],
     ["Alcance", ALCANCE_ETIQUETA[alcance] || alcance],

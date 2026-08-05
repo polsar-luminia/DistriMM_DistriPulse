@@ -113,7 +113,7 @@ export function registerTools(server, supabase) {
     {
       title: "Consultar inventario",
       description:
-        "Existencias según la última carga de saldos: valor y unidades agrupadas por bodega, marca, categoría o producto, en COP. Por defecto solo cuenta las bodegas confiables (1, 5 y 6). Para análisis de stock muerto/lento/agotado y sugerido de compra usar la herramienta analisis_stock_y_sugerido.",
+        "Existencias según la última carga de saldos: valor y unidades agrupadas por bodega, marca, categoría o producto, en COP. Por defecto solo cuenta las bodegas confiables (3, 5 y 6). Para análisis de stock muerto/lento/agotado y sugerido de compra usar la herramienta analisis_stock_y_sugerido.",
       inputSchema: {
         agrupar_por: z.enum(["bodega", "marca", "categoria", "producto"]).default("bodega"),
         buscar: z
@@ -123,7 +123,7 @@ export function registerTools(server, supabase) {
         solo_bodegas_confiables: z
           .boolean()
           .default(true)
-          .describe("true = solo bodegas 1, 5 y 6 (recomendado)"),
+          .describe("true = solo bodegas 3, 5 y 6 (recomendado)"),
         limite: z.number().int().min(1).max(100).default(20),
       },
     },

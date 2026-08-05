@@ -227,7 +227,7 @@ Origen: `IN_ProdBodega` + `IN_Producto` + `IN_Marcas` + `IN_Categorias`, filtran
 unidades, 22.823.893 COP** en el ERP y **122 / 5.744 / 22.823.893** en el dashboard — coincidencia
 exacta al peso. Las demás bodegas difieren sólo por movimiento posterior a la última carga manual.
 
-El filtro de bodegas confiables (1, 5, 6) **se sigue aplicando aguas abajo**, en el RPC de cálculo;
+El filtro de bodegas confiables (3, 5, 6) **se sigue aplicando aguas abajo**, en el RPC de cálculo;
 la sincronización guarda todas las bodegas, igual que hoy.
 
 ### 3.4 Clientes → `distrimm_clientes`
