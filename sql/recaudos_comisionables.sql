@@ -125,7 +125,19 @@ SELECT
   r.origen,
   r.erp_documento,
   r.erp_item,
-  r.fuente
+  r.fuente,
+
+  -- Los días que la regla de mora de arriba REALMENTE evaluó (desde la emisión
+  -- de la factura). Existe porque la UI etiquetaba el motivo de exclusión
+  -- adivinándolo con `r.dias_mora` —la medida del ERP, desde el vencimiento— y
+  -- un abono a 85 días de la factura pero 25 del vencimiento salía rotulado
+  -- "100% marca" en vez de mora. NULL = factura sin cruce (no comisiona por
+  -- política conservadora, no por mora).
+  CASE WHEN c.fuente <> 'erp'      THEN r.dias_mora  -- lo manual ya contaba desde la emisión
+       WHEN r.origen = 'contado'   THEN 0
+       WHEN pf.fecha_factura IS NULL THEN NULL
+       ELSE r.fecha_abono - pf.fecha_factura
+  END AS dias_mora_comision
 FROM distrimm_comisiones_recaudos r
 JOIN distrimm_comisiones_cargas_recaudo c ON c.id = r.carga_id
 LEFT JOIN por_factura pf ON pf.fac = r.factura

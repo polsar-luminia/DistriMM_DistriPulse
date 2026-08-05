@@ -1,4 +1,11 @@
-import React, { useState, useMemo, useEffect, useContext } from "react";
+import React, {
+  useState,
+  useMemo,
+  useEffect,
+  useContext,
+  useCallback,
+  useRef,
+} from "react";
 import {
   Wallet,
   Upload,
@@ -13,7 +20,11 @@ import {
   ChevronUp,
   Clock,
   Tag,
+  Download,
+  Filter,
+  User,
 } from "lucide-react";
+import { sileo } from "sileo";
 import { formatCurrency, formatFullCurrency } from "../../utils/formatters";
 import { clickableProps } from "@/utils/a11y";
 import { Card, KpiCard, EmptyState, MESES } from "./ComisionesShared";
@@ -21,6 +32,25 @@ import { leerDiasMoraLimite } from "../../hooks/comisiones/utils";
 import { DashboardContext } from "../DashboardManager";
 import { getPeriodoOperativo } from "../../utils/periodoOperativo";
 import { getVendedores } from "../../services/portfolioService";
+import {
+  exportRecaudoExcel,
+  getMotivoRecaudo,
+} from "../../utils/recaudoExcelExport";
+
+const ESTADO_OPCIONES = [
+  { value: "todos", label: "Todos los estados" },
+  { value: "comisionable", label: "Comisionables" },
+  { value: "mora", label: "Excluidos por mora" },
+  { value: "marca", label: "100% marca excluida" },
+  { value: "parcial", label: "Marca parcial" },
+  { value: "sin_factura", label: "Sin factura" },
+];
+
+const ORIGEN_OPCIONES = [
+  { value: "todos", label: "Crédito y contado" },
+  { value: "credito", label: "Solo crédito" },
+  { value: "contado", label: "Solo contado" },
+];
 
 export default function RecaudoTab({ hook }) {
   const {
@@ -65,6 +95,16 @@ export default function RecaudoTab({ hook }) {
 
   const [expandedVendedor, setExpandedVendedor] = useState(null);
 
+  // Filtros del informe: lo que se ve filtrado es lo que se exporta
+  const [filtroVendedor, setFiltroVendedor] = useState("todos");
+  const [filtroOrigen, setFiltroOrigen] = useState("todos");
+  const [filtroEstado, setFiltroEstado] = useState("todos");
+
+  // Al cambiar de periodo el vendedor filtrado puede no existir en el nuevo mes
+  useEffect(() => {
+    setFiltroVendedor("todos");
+  }, [selectedYear, selectedMonth]);
+
   // Mapa codigo → nombre desde tabla maestra de vendedores
   const [vendedorNombres, setVendedorNombres] = useState({});
   useEffect(() => {
@@ -80,19 +120,50 @@ export default function RecaudoTab({ hook }) {
     });
   }, []);
 
-  // Derive exclusion reason from persisted data
-  const getMotivo = (r) => {
-    if (!r.aplica_comision && r.dias_mora > DIAS_MORA_LIMITE) return "mora";
-    if ((r.valor_excluido_marca || 0) > 0) return "parcial";
-    if (r.aplica_comision) return "comisionable";
-    return "marca";
-  };
+  // La clasificación por motivo vive en recaudoExcelExport.getMotivoRecaudo,
+  // compartida con el informe de Excel para que pantalla y descarga no diverjan.
+  const getMotivo = getMotivoRecaudo;
+
+  // Vendedores presentes en el periodo (sin filtrar), para el selector
+  const vendedoresDisponibles = useMemo(() => {
+    const set = new Set(
+      recaudos.map((r) => r.vendedor_codigo || "SIN VENDEDOR"),
+    );
+    return [...set].sort((a, b) =>
+      (vendedorNombres[a] || a).localeCompare(vendedorNombres[b] || b, "es"),
+    );
+  }, [recaudos, vendedorNombres]);
+
+  // Recaudos tras aplicar filtros — alimentan tabla, KPIs y exportación
+  const recaudosFiltrados = useMemo(
+    () =>
+      recaudos.filter((r) => {
+        if (
+          filtroVendedor !== "todos" &&
+          (r.vendedor_codigo || "SIN VENDEDOR") !== filtroVendedor
+        )
+          return false;
+        if (filtroOrigen !== "todos") {
+          const origen = r.origen === "contado" ? "contado" : "credito";
+          if (origen !== filtroOrigen) return false;
+        }
+        if (filtroEstado !== "todos" && getMotivoRecaudo(r) !== filtroEstado)
+          return false;
+        return true;
+      }),
+    [recaudos, filtroVendedor, filtroOrigen, filtroEstado],
+  );
+
+  const hayFiltrosActivos =
+    filtroVendedor !== "todos" ||
+    filtroOrigen !== "todos" ||
+    filtroEstado !== "todos";
 
   // Aggregate recaudos by vendedor_codigo
   const vendedorStats = useMemo(() => {
-    if (!recaudos.length) return [];
+    if (!recaudosFiltrados.length) return [];
     const map = {};
-    recaudos.forEach((r) => {
+    recaudosFiltrados.forEach((r) => {
       const cod = r.vendedor_codigo || "SIN VENDEDOR";
       if (!map[cod]) {
         map[cod] = {
@@ -133,7 +204,7 @@ export default function RecaudoTab({ hook }) {
     return Object.values(map).sort(
       (a, b) => b.totalComisionable - a.totalComisionable,
     );
-  }, [recaudos]);
+  }, [recaudosFiltrados]);
 
   // KPI totals
   const totals = useMemo(() => {
@@ -147,7 +218,7 @@ export default function RecaudoTab({ hook }) {
     let totalContado = 0;
     let totalCredito = 0;
     let countContado = 0;
-    recaudos.forEach((r) => {
+    recaudosFiltrados.forEach((r) => {
       const val = Number(r.valor_recaudo || 0);
       const exclMarca = Number(r.valor_excluido_marca || 0);
       const iva = Number(r.valor_iva || 0);
@@ -189,7 +260,54 @@ export default function RecaudoTab({ hook }) {
       totalCredito,
       countContado,
     };
-  }, [recaudos]);
+  }, [recaudosFiltrados]);
+
+  // ── Exportación a Excel ──
+  const [isExporting, setIsExporting] = useState(false);
+  const exportingRef = useRef(false);
+  const handleExport = useCallback(async () => {
+    if (!recaudosFiltrados.length || exportingRef.current) return;
+    exportingRef.current = true;
+    setIsExporting(true);
+    try {
+      await exportRecaudoExcel({
+        recaudos: recaudosFiltrados,
+        vendedorStats,
+        totals,
+        vendedorNombres,
+        periodoLabel: `${MESES[selectedMonth - 1]}-${selectedYear}`,
+        diasMoraLimite: DIAS_MORA_LIMITE,
+        filtros: {
+          vendedor:
+            filtroVendedor === "todos"
+              ? "Todos"
+              : vendedorNombres[filtroVendedor] || filtroVendedor,
+          origen:
+            ORIGEN_OPCIONES.find((o) => o.value === filtroOrigen)?.label ||
+            filtroOrigen,
+          estado:
+            ESTADO_OPCIONES.find((o) => o.value === filtroEstado)?.label ||
+            filtroEstado,
+        },
+      });
+    } catch (err) {
+      sileo.error("Error al exportar: " + err.message);
+    } finally {
+      exportingRef.current = false;
+      setIsExporting(false);
+    }
+  }, [
+    recaudosFiltrados,
+    vendedorStats,
+    totals,
+    vendedorNombres,
+    selectedMonth,
+    selectedYear,
+    DIAS_MORA_LIMITE,
+    filtroVendedor,
+    filtroOrigen,
+    filtroEstado,
+  ]);
 
   if (loadingRecaudoCargas) {
     return (
@@ -230,6 +348,66 @@ export default function RecaudoTab({ hook }) {
           </select>
         </div>
 
+        {/* Filtro por vendedor */}
+        <div className="flex items-center gap-2 bg-slate-100 rounded-lg px-3 py-2 border border-slate-200">
+          <User size={14} className="text-emerald-600 shrink-0" />
+          <select
+            value={filtroVendedor}
+            onChange={(e) => setFiltroVendedor(e.target.value)}
+            aria-label="Filtrar por vendedor"
+            className="bg-transparent border-none text-xs font-bold focus:ring-0 cursor-pointer outline-none text-slate-700 max-w-[180px]"
+          >
+            <option value="todos">Todos los vendedores</option>
+            {vendedoresDisponibles.map((cod) => (
+              <option key={cod} value={cod}>
+                {vendedorNombres[cod] || cod}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Filtro por origen y estado */}
+        <div className="flex items-center gap-2 bg-slate-100 rounded-lg px-3 py-2 border border-slate-200">
+          <Filter size={14} className="text-emerald-600 shrink-0" />
+          <select
+            value={filtroOrigen}
+            onChange={(e) => setFiltroOrigen(e.target.value)}
+            aria-label="Filtrar por origen"
+            className="bg-transparent border-none text-xs font-bold focus:ring-0 cursor-pointer outline-none text-slate-700"
+          >
+            {ORIGEN_OPCIONES.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+          <select
+            value={filtroEstado}
+            onChange={(e) => setFiltroEstado(e.target.value)}
+            aria-label="Filtrar por estado"
+            className="bg-transparent border-none text-xs font-bold focus:ring-0 cursor-pointer outline-none text-slate-700"
+          >
+            {ESTADO_OPCIONES.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {hayFiltrosActivos && (
+          <button
+            onClick={() => {
+              setFiltroVendedor("todos");
+              setFiltroOrigen("todos");
+              setFiltroEstado("todos");
+            }}
+            className="text-[10px] font-bold text-slate-500 hover:text-slate-700 underline"
+          >
+            Limpiar filtros
+          </button>
+        )}
+
         {/* Cargas del periodo (sincronizadas desde el ERP) */}
         {cargasDelPeriodo.length > 0 && (
           <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-full">
@@ -240,6 +418,22 @@ export default function RecaudoTab({ hook }) {
 
         <div className="flex-1" />
 
+        {recaudosFiltrados.length > 0 && (
+          <button
+            onClick={handleExport}
+            disabled={isExporting}
+            className="px-3 py-2 bg-slate-700 rounded-lg text-xs font-bold text-white hover:bg-slate-800 transition-colors shadow-sm flex items-center gap-1.5 disabled:opacity-50"
+          >
+            {isExporting ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Download size={14} />
+            )}
+            {isExporting
+              ? "Exportando..."
+              : `Exportar Excel (${recaudosFiltrados.length})`}
+          </button>
+        )}
       </div>
 
       {!loadingRecaudos && recaudos.length === 0 ? (
@@ -311,7 +505,11 @@ export default function RecaudoTab({ hook }) {
             <EmptyState
               icon={Wallet}
               title="Sin resultados"
-              subtitle="No se encontraron datos para esta carga."
+              subtitle={
+                hayFiltrosActivos
+                  ? "Ningún recaudo coincide con los filtros aplicados."
+                  : "No se encontraron datos para esta carga."
+              }
             />
           ) : (
             <Card className="overflow-hidden !p-0">
@@ -465,11 +663,7 @@ export default function RecaudoTab({ hook }) {
                                                   item.valor_excluido_marca ||
                                                     0,
                                                 );
-                                                if (
-                                                  !item.aplica_comision &&
-                                                  item.dias_mora >
-                                                    DIAS_MORA_LIMITE
-                                                )
+                                                if (!item.aplica_comision)
                                                   return (
                                                     <span className="text-rose-500">
                                                       $ 0
@@ -500,16 +694,22 @@ export default function RecaudoTab({ hook }) {
                                               })()}
                                             </td>
                                             <td className="px-4 py-2 text-center">
-                                              <span
-                                                className={
-                                                  item.dias_mora >
-                                                  DIAS_MORA_LIMITE
-                                                    ? "text-rose-600 font-bold"
-                                                    : "text-slate-600"
-                                                }
-                                              >
-                                                {item.dias_mora}
-                                              </span>
+                                              {(() => {
+                                                const dias =
+                                                  item.dias_mora_comision ??
+                                                  item.dias_mora;
+                                                return (
+                                                  <span
+                                                    className={
+                                                      !item.aplica_comision
+                                                        ? "text-rose-600 font-bold"
+                                                        : "text-slate-600"
+                                                    }
+                                                  >
+                                                    {dias ?? "—"}
+                                                  </span>
+                                                );
+                                              })()}
                                             </td>
                                             <td className="px-4 py-2 text-center">
                                               {(() => {
@@ -538,6 +738,12 @@ export default function RecaudoTab({ hook }) {
                                                   return (
                                                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700">
                                                       100% marca
+                                                    </span>
+                                                  );
+                                                if (motivo === "sin_factura")
+                                                  return (
+                                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-600">
+                                                      Sin factura
                                                     </span>
                                                   );
                                                 return (
